@@ -1,16 +1,21 @@
+import type { APIRoute } from 'astro';
+
+// This route must run per-request (it reads env vars and talks to Resend),
+// so it's opted out of Astro's default static prerendering.
+export const prerender = false;
+
 /**
- * Cloudflare Pages Function — POST /api/contact
+ * POST /api/contact
  *
- * Runs at the edge, not in the Astro build. Validates the submission,
- * checks it against Turnstile (bot protection), and forwards it by email
- * via Resend. No data is stored anywhere; nothing here touches a database.
+ * Validates the submission, checks it against Turnstile (bot protection),
+ * and forwards it by email via Resend. No data is stored anywhere; nothing
+ * here touches a database.
  *
- * Required environment variables (set in the Cloudflare Pages dashboard
- * under Settings → Environment variables, as *encrypted* secrets — never
- * committed to the repo):
- *   RESEND_API_KEY      - API key from resend.com
- *   CONTACT_TO_EMAIL    - inbox that should receive submissions
- *   CONTACT_FROM_EMAIL  - verified sender address/domain in Resend
+ * Required env vars, set as encrypted secrets in the Cloudflare dashboard
+ * (Settings → Environment variables) — never committed to the repo:
+ *   RESEND_API_KEY       - API key from resend.com
+ *   CONTACT_TO_EMAIL     - inbox that should receive submissions
+ *   CONTACT_FROM_EMAIL   - verified sender address/domain in Resend
  *   TURNSTILE_SECRET_KEY - secret key from the Cloudflare Turnstile dashboard
  *                          (optional: if unset, Turnstile verification is skipped)
  */
@@ -64,8 +69,8 @@ async function verifyTurnstile(token: string | undefined, secret: string, ip: st
   return result.success === true;
 }
 
-export const onRequestPost: PagesFunction<Env> = async (context) => {
-  const { request, env } = context;
+export const POST: APIRoute = async ({ request, locals }) => {
+  const env = (locals as { runtime?: { env: Env } }).runtime?.env;
 
   let payload: ContactPayload;
   try {
@@ -93,7 +98,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     return json({ error: 'Please provide a valid email address.' }, 400);
   }
 
-  if (env.TURNSTILE_SECRET_KEY) {
+  if (env?.TURNSTILE_SECRET_KEY) {
     const ip = request.headers.get('CF-Connecting-IP') || '';
     const verified = await verifyTurnstile(payload['cf-turnstile-response'], env.TURNSTILE_SECRET_KEY, ip);
     if (!verified) {
@@ -101,7 +106,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     }
   }
 
-  if (!env.RESEND_API_KEY || !env.CONTACT_TO_EMAIL || !env.CONTACT_FROM_EMAIL) {
+  if (!env?.RESEND_API_KEY || !env?.CONTACT_TO_EMAIL || !env?.CONTACT_FROM_EMAIL) {
     console.error('Contact form is missing required environment configuration.');
     return json({ error: 'The contact form is temporarily unavailable. Please try again later.' }, 500);
   }
@@ -132,8 +137,4 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   }
 
   return json({ ok: true });
-};
-
-export const onRequestGet: PagesFunction = async () => {
-  return json({ error: 'Method not allowed.' }, 405);
 };

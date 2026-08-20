@@ -1,20 +1,30 @@
 # InduoWorks
 
-Static site — portfolio, engineering showcase, careers, and contact — built with
+Site — portfolio, engineering showcase, careers, and contact — built with
 [Astro](https://astro.build) + [Tailwind CSS](https://tailwindcss.com), deployed on
-[Cloudflare Pages](https://pages.cloudflare.com).
+[Cloudflare Workers](https://workers.cloudflare.com) via the official
+[`@astrojs/cloudflare`](https://docs.astro.build/en/guides/integrations-guide/cloudflare/) adapter.
 
-Design goals: minimal hosting cost (Cloudflare Pages free tier), maximum performance
-(prebuilt static HTML, zero client-side JS by default), and a small, auditable
-security surface (no database, no server secrets in the repo, strict security headers).
+Design goals: minimal hosting cost (Cloudflare's free tier), maximum performance
+(prebuilt static HTML for every page, zero client-side JS by default), and a small,
+auditable security surface (no database, no server secrets in the repo, strict
+security headers).
+
+> Note: this project started out targeting classic Cloudflare Pages with a plain
+> `output: 'static'` build. Cloudflare's git-connected build pipeline now applies
+> the Cloudflare adapter automatically for Astro projects regardless, so the
+> adapter is configured explicitly here to keep local builds and the real
+> deployment identical. Every page still prerenders to static HTML — only
+> `/api/contact` runs per-request.
 
 ## Stack
 
-- **Astro** (`output: 'static'`) — every page is prebuilt HTML at build time
+- **Astro** (`@astrojs/cloudflare` adapter, most routes prerendered) — every page
+  except the contact API is prebuilt HTML at build time
 - **Tailwind CSS v4** — utility CSS, no runtime cost
-- **Cloudflare Pages** — hosting + global CDN + free TLS
-- **Cloudflare Pages Functions** (`/functions/api/contact.ts`) — the *only* server-side
-  code, handling the contact form
+- **Cloudflare Workers** — hosting + global CDN + free TLS
+- **`src/pages/api/contact.ts`** — the *only* on-demand (non-prerendered) route,
+  handling the contact form
 - **Resend** — transactional email for contact form delivery
 - **Cloudflare Turnstile** — bot protection on the contact form (optional but recommended)
 
@@ -22,17 +32,20 @@ security surface (no database, no server secrets in the repo, strict security he
 
 ```text
 /
-├── functions/
-│   └── api/contact.ts     # Cloudflare Pages Function — contact form endpoint
 ├── public/
-│   ├── _headers           # security headers (CSP, HSTS, etc.)
+│   ├── _headers           # security headers (CSP, HSTS, etc.) — base rules;
+│   │                       # scripts/generate-csp.mjs appends script hashes at build time
 │   └── robots.txt
 ├── src/
 │   ├── components/        # Header, Footer, SEO, ThemeToggle
 │   ├── layouts/Layout.astro
-│   ├── pages/              # routes: /, /work, /showcase, /careers, /contact
+│   ├── middleware.ts       # redirects www.induo.works -> induo.works
+│   ├── pages/
+│   │   ├── api/contact.ts  # contact form endpoint (prerender = false)
+│   │   └── ...              # routes: /, /work, /showcase, /careers, /contact
 │   └── config.ts           # <- edit site copy, projects, roles here
-└── astro.config.mjs
+├── astro.config.mjs
+└── wrangler.jsonc          # Cloudflare Worker config (name, assets, bindings)
 ```
 
 Most day-to-day content edits (projects, showcase items, open roles, site copy)
@@ -43,26 +56,29 @@ templates for routine updates.
 
 ```bash
 npm install
-npm run dev        # http://localhost:4321
+npm run dev        # http://localhost:4321 — fast iteration, no Cloudflare bindings
 ```
 
-To test the contact form locally (including the Cloudflare Function), copy
-`.dev.vars.example` to `.dev.vars`, fill in real values, then:
+`npm run dev` is enough for everything except the contact form (it needs
+Cloudflare env bindings, which only exist under `wrangler`). To test the
+contact form locally, copy `.dev.vars.example` to `.dev.vars`, fill in real
+values, then:
 
 ```bash
-npm run pages:dev  # builds + runs via wrangler, so /api/contact works
+npm run worker:dev   # builds + runs via `wrangler dev`, so /api/contact works
 ```
 
-## Deploying (one-time setup)
+## Deploying
 
-1. **Push this repo to GitHub** (already done if you're reading this from the repo).
-2. **Cloudflare Pages → create a project → Connect to Git**, select this repo.
-   - Build command: `npm run build`
-   - Build output directory: `dist`
-   - Framework preset: Astro
-3. **Environment variables** (Cloudflare Pages dashboard → your project →
-   Settings → Environment variables). Set these for the **Production**
-   environment (and Preview, if you want the form to work on preview deploys):
+This repo is connected to Cloudflare via git — **push to `main` and Cloudflare
+builds + deploys automatically.** Nothing to run locally for normal deploys.
+
+One-time setup (already done for this project, kept here for reference):
+
+1. **Cloudflare dashboard → Workers & Pages → Create application → Connect to Git**,
+   select this repo. Build command `npm run build`, framework preset Astro.
+2. **Environment variables** (project → Settings → Environment variables, Production
+   — and Preview too, if you want the form to work on preview deploys):
 
    | Variable | Type | Notes |
    |---|---|---|
@@ -74,16 +90,17 @@ npm run pages:dev  # builds + runs via wrangler, so /api/contact works
 
    None of these ever go in the repo. `.env` and `.dev.vars` are gitignored.
 
-4. **Turnstile**: Cloudflare dashboard → Turnstile → Add site → widget mode
+3. **Turnstile**: Cloudflare dashboard → Turnstile → Add site → widget mode
    "Managed" → copy the Site Key into `PUBLIC_TURNSTILE_SITE_KEY` and the
-   Secret Key into `TURNSTILE_SECRET_KEY`. If you skip this, the contact form
-   still works — it just skips bot verification.
-5. **Custom domain** (optional): Pages project → Custom domains → add your
-   domain (DNS can also live on Cloudflare for one-click setup). Afterwards,
-   update `site` in [`astro.config.mjs`](astro.config.mjs) and
-   [`src/config.ts`](src/config.ts) to the real domain and redeploy, so
-   canonical URLs / sitemap / OG tags are correct.
-6. Push to `main` → Cloudflare Pages builds and deploys automatically on every push.
+   Secret Key into `TURNSTILE_SECRET_KEY`. Make sure every hostname the site is
+   reachable at (the `*.workers.dev` URL, `induo.works`, `www.induo.works`) is
+   listed as an allowed domain on the widget, or verification fails.
+4. **Custom domain**: project → Settings → Domains & Routes → Add → Custom Domain.
+   If the domain shows "externally managed DNS records" when adding it, delete
+   the conflicting A/CNAME records under DNS → Records first (leave MX/TXT/DKIM
+   records alone — those are for email, unrelated to this).
+   `www` doesn't need a separate redirect rule — it's added as its own Custom
+   Domain and [`src/middleware.ts`](src/middleware.ts) redirects it to the apex.
 
 ## Security notes
 
@@ -91,11 +108,13 @@ npm run pages:dev  # builds + runs via wrangler, so /api/contact works
 - The only server-side logic is the contact endpoint, which validates input,
   checks a honeypot field, optionally verifies Turnstile, and forwards to
   email via Resend. It never stores submissions anywhere.
-- Secrets live only in Cloudflare's encrypted environment variables, never
-  in git.
+- Secrets live only in Cloudflare's encrypted environment variables, never in git.
 - `public/_headers` sets a Content-Security-Policy, HSTS, frame-denial, and
-  restrictive Permissions-Policy on every response, Cloudflare Pages applies
-  these at the edge automatically.
+  restrictive Permissions-Policy on every response. Astro inlines some
+  per-page scripts directly into the HTML for performance; rather than
+  weaken the CSP with `'unsafe-inline'`, [`scripts/generate-csp.mjs`](scripts/generate-csp.mjs)
+  runs after every build, hashes exactly the inline scripts present, and
+  allow-lists those hashes — no manual maintenance needed as code changes.
 - Being a **public** repository doesn't expose anything sensitive: the
   frontend code is delivered to every visitor's browser regardless (view-source
   already shows it), and the one server function reads its credentials from

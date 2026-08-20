@@ -30,9 +30,17 @@
 
 유일한 예외가 **문의(Contact) 폼**입니다. 이건 방문자마다 다른 결과(이메일 발송)를
 만들어야 하니 정적 파일만으로는 안 됩니다. 그래서 이 부분만 필요한 순간에만
-잠깐 실행되는 작은 서버리스 함수(Cloudflare Pages Function)로 처리합니다.
-"진짜 서버"가 아니라 요청 하나 처리하고 사라지는 함수라, 관리할 것도 공격받을 것도
-거의 없습니다.
+잠깐 실행되는 서버리스 함수(Cloudflare Worker의 API 라우트, `/api/contact`)로
+처리합니다. "진짜 서버"가 아니라 요청 하나 처리하고 사라지는 함수라, 관리할 것도
+공격받을 것도 거의 없습니다.
+
+> **중간에 방향을 한 번 바꿨습니다**: 처음엔 순수 정적 배포(Cloudflare Pages)로
+> 시작했는데, Cloudflare가 Git 연동 시 Astro 프로젝트에 Workers용 어댑터를 자동
+> 적용하는 걸 배포 중에 발견했습니다. 그래서 이걸 저장소에 명시적으로 설정해서
+> (`@astrojs/cloudflare` 어댑터), 로컬 빌드와 실제 배포가 항상 똑같이 동작하도록
+> 맞췄습니다 — 페이지 대부분은 여전히 미리 빌드된 정적 HTML이고, `/api/contact`
+> 하나만 요청마다 실행됩니다. URL 끝이 `.pages.dev`가 아니라 `.workers.dev`인
+> 이유이기도 합니다.
 
 ---
 
@@ -45,8 +53,9 @@
 달리 **브라우저에 JS를 거의 안 보냅니다** — 인터랙션이 필요한 부분(테마 토글, 문의폼)만
 작은 스크립트로 남기고, 나머지는 순수 HTML/CSS입니다. 그래서 로딩이 빠릅니다.
 
-`npm run build`를 실행하면 `src/pages/` 안의 파일들이 `dist/` 폴더에 완성된
-HTML로 변환됩니다. Cloudflare Pages는 바로 이 `dist/` 폴더를 그대로 배포합니다.
+`npm run build`를 실행하면 `src/pages/` 안의 파일들이 `dist/client/` 폴더에 완성된
+HTML로 변환되고, `/api/contact`처럼 요청마다 실행돼야 하는 부분만 `dist/server/`에
+별도로 빌드됩니다. Cloudflare가 이 둘을 합쳐 하나의 Worker로 배포합니다.
 
 ### 2-2. Tailwind CSS — 디자인을 코드로
 
@@ -84,7 +93,7 @@ HTML로 변환됩니다. Cloudflare Pages는 바로 이 `dist/` 폴더를 그대
 방문자가 폼 작성 → 브라우저 JS가 /api/contact 로 전송
                         │
                         ▼
-        Cloudflare Pages Function 실행 (functions/api/contact.ts)
+     Cloudflare Worker의 API 라우트 실행 (src/pages/api/contact.ts)
                         │
         1) 봉투 채우기(허니팟) 필드가 채워져 있으면 → 봇으로 간주, 조용히 무시
         2) 이름/이메일/메시지 형식 검증
@@ -109,7 +118,8 @@ HTML로 변환됩니다. Cloudflare Pages는 바로 이 `dist/` 폴더를 그대
 - **GitHub CLI(`gh`)** — 이미 설치는 되어 있었고 로그인도 되어 있어서, 터미널에서 바로
   레포지토리를 만들고 푸시할 수 있었습니다
 - **npm 패키지들** — `astro`, `tailwindcss`, `@astrojs/sitemap`(검색엔진용 사이트맵
-  자동 생성), `wrangler`(Cloudflare 로컬 테스트 도구), `@cloudflare/workers-types`
+  자동 생성), `@astrojs/cloudflare`(Cloudflare Worker로 빌드해주는 어댑터),
+  `wrangler`(Cloudflare 로컬 테스트 도구), `@cloudflare/workers-types`
   (문의폼 함수 코드의 타입 검사용)
 
 ---
@@ -120,7 +130,7 @@ HTML로 변환됩니다. Cloudflare Pages는 바로 이 `dist/` 폴더를 그대
 
 1. **GitHub 레포지토리 생성** — 이건 제가 `gh` CLI로 대신 만들었습니다.
    [github.com/minsueverywhere/induoworks-site](https://github.com/minsueverywhere/induoworks-site)
-2. **Cloudflare Pages 프로젝트 생성 & GitHub 연결** — Cloudflare 대시보드에서
+2. **Cloudflare 프로젝트 생성 & GitHub 연결** — Cloudflare 대시보드(Workers & Pages)에서
    이 저장소를 "지켜보도록" 등록. (이건 로그인이 필요해서 안내만 드리고 직접
    진행하셨거나 진행 중이실 겁니다.)
 3. **환경변수(비밀값) 등록** — Resend API 키, Turnstile 키 등을 Cloudflare
@@ -163,7 +173,7 @@ Cloudflare가 실제로 반응해서 새 빌드를 돌리는지.
 
 ## 5. 이 구조가 "최소 비용"인 이유
 
-- **호스팅**: Cloudflare Pages 무료 티어 (빌드 500회/월, 대역폭 무제한, 전 세계 CDN, 무료 SSL 인증서 포함)
+- **호스팅**: Cloudflare Workers 무료 티어 (빌드 500회/월, 대역폭 무제한, 전 세계 CDN, 무료 SSL 인증서 포함)
 - **문의 폼 발송**: Resend 무료 티어 (월 3,000통)
 - **봇 차단**: Cloudflare Turnstile — 무료
 - **도메인**: 원하는 커스텀 도메인만 구매하면 되고(연 1만~2만 원대), 그 외엔 전부 $0
@@ -181,7 +191,8 @@ $0으로 유지되는 구조입니다.
 | 색상·폰트 테마 | `src/styles/global.css` (`:root`, `[data-theme="light"]`) |
 | 새 페이지 추가 | `src/pages/` 에 `.astro` 파일 추가 |
 | 헤더/푸터 구조 | `src/components/Header.astro`, `Footer.astro` |
-| 문의폼 로직 | `functions/api/contact.ts` |
+| 문의폼 로직 | `src/pages/api/contact.ts` |
+| www → 루트 도메인 리다이렉트 | `src/middleware.ts` |
 | 보안 헤더 | `public/_headers` |
 
 고친 뒤엔 `git push` 한 번이면 자동으로 반영됩니다(4-2 참고).
