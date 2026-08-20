@@ -8,8 +8,7 @@ export const site = {
   tagline: 'Software that earns its keep.',
   description:
     'InduoWorks builds fast, reliable web software — portfolio, engineering showcase, and open roles.',
-  // Update alongside `site` in astro.config.mjs when the custom domain lands.
-  url: 'https://induoworks-site.pages.dev',
+  url: 'https://induo.works',
   locale: 'en',
   // Public contact email shown on the site — set this or leave the contact
   // form as the only channel (see /src/pages/contact.astro).
@@ -42,10 +41,10 @@ export const projects: Project[] = [
     slug: 'induoworks-site',
     title: 'InduoWorks Site',
     summary:
-      'This site. Static Astro build on Cloudflare Pages — zero-JS by default, edge-cached worldwide, serverless contact handling.',
+      'This site. Astro build on Cloudflare Workers — zero-JS by default, edge-cached worldwide, serverless contact handling.',
     year: '2026',
     role: 'Design & build',
-    stack: ['Astro', 'Tailwind CSS', 'Cloudflare Pages'],
+    stack: ['Astro', 'Tailwind CSS', 'Cloudflare Workers'],
     repo: 'https://github.com/minsueverywhere/induoworks-site',
     featured: true,
   },
