@@ -6,6 +6,12 @@
       "runtimeExecutable": "C:\\Windows\\System32\\cmd.exe",
       "runtimeArgs": ["/c", "set PATH=C:\\Program Files\\nodejs\\;%PATH% && npm run dev"],
       "port": 4321
+    },
+    {
+      "name": "induoworks-pages",
+      "runtimeExecutable": "C:\\Windows\\System32\\cmd.exe",
+      "runtimeArgs": ["/c", "set PATH=C:\\Program Files\\nodejs\\;%PATH% && npx wrangler pages dev ./dist --port 8788"],
+      "port": 8788
     }
   ]
 }
