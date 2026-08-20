@@ -14,11 +14,23 @@
  * Re-run any time inline script content changes — nothing to maintain by hand.
  */
 import { createHash } from 'node:crypto';
-import { readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, writeFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 const DIST_DIR = join(process.cwd(), 'dist');
-const HEADERS_FILE = join(DIST_DIR, '_headers');
+
+// Plain `output: 'static'` builds put _headers at dist/_headers. With the
+// @astrojs/cloudflare adapter (which Cloudflare's Workers Builds pipeline
+// applies automatically for git-connected Astro projects), static assets —
+// including _headers — land under dist/client/ instead, alongside a
+// separate dist/_worker.js/ for the server bundle. Support both so this
+// script keeps working regardless of which mode Cloudflare decides to use.
+const HEADERS_FILE = [join(DIST_DIR, 'client', '_headers'), join(DIST_DIR, '_headers')].find(existsSync);
+
+if (!HEADERS_FILE) {
+  console.error('[generate-csp] Could not find _headers in dist/ or dist/client/ — skipping.');
+  process.exit(1);
+}
 
 function walk(dir) {
   const out = [];
