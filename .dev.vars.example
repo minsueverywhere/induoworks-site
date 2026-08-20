@@ -1,0 +1,9 @@
+# Copy to .dev.vars for local `wrangler pages dev` testing.
+# .dev.vars is gitignored — never commit real secrets.
+# In production these are set as encrypted Environment Variables in the
+# Cloudflare Pages dashboard (Settings → Environment variables), not here.
+
+RESEND_API_KEY=
+CONTACT_TO_EMAIL=
+CONTACT_FROM_EMAIL=onboarding@resend.dev
+TURNSTILE_SECRET_KEY=

@@ -1,0 +1,38 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { roles } from '../../config';
+
+const openRoles = roles.filter((r) => r.open);
+---
+
+<Layout title="Careers" description="Open roles at InduoWorks.">
+  <section class="mx-auto max-w-5xl px-6 pb-24 pt-16 sm:pt-20">
+    <h1 class="text-3xl font-semibold tracking-tight">Careers</h1>
+    <p class="mt-3 max-w-xl text-[var(--color-text-muted)]">
+      {openRoles.length > 0 ? 'Open roles below. Reach out via the contact form to apply.' : 'No open roles right now — check back soon.'}
+    </p>
+
+    <div class="mt-10 space-y-4">
+      {openRoles.map((r) => (
+        <div class="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-6 sm:p-8">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h2 class="font-semibold">{r.title}</h2>
+            <span class="rounded-full border border-[var(--color-border)] px-2.5 py-1 text-xs text-[var(--color-text-muted)]">
+              {r.type} · {r.location}
+            </span>
+          </div>
+          <p class="mt-2 text-sm text-[var(--color-text-muted)]">{r.summary}</p>
+          <ul class="mt-4 list-disc space-y-1 pl-5 text-sm text-[var(--color-text-muted)]">
+            {r.responsibilities.map((item) => <li>{item}</li>)}
+          </ul>
+          <a
+            href="/contact/"
+            class="focus-ring mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--color-text)] px-4 py-2 text-sm font-medium text-[var(--color-bg)] hover:opacity-90"
+          >
+            Apply via contact form &rarr;
+          </a>
+        </div>
+      ))}
+    </div>
+  </section>
+</Layout>

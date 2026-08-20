@@ -1,0 +1,89 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { site, projects, showcase } from '../config';
+
+const featured = projects.filter((p) => p.featured);
+---
+
+<Layout title={site.name} description={site.description}>
+  <section class="mx-auto max-w-5xl px-6 pb-16 pt-20 sm:pt-28">
+    <p class="text-sm font-medium text-[var(--color-accent)]">{site.tagline}</p>
+    <h1 class="mt-4 max-w-2xl text-4xl font-semibold tracking-tight sm:text-5xl">
+      Building fast, reliable software — and showing the work.
+    </h1>
+    <p class="mt-5 max-w-xl text-base text-[var(--color-text-muted)]">
+      {site.description}
+    </p>
+    <div class="mt-8 flex flex-wrap gap-3">
+      <a
+        href="/work/"
+        class="focus-ring rounded-full bg-[var(--color-text)] px-5 py-2.5 text-sm font-medium text-[var(--color-bg)] transition-opacity hover:opacity-90"
+      >
+        View work
+      </a>
+      <a
+        href="/contact/"
+        class="focus-ring rounded-full border border-[var(--color-border)] px-5 py-2.5 text-sm font-medium transition-colors hover:border-[var(--color-accent)]"
+      >
+        Get in touch
+      </a>
+    </div>
+  </section>
+
+  {featured.length > 0 && (
+    <section class="mx-auto max-w-5xl px-6 py-16">
+      <h2 class="text-sm font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Featured work</h2>
+      <div class="mt-6 grid gap-6 sm:grid-cols-2">
+        {featured.map((p) => (
+          <a
+            href={`/work/${p.slug}/`}
+            class="focus-ring group rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-6 transition-colors hover:border-[var(--color-accent)]"
+          >
+            <div class="flex items-center justify-between">
+              <h3 class="font-semibold">{p.title}</h3>
+              <span class="text-xs text-[var(--color-text-muted)]">{p.year}</span>
+            </div>
+            <p class="mt-2 text-sm text-[var(--color-text-muted)]">{p.summary}</p>
+            <ul class="mt-4 flex flex-wrap gap-2">
+              {p.stack.map((s) => (
+                <li class="rounded-full border border-[var(--color-border)] px-2.5 py-1 text-xs text-[var(--color-text-muted)]">{s}</li>
+              ))}
+            </ul>
+          </a>
+        ))}
+      </div>
+    </section>
+  )}
+
+  <section class="mx-auto max-w-5xl px-6 py-16">
+    <div class="flex items-end justify-between">
+      <h2 class="text-sm font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Engineering showcase</h2>
+      <a href="/showcase/" class="focus-ring rounded text-sm text-[var(--color-accent)] hover:underline">See all</a>
+    </div>
+    <div class="mt-6 grid gap-6 sm:grid-cols-3">
+      {showcase.map((item) => (
+        <div class="rounded-2xl border border-[var(--color-border)] p-6">
+          <h3 class="font-semibold">{item.title}</h3>
+          <p class="mt-2 text-sm text-[var(--color-text-muted)]">{item.blurb}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-5xl px-6 py-16">
+    <div class="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-8 text-center sm:p-12">
+      <h2 class="text-2xl font-semibold">Hiring, or want to talk shop?</h2>
+      <p class="mx-auto mt-3 max-w-md text-sm text-[var(--color-text-muted)]">
+        Open roles are listed on the careers page. For anything else, the contact form reaches me directly.
+      </p>
+      <div class="mt-6 flex flex-wrap justify-center gap-3">
+        <a href="/careers/" class="focus-ring rounded-full bg-[var(--color-text)] px-5 py-2.5 text-sm font-medium text-[var(--color-bg)] hover:opacity-90">
+          See open roles
+        </a>
+        <a href="/contact/" class="focus-ring rounded-full border border-[var(--color-border)] px-5 py-2.5 text-sm font-medium hover:border-[var(--color-accent)]">
+          Contact
+        </a>
+      </div>
+    </div>
+  </section>
+</Layout>

@@ -1,0 +1,45 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import { projects } from '../../../config';
+
+export function getStaticPaths() {
+  return projects.map((p) => ({ params: { slug: p.slug }, props: { project: p } }));
+}
+
+const { project } = Astro.props;
+---
+
+<Layout title={project.title} description={project.summary}>
+  <article class="mx-auto max-w-3xl px-6 pb-24 pt-16 sm:pt-20">
+    <a href="/work/" class="focus-ring rounded text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)]">&larr; Work</a>
+
+    <h1 class="mt-4 text-3xl font-semibold tracking-tight">{project.title}</h1>
+    <p class="mt-3 text-[var(--color-text-muted)]">{project.summary}</p>
+
+    <dl class="mt-8 grid grid-cols-2 gap-6 border-y border-[var(--color-border)] py-6 text-sm sm:grid-cols-4">
+      <div>
+        <dt class="text-[var(--color-text-muted)]">Year</dt>
+        <dd class="mt-1 font-medium">{project.year}</dd>
+      </div>
+      <div>
+        <dt class="text-[var(--color-text-muted)]">Role</dt>
+        <dd class="mt-1 font-medium">{project.role}</dd>
+      </div>
+      <div class="col-span-2">
+        <dt class="text-[var(--color-text-muted)]">Stack</dt>
+        <dd class="mt-1 font-medium">{project.stack.join(', ')}</dd>
+      </div>
+    </dl>
+
+    {project.repo && (
+      <a
+        href={project.repo}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="focus-ring mt-8 inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] px-4 py-2 text-sm hover:border-[var(--color-accent)]"
+      >
+        View source &rarr;
+      </a>
+    )}
+  </article>
+</Layout>

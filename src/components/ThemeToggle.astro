@@ -1,0 +1,63 @@
+---
+// Inline, dependency-free theme toggle. The blocking snippet in Layout.astro
+// sets data-theme before first paint, so there is no flash-of-wrong-theme.
+---
+
+<button
+  id="theme-toggle"
+  type="button"
+  aria-label="Toggle color theme"
+  class="focus-ring inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-border)] text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)]"
+>
+  <svg
+    id="icon-sun"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    class="hidden h-4.5 w-4.5"
+  >
+    <circle cx="12" cy="12" r="4"></circle>
+    <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"
+    ></path>
+  </svg>
+  <svg
+    id="icon-moon"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    class="h-4.5 w-4.5"
+  >
+    <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"></path>
+  </svg>
+</button>
+
+<script is:inline>
+  (function () {
+    const root = document.documentElement;
+    const btn = document.getElementById('theme-toggle');
+    const sun = document.getElementById('icon-sun');
+    const moon = document.getElementById('icon-moon');
+
+    function sync() {
+      const theme = root.getAttribute('data-theme') || 'dark';
+      sun?.classList.toggle('hidden', theme !== 'light');
+      moon?.classList.toggle('hidden', theme === 'light');
+    }
+    sync();
+
+    btn?.addEventListener('click', () => {
+      const next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      root.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      sync();
+    });
+  })();
+</script>
