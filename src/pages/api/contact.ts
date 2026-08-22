@@ -111,7 +111,16 @@ export const POST: APIRoute = async ({ request }) => {
 
   if (!cfEnv?.RESEND_API_KEY || !cfEnv?.CONTACT_TO_EMAIL || !cfEnv?.CONTACT_FROM_EMAIL) {
     console.error('Contact form is missing required environment configuration.');
-    return json({ error: 'The contact form is temporarily unavailable. Please try again later.' }, 500);
+    // TEMPORARY DIAGNOSTIC — lists which env var *names* (never values) are
+    // visible at runtime, to debug why dashboard-configured vars aren't
+    // showing up. Remove once resolved.
+    return json(
+      {
+        error: 'The contact form is temporarily unavailable. Please try again later.',
+        debugAvailableKeys: cfEnv ? Object.keys(cfEnv) : 'env is null/undefined',
+      },
+      500
+    );
   }
 
   const emailRes = await fetch('https://api.resend.com/emails', {
