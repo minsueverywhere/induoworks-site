@@ -135,8 +135,11 @@ export const POST: APIRoute = async ({ request }) => {
   });
 
   if (!emailRes.ok) {
-    console.error('Resend API error:', await emailRes.text());
-    return json({ error: 'Could not send your message. Please try again later.' }, 502);
+    const resendError = await emailRes.text();
+    console.error('Resend API error:', resendError);
+    // TEMPORARY DIAGNOSTIC — surfaces Resend's own rejection reason (not a
+    // secret) to debug a delivery failure. Remove once resolved.
+    return json({ error: 'Could not send your message. Please try again later.', debugResendError: resendError }, 502);
   }
 
   return json({ ok: true });
