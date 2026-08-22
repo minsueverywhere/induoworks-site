@@ -1,4 +1,7 @@
 import type { APIRoute } from 'astro';
+// Astro 6+ removed `locals.runtime.env` — Cloudflare bindings/vars are read
+// via this module import instead (workerd's native way to expose them).
+import { env } from 'cloudflare:workers';
 
 // This route must run per-request (it reads env vars and talks to Resend),
 // so it's opted out of Astro's default static prerendering.
@@ -69,9 +72,9 @@ async function verifyTurnstile(token: string | undefined, secret: string, ip: st
   return result.success === true;
 }
 
-export const POST: APIRoute = async ({ request, locals }) => {
-  const env = (locals as { runtime?: { env: Env } }).runtime?.env;
+const cfEnv = env as unknown as Partial<Env>;
 
+export const POST: APIRoute = async ({ request }) => {
   let payload: ContactPayload;
   try {
     payload = await request.json();
@@ -98,15 +101,15 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return json({ error: 'Please provide a valid email address.' }, 400);
   }
 
-  if (env?.TURNSTILE_SECRET_KEY) {
+  if (cfEnv?.TURNSTILE_SECRET_KEY) {
     const ip = request.headers.get('CF-Connecting-IP') || '';
-    const verified = await verifyTurnstile(payload['cf-turnstile-response'], env.TURNSTILE_SECRET_KEY, ip);
+    const verified = await verifyTurnstile(payload['cf-turnstile-response'], cfEnv.TURNSTILE_SECRET_KEY, ip);
     if (!verified) {
       return json({ error: 'Verification failed. Please retry.' }, 403);
     }
   }
 
-  if (!env?.RESEND_API_KEY || !env?.CONTACT_TO_EMAIL || !env?.CONTACT_FROM_EMAIL) {
+  if (!cfEnv?.RESEND_API_KEY || !cfEnv?.CONTACT_TO_EMAIL || !cfEnv?.CONTACT_FROM_EMAIL) {
     console.error('Contact form is missing required environment configuration.');
     return json({ error: 'The contact form is temporarily unavailable. Please try again later.' }, 500);
   }
@@ -114,12 +117,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const emailRes = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${env.RESEND_API_KEY}`,
+      Authorization: `Bearer ${cfEnv.RESEND_API_KEY}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: env.CONTACT_FROM_EMAIL,
-      to: env.CONTACT_TO_EMAIL,
+      from: cfEnv.CONTACT_FROM_EMAIL,
+      to: cfEnv.CONTACT_TO_EMAIL,
       reply_to: email,
       subject: `New contact form message from ${name}`,
       html: `
