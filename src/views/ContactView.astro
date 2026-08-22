@@ -21,12 +21,13 @@ const strings = {
 
 <Layout lang={lang} title={dict.contact.title} description={dict.contact.title}>
   <section class="mx-auto max-w-xl px-6 pb-24 pt-16 sm:pt-20">
-    <h1 class="text-3xl font-semibold tracking-tight">{dict.contact.title}</h1>
+    <p class="technical-label text-[var(--color-wood)]">INBOX / DIRECT LINE</p>
+    <h1 class="mt-3 text-3xl font-semibold tracking-tight">{dict.contact.title}</h1>
     <p class="mt-3 text-[var(--color-text-muted)]">
       {site.email ? dict.contact.introWithEmail(site.email) : dict.contact.introNoEmail}
     </p>
 
-    <form id="contact-form" class="mt-10 space-y-5" novalidate>
+    <form id="contact-form" class="workshop-panel mt-10 space-y-5 rounded-xl border border-[var(--color-border)] p-6 sm:p-8" novalidate>
       <div>
         <label for="name" class="block text-sm font-medium">{dict.contact.name}</label>
         <input
@@ -84,6 +85,8 @@ const strings = {
         {dict.contact.send}
       </button>
 
+      <p class="text-xs leading-relaxed text-[var(--color-text-muted)]">{dict.contact.privacyNote}</p>
+
       <p id="form-status" role="status" aria-live="polite" class="text-sm"></p>
     </form>
   </section>
@@ -92,7 +95,7 @@ const strings = {
     <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   )}
 
-  <script define:vars={{ strings }}>
+  <script is:inline define:vars={{ strings }}>
     const form = document.getElementById('contact-form');
     const status = document.getElementById('form-status');
     const submitBtn = document.getElementById('submit-btn');
@@ -100,6 +103,7 @@ const strings = {
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
       status.textContent = '';
+      if (!form.reportValidity()) return;
       submitBtn.disabled = true;
       submitBtn.textContent = strings.sending;
 
@@ -112,10 +116,10 @@ const strings = {
           body: JSON.stringify(data),
         });
 
-        const body = await res.json().catch(() => ({}));
+        await res.json().catch(() => ({}));
 
         if (!res.ok) {
-          throw new Error(body?.error || strings.genericError);
+          throw new Error(strings.genericError);
         }
 
         form.reset();
@@ -125,6 +129,10 @@ const strings = {
         status.textContent = err instanceof Error ? err.message : strings.genericError;
         status.className = 'text-sm text-red-400';
       } finally {
+        // Turnstile tokens are single-use. Always request a fresh token so a
+        // visitor can retry after a validation or email-provider failure.
+        // @ts-expect-error Turnstile adds this global when its script loads.
+        window.turnstile?.reset();
         submitBtn.disabled = false;
         submitBtn.textContent = strings.send;
       }

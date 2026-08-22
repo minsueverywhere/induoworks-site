@@ -14,14 +14,15 @@ const openRoles = roles.filter((r) => r.open);
 
 <Layout lang={lang} title={dict.careers.title} description={dict.careers.description}>
   <section class="mx-auto max-w-5xl px-6 pb-24 pt-16 sm:pt-20">
-    <h1 class="text-3xl font-semibold tracking-tight">{dict.careers.title}</h1>
+    <p class="technical-label text-[var(--color-wood)]">WORKSHOP / OPEN ROLES</p>
+    <h1 class="mt-3 text-3xl font-semibold tracking-tight">{dict.careers.title}</h1>
     <p class="mt-3 max-w-xl text-[var(--color-text-muted)]">
       {openRoles.length > 0 ? dict.careers.introOpen : dict.careers.introClosed}
     </p>
 
     <div class="mt-10 space-y-4">
       {openRoles.map((r) => (
-        <div class="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-6 sm:p-8">
+        <div class="workshop-panel wood-rule rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-6 pl-7 sm:p-8 sm:pl-9">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <h2 class="font-semibold">{r.title[lang]}</h2>
             <span class="rounded-full border border-[var(--color-border)] px-2.5 py-1 text-xs text-[var(--color-text-muted)]">

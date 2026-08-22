@@ -20,7 +20,7 @@ const dict = t(lang);
       {projects.map((p) => (
         <a
           href={localizePath(`/work/${p.slug}/`, lang)}
-          class="focus-ring group rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-6 transition-colors hover:border-[var(--color-accent)]"
+          class="workshop-panel wood-rule focus-ring group rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-6 pl-7 transition-colors hover:border-[var(--color-accent)]"
         >
           <div class="flex items-center justify-between">
             <h2 class="font-semibold">{p.title[lang]}</h2>

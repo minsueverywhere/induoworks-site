@@ -1,0 +1,33 @@
+---
+import Layout from '../layouts/Layout.astro';
+import WebGPUDemo from '../components/WebGPUDemo.astro';
+import type { Lab } from '../config';
+import { t, localizePath, type Locale } from '../i18n';
+
+interface Props {
+  lang: Locale;
+  lab: Lab;
+}
+
+const { lang, lab } = Astro.props;
+const dict = t(lang);
+---
+
+<Layout lang={lang} title={lab.title[lang]} description={lab.summary[lang]} image={null}>
+  <article class="mx-auto max-w-5xl px-6 pb-24 pt-16 sm:pt-20">
+    <a href={localizePath('/labs/', lang)} class="focus-ring rounded text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)]">{dict.labDetail.back}</a>
+    <div class="mt-8 flex flex-wrap items-center gap-3">
+      <span class="technical-label text-[var(--color-wood)]">R&amp;D / {lab.year}</span>
+      <span class="rounded-full border border-[var(--color-border)] px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider text-[var(--color-accent)]">{dict.labDetail.experimental}</span>
+    </div>
+    <h1 class="mt-4 text-3xl font-semibold tracking-tight sm:text-5xl">{lab.title[lang]}</h1>
+    <p class="mt-4 max-w-2xl text-lg leading-relaxed text-[var(--color-text-muted)]">{lab.description[lang]}</p>
+    <ul class="mt-6 flex flex-wrap gap-2">
+      {lab.stack.map((item) => <li class="rounded-full border border-[var(--color-border)] px-2.5 py-1 font-mono text-xs text-[var(--color-text-muted)]">{item}</li>)}
+    </ul>
+
+    <div class="mt-12">
+      {lab.slug === 'gpu-interference' && <WebGPUDemo labels={dict.labDetail} />}
+    </div>
+  </article>
+</Layout>

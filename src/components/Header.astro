@@ -1,5 +1,5 @@
 ---
-import { site } from '../config';
+import { site, companies } from '../config';
 import { t, navItems, localizePath, stripLocale, type Locale } from '../i18n';
 import ThemeToggle from './ThemeToggle.astro';
 
@@ -15,7 +15,8 @@ const { path: currentBasePath } = stripLocale(Astro.url.pathname);
 const isActive = (basePath: string) =>
   basePath === '/' ? currentBasePath === '/' : currentBasePath.startsWith(basePath);
 
-const items = navItems.map((item) => ({
+const hasPublishedCompanies = companies.some((company) => company.published !== false);
+const items = navItems.filter((item) => item.key !== 'companies' || hasPublishedCompanies).map((item) => ({
   href: localizePath(item.path, lang),
   label: dict.nav[item.key],
   active: isActive(item.path),
@@ -24,20 +25,22 @@ const items = navItems.map((item) => ({
 const switchHref = localizePath(currentBasePath, otherLang);
 ---
 
-<header class="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--color-bg)]/80 backdrop-blur">
+<header class="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--color-bg)]/88 backdrop-blur-md">
+  <div class="h-px bg-gradient-to-r from-transparent via-[var(--color-wood)] to-transparent opacity-70"></div>
   <div class="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-    <a href={localizePath('/', lang)} class="focus-ring rounded font-semibold tracking-tight">
-      {site.name}
+    <a href={localizePath('/', lang)} class="focus-ring flex items-center gap-2.5 rounded font-semibold tracking-tight">
+      <span class="grid h-7 w-7 place-items-center border border-[var(--color-wood)] bg-[var(--color-wood-muted)] font-mono text-[10px] text-[var(--color-wood)]" aria-hidden="true">IW</span>
+      <span>{site.name}</span>
     </a>
 
-    <nav class="hidden items-center gap-6 md:flex" aria-label="Primary">
+    <nav class="hidden items-center gap-6 lg:flex" aria-label="Primary">
       {items.map((item) => (
         <a
           href={item.href}
           class:list={[
             'focus-ring rounded text-sm transition-colors',
             item.active
-              ? 'text-[var(--color-text)]'
+              ? 'text-[var(--color-accent)]'
               : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]',
           ]}
           aria-current={item.active ? 'page' : undefined}
@@ -63,7 +66,7 @@ const switchHref = localizePath(currentBasePath, otherLang);
         aria-label={dict.misc.toggleMenu}
         aria-expanded="false"
         aria-controls="mobile-menu"
-        class="focus-ring inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-border)] text-[var(--color-text-muted)] md:hidden"
+        class="focus-ring inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-border)] text-[var(--color-text-muted)] lg:hidden"
       >
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="h-4.5 w-4.5">
           <path d="M4 7h16M4 12h16M4 17h16"></path>
@@ -72,7 +75,7 @@ const switchHref = localizePath(currentBasePath, otherLang);
     </div>
   </div>
 
-  <nav id="mobile-menu" class="hidden border-t border-[var(--color-border)] px-6 py-3 md:hidden" aria-label="Primary mobile">
+  <nav id="mobile-menu" class="hidden border-t border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-6 py-4 lg:hidden" aria-label="Primary mobile">
     <ul class="flex flex-col gap-3">
       {items.map((item) => (
         <li>

@@ -1,6 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { site, projects, showcase } from '../config';
+import { site, projects, showcase, roles } from '../config';
 import { t, localizePath, type Locale } from '../i18n';
 
 interface Props {
@@ -10,18 +10,21 @@ interface Props {
 const { lang } = Astro.props;
 const dict = t(lang);
 const featured = projects.filter((p) => p.featured);
+const hasOpenRoles = roles.some((role) => role.open);
 ---
 
 <Layout lang={lang} title={site.name} description={dict.meta.description}>
-  <section class="mx-auto max-w-5xl px-6 pb-16 pt-20 sm:pt-28">
-    <p class="text-sm font-medium text-[var(--color-accent)]">{dict.meta.tagline}</p>
-    <h1 class="mt-4 max-w-2xl text-4xl font-semibold tracking-tight sm:text-5xl">
-      {dict.home.heading}
-    </h1>
-    <p class="mt-5 max-w-xl text-base text-[var(--color-text-muted)]">
-      {dict.meta.description}
-    </p>
-    <div class="mt-8 flex flex-wrap gap-3">
+  <section class="mx-auto grid max-w-5xl items-center gap-12 px-6 pb-16 pt-16 sm:pt-24 lg:grid-cols-[1.18fr_.82fr]">
+    <div>
+      <p class="technical-label text-[var(--color-wood)]">INDUOWORKS / SOFTWARE WORKSHOP</p>
+      <p class="mt-5 text-sm font-medium text-[var(--color-accent)]">{dict.meta.tagline}</p>
+      <h1 class="mt-4 max-w-2xl text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">
+        {dict.home.heading}
+      </h1>
+      <p class="mt-5 max-w-xl text-base text-[var(--color-text-muted)]">
+        {dict.meta.description}
+      </p>
+      <div class="mt-8 flex flex-wrap gap-3">
       <a
         href={localizePath('/work/', lang)}
         class="focus-ring rounded-full bg-[var(--color-text)] px-5 py-2.5 text-sm font-medium text-[var(--color-bg)] transition-opacity hover:opacity-90"
@@ -34,6 +37,22 @@ const featured = projects.filter((p) => p.featured);
       >
         {dict.home.getInTouch}
       </a>
+      </div>
+    </div>
+
+    <div class="workshop-panel relative hidden aspect-square overflow-hidden border border-[var(--color-border)] p-6 lg:block" aria-hidden="true">
+      <div class="absolute inset-4 border border-dashed border-[var(--color-accent)]/25"></div>
+      <svg viewBox="0 0 320 320" class="h-full w-full text-[var(--color-accent)]" fill="none" stroke="currentColor">
+        <path d="M64 199 160 143l96 56-96 56-96-56Z" stroke-width="1.4" />
+        <path d="m64 199 0-78 96-56 96 56v78M160 143V65M64 121l96 56 96-56" stroke-width="1" opacity=".7" />
+        <path d="M94 190v-42l66-38 66 38v42l-66 38-66-38Z" stroke-width="1.6" />
+        <circle cx="160" cy="169" r="24" stroke-width="1.4" />
+        <circle cx="160" cy="169" r="6" fill="currentColor" stroke="none" />
+        <path d="M36 42h72M36 42v72M284 278h-72M284 278v-72" opacity=".45" />
+        <path d="M32 274h84M32 264v20M116 264v20M42 270v8M52 270v8M62 270v8M72 270v8M82 270v8M92 270v8M102 270v8" stroke="var(--color-wood)" opacity=".8" />
+      </svg>
+      <span class="technical-label absolute left-6 top-5 text-[var(--color-text-muted)]">DWG 01 / SYSTEM</span>
+      <span class="technical-label absolute bottom-5 right-6 text-[var(--color-text-muted)]">SCALE 1:1</span>
     </div>
   </section>
 
@@ -44,7 +63,7 @@ const featured = projects.filter((p) => p.featured);
         {featured.map((p) => (
           <a
             href={localizePath(`/work/${p.slug}/`, lang)}
-            class="focus-ring group rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-6 transition-colors hover:border-[var(--color-accent)]"
+            class="workshop-panel wood-rule focus-ring group rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-6 pl-7 transition-colors hover:border-[var(--color-accent)]"
           >
             <div class="flex items-center justify-between">
               <h3 class="font-semibold">{p.title[lang]}</h3>
@@ -69,7 +88,7 @@ const featured = projects.filter((p) => p.featured);
     </div>
     <div class="mt-6 grid gap-6 sm:grid-cols-3">
       {showcase.map((item) => (
-        <div class="rounded-2xl border border-[var(--color-border)] p-6">
+        <div class="workshop-panel rounded-xl border border-[var(--color-border)] p-6">
           <h3 class="font-semibold">{item.title[lang]}</h3>
           <p class="mt-2 text-sm text-[var(--color-text-muted)]">{item.blurb[lang]}</p>
         </div>
@@ -78,16 +97,23 @@ const featured = projects.filter((p) => p.featured);
   </section>
 
   <section class="mx-auto max-w-5xl px-6 py-16">
-    <div class="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-8 text-center sm:p-12">
-      <h2 class="text-2xl font-semibold">{dict.home.hiringHeading}</h2>
+    <div class="workshop-panel rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-8 text-center sm:p-12">
+      <h2 class="text-2xl font-semibold">{hasOpenRoles ? dict.home.hiringHeading : dict.home.collaborationHeading}</h2>
       <p class="mx-auto mt-3 max-w-md text-sm text-[var(--color-text-muted)]">
-        {dict.home.hiringBody}
+        {hasOpenRoles ? dict.home.hiringBody : dict.home.collaborationBody}
       </p>
       <div class="mt-6 flex flex-wrap justify-center gap-3">
-        <a href={localizePath('/careers/', lang)} class="focus-ring rounded-full bg-[var(--color-text)] px-5 py-2.5 text-sm font-medium text-[var(--color-bg)] hover:opacity-90">
-          {dict.home.seeOpenRoles}
-        </a>
-        <a href={localizePath('/contact/', lang)} class="focus-ring rounded-full border border-[var(--color-border)] px-5 py-2.5 text-sm font-medium hover:border-[var(--color-accent)]">
+        {hasOpenRoles && (
+          <a href={localizePath('/careers/', lang)} class="focus-ring rounded-full bg-[var(--color-text)] px-5 py-2.5 text-sm font-medium text-[var(--color-bg)] hover:opacity-90">
+            {dict.home.seeOpenRoles}
+          </a>
+        )}
+        <a href={localizePath('/contact/', lang)} class:list={[
+          'focus-ring rounded-full px-5 py-2.5 text-sm font-medium',
+          hasOpenRoles
+            ? 'border border-[var(--color-border)] hover:border-[var(--color-accent)]'
+            : 'bg-[var(--color-text)] text-[var(--color-bg)] hover:opacity-90',
+        ]}>
           {dict.home.contact}
         </a>
       </div>

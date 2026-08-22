@@ -1,0 +1,215 @@
+---
+interface Props {
+  labels: {
+    start: string;
+    pause: string;
+    resume: string;
+    ready: string;
+    running: string;
+    paused: string;
+    unsupported: string;
+    failed: string;
+    reducedMotion: string;
+  };
+}
+
+const { labels } = Astro.props;
+---
+
+<section
+  class="gpu-demo overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)]"
+  data-labels={JSON.stringify(labels)}
+>
+  <div class="relative aspect-[16/9] min-h-64 overflow-hidden bg-[#070a12]">
+    <div class="gpu-fallback absolute inset-0" aria-hidden="true"></div>
+    <canvas class="absolute inset-0 h-full w-full opacity-0 transition-opacity duration-500" aria-label="Animated wave interference field"></canvas>
+    <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,transparent_60%,rgba(0,0,0,.45))]" aria-hidden="true"></div>
+  </div>
+  <div class="flex flex-col gap-3 border-t border-[var(--color-border)] p-4 sm:flex-row sm:items-center sm:justify-between">
+    <p class="gpu-status text-sm text-[var(--color-text-muted)]" aria-live="polite">{labels.ready}</p>
+    <button
+      type="button"
+      class="gpu-toggle focus-ring shrink-0 rounded-full bg-[var(--color-text)] px-5 py-2.5 text-sm font-medium text-[var(--color-bg)] hover:opacity-90"
+    >
+      {labels.start}
+    </button>
+  </div>
+</section>
+
+<script>
+  const shader = /* wgsl */ `
+    struct Uniforms {
+      values: vec4f,
+    }
+
+    @group(0) @binding(0) var<uniform> uniforms: Uniforms;
+
+    @vertex
+    fn vertexMain(@builtin(vertex_index) index: u32) -> @builtin(position) vec4f {
+      let positions = array<vec2f, 3>(
+        vec2f(-1.0, -1.0),
+        vec2f(3.0, -1.0),
+        vec2f(-1.0, 3.0)
+      );
+      return vec4f(positions[index], 0.0, 1.0);
+    }
+
+    @fragment
+    fn fragmentMain(@builtin(position) position: vec4f) -> @location(0) vec4f {
+      let time = uniforms.values.x;
+      let size = uniforms.values.yz;
+      let uv = (position.xy * 2.0 - size) / min(size.x, size.y);
+      let sourceA = vec2f(sin(time * 0.47) * 0.42, cos(time * 0.31) * 0.24);
+      let sourceB = vec2f(cos(time * 0.39) * -0.38, sin(time * 0.53) * -0.22);
+      let waveA = sin(distance(uv, sourceA) * 28.0 - time * 3.4);
+      let waveB = sin(distance(uv, sourceB) * 31.0 - time * 2.8);
+      let field = (waveA + waveB) * 0.5;
+      let glow = exp(-3.2 * min(distance(uv, sourceA), distance(uv, sourceB)));
+      let line = smoothstep(0.56, 0.96, abs(field));
+      let base = vec3f(0.014, 0.025, 0.065);
+      let blue = vec3f(0.08, 0.32, 1.0);
+      let cyan = vec3f(0.18, 0.82, 1.0);
+      let color = base + blue * line * 0.72 + cyan * glow * 0.34;
+      return vec4f(color, 1.0);
+    }
+  `;
+
+  document.querySelectorAll<HTMLElement>('.gpu-demo').forEach((root) => {
+    const canvas = root.querySelector<HTMLCanvasElement>('canvas');
+    const button = root.querySelector<HTMLButtonElement>('.gpu-toggle');
+    const status = root.querySelector<HTMLElement>('.gpu-status');
+    if (!canvas || !button || !status) return;
+
+    const labels = JSON.parse(root.dataset.labels ?? '{}') as Record<string, string>;
+    const gpu = (navigator as Navigator & { gpu?: any }).gpu;
+    let device: any;
+    let context: any;
+    let pipeline: any;
+    let uniformBuffer: any;
+    let bindGroup: any;
+    let frame = 0;
+    let running = false;
+    let startedAt = 0;
+    let elapsed = 0;
+
+    const setState = (text: string, buttonText: string, disabled = false) => {
+      status.textContent = text;
+      button.textContent = buttonText;
+      button.disabled = disabled;
+      button.classList.toggle('opacity-50', disabled);
+    };
+
+    const resize = () => {
+      const scale = Math.min(window.devicePixelRatio || 1, 2);
+      const width = Math.max(1, Math.floor(canvas.clientWidth * scale));
+      const height = Math.max(1, Math.floor(canvas.clientHeight * scale));
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
+    };
+
+    const draw = (now: number) => {
+      if (!running || !device) return;
+      resize();
+      const time = elapsed + (now - startedAt) / 1000;
+      device.queue.writeBuffer(uniformBuffer, 0, new Float32Array([time, canvas.width, canvas.height, 0]));
+      const encoder = device.createCommandEncoder();
+      const pass = encoder.beginRenderPass({
+        colorAttachments: [{
+          view: context.getCurrentTexture().createView(),
+          clearValue: { r: 0.01, g: 0.015, b: 0.035, a: 1 },
+          loadOp: 'clear',
+          storeOp: 'store',
+        }],
+      });
+      pass.setPipeline(pipeline);
+      pass.setBindGroup(0, bindGroup);
+      pass.draw(3);
+      pass.end();
+      device.queue.submit([encoder.finish()]);
+      frame = requestAnimationFrame(draw);
+    };
+
+    const pause = (message = labels.paused) => {
+      if (!running) return;
+      elapsed += (performance.now() - startedAt) / 1000;
+      running = false;
+      cancelAnimationFrame(frame);
+      setState(message, labels.resume);
+    };
+
+    const resume = () => {
+      if (!device || running) return;
+      running = true;
+      startedAt = performance.now();
+      setState(labels.running, labels.pause);
+      frame = requestAnimationFrame(draw);
+    };
+
+    const start = async () => {
+      if (!gpu) {
+        setState(labels.unsupported, labels.start, true);
+        return;
+      }
+      setState(labels.ready, labels.start, true);
+      try {
+        const adapter = await gpu.requestAdapter();
+        if (!adapter) throw new Error('No WebGPU adapter');
+        device = await adapter.requestDevice();
+        context = canvas.getContext('webgpu');
+        if (!context) throw new Error('No WebGPU canvas context');
+        const format = gpu.getPreferredCanvasFormat();
+        context.configure({ device, format, alphaMode: 'opaque' });
+        const module = device.createShaderModule({ code: shader });
+        pipeline = device.createRenderPipeline({
+          layout: 'auto',
+          vertex: { module, entryPoint: 'vertexMain' },
+          fragment: { module, entryPoint: 'fragmentMain', targets: [{ format }] },
+          primitive: { topology: 'triangle-list' },
+        });
+        uniformBuffer = device.createBuffer({ size: 16, usage: 0x40 | 0x08 });
+        bindGroup = device.createBindGroup({
+          layout: pipeline.getBindGroupLayout(0),
+          entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
+        });
+        device.lost.then(() => {
+          running = false;
+          canvas.classList.add('opacity-0');
+          setState(labels.failed, labels.start, true);
+        });
+        canvas.classList.remove('opacity-0');
+        if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          running = true;
+          startedAt = performance.now();
+          draw(startedAt);
+          pause(labels.reducedMotion);
+        } else {
+          resume();
+        }
+      } catch {
+        setState(labels.failed, labels.start, true);
+      }
+    };
+
+    button.addEventListener('click', () => {
+      if (!device) void start();
+      else if (running) pause();
+      else resume();
+    });
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) pause();
+    });
+  });
+</script>
+
+<style>
+  .gpu-fallback {
+    background:
+      radial-gradient(circle at 32% 45%, rgba(35, 120, 255, 0.8) 0 1px, transparent 20%),
+      radial-gradient(circle at 68% 58%, rgba(30, 206, 255, 0.65) 0 1px, transparent 22%),
+      repeating-radial-gradient(circle at 32% 45%, transparent 0 16px, rgba(69, 118, 255, 0.16) 17px 18px, transparent 19px 31px),
+      repeating-radial-gradient(circle at 68% 58%, transparent 0 18px, rgba(35, 202, 255, 0.13) 19px 20px, transparent 21px 34px),
+      #070a12;
+  }
+</style>

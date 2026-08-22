@@ -34,6 +34,7 @@ security headers).
 /
 ├── public/
 │   ├── logos/              # company logos for the /companies page (see below)
+│   ├── og.png              # default 1200×630 social sharing image
 │   ├── _headers            # security headers (CSP, HSTS, etc.) — base rules;
 │   │                       # scripts/generate-csp.mjs appends script hashes at build time
 │   └── robots.txt
@@ -63,6 +64,19 @@ wrappers that just pick a language.
 `.png`), then set `logo: '/logos/<name>.svg'` on that company's entry in
 `src/config.ts`. No logo set — it shows a monogram badge instead, so nothing
 breaks in the meantime.
+
+### Adding work, galleries, Steam links, and Labs
+
+- Add projects in `src/config.ts`. `href`, `repo`, and `steamUrl` become action
+  buttons automatically. `status` and `kind` control the case-study metadata.
+- Import local images in `src/config.ts`, assign one to `cover`, and add
+  `{ src, alt: { en, ko }, caption? }` entries to `gallery`. Astro generates
+  responsive image variants at build time.
+- Add short experiments to the `labs` array. The bilingual list/detail routes
+  are generated automatically; connect a new interactive component in
+  `src/views/LabDetailView.astro`.
+- WebGPU demos belong on their own Lab detail route. Feature-detect WebGPU,
+  initialize it only after user interaction, and retain a non-WebGPU fallback.
 
 ## Local development
 
@@ -96,11 +110,17 @@ One-time setup (already done for this project, kept here for reference):
    |---|---|---|
    | `RESEND_API_KEY` | Secret | From [resend.com](https://resend.com) (free tier: 3,000 emails/mo) |
    | `CONTACT_TO_EMAIL` | Secret | Inbox that receives form submissions |
-   | `CONTACT_FROM_EMAIL` | Secret | Verified sender in Resend (a domain you verify there, or `onboarding@resend.dev` for testing) |
+   | `CONTACT_FROM_EMAIL` | Secret | Sender on a domain already verified in Resend, e.g. `InduoWorks <contact@induo.works>` |
    | `TURNSTILE_SECRET_KEY` | Secret | From the Cloudflare Turnstile dashboard |
    | `PUBLIC_TURNSTILE_SITE_KEY` | Plaintext (build-time) | Same Turnstile widget, public site key — needed at **build** time, not just runtime |
 
    None of these ever go in the repo. `.env` and `.dev.vars` are gitignored.
+
+   Before deploying, add `induo.works` under **Resend → Domains** and publish
+   the DNS records Resend supplies. Wait until its status is **Verified** before
+   using an `@induo.works` address in `CONTACT_FROM_EMAIL`. The fallback sender
+   `onboarding@resend.dev` is testing-only and can send only to the email address
+   associated with the Resend account.
 
 3. **Turnstile**: Cloudflare dashboard → Turnstile → Add site → widget mode
    "Managed" → copy the Site Key into `PUBLIC_TURNSTILE_SITE_KEY` and the
