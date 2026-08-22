@@ -12,8 +12,9 @@ const year = new Date().getFullYear();
 ---
 
 <footer class="mt-24 border-t border-[var(--color-border)]">
+  <div class="h-px bg-gradient-to-r from-transparent via-[var(--color-wood)] to-transparent opacity-40"></div>
   <div class="mx-auto flex max-w-5xl flex-col gap-3 px-6 py-10 text-sm text-[var(--color-text-muted)] sm:flex-row sm:items-center sm:justify-between">
-    <p>&copy; {year} {site.name}. {dict.footer.rights}</p>
+    <p><span class="font-mono text-[var(--color-wood)]">IW-{year}</span> · {site.name}. {dict.footer.rights}</p>
     <div class="flex gap-5">
       <a href={localizePath('/contact/', lang)} class="focus-ring rounded hover:text-[var(--color-text)]">{dict.nav.contact}</a>
       <a href={site.github} target="_blank" rel="noopener noreferrer" class="focus-ring rounded hover:text-[var(--color-text)]">GitHub</a>

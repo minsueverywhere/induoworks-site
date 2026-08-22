@@ -38,7 +38,14 @@ interface ContactPayload {
   'cf-turnstile-response'?: string;
 }
 
+interface ResendErrorPayload {
+  statusCode?: number;
+  name?: string;
+  message?: string;
+}
+
 const MAX_LEN = { name: 120, email: 200, message: 4000 };
+const MIN_MESSAGE_LEN = 10;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function json(data: unknown, status = 200): Response {
@@ -55,6 +62,14 @@ function escapeHtml(input: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+function parseResendError(body: string): ResendErrorPayload {
+  try {
+    return JSON.parse(body) as ResendErrorPayload;
+  } catch {
+    return { message: body || 'Unknown Resend error' };
+  }
 }
 
 async function verifyTurnstile(token: string | undefined, secret: string, ip: string): Promise<boolean> {
@@ -100,6 +115,9 @@ export const POST: APIRoute = async ({ request }) => {
   if (!EMAIL_RE.test(email)) {
     return json({ error: 'Please provide a valid email address.' }, 400);
   }
+  if (message.length < MIN_MESSAGE_LEN) {
+    return json({ error: 'Please enter at least 10 characters.' }, 400);
+  }
 
   if (cfEnv?.TURNSTILE_SECRET_KEY) {
     const ip = request.headers.get('CF-Connecting-IP') || '';
@@ -114,32 +132,42 @@ export const POST: APIRoute = async ({ request }) => {
     return json({ error: 'The contact form is temporarily unavailable. Please try again later.' }, 500);
   }
 
-  const emailRes = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${cfEnv.RESEND_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: cfEnv.CONTACT_FROM_EMAIL,
-      to: cfEnv.CONTACT_TO_EMAIL,
-      reply_to: email,
-      subject: `New contact form message from ${name}`,
-      html: `
-        <p><strong>Name:</strong> ${escapeHtml(name)}</p>
-        <p><strong>Email:</strong> ${escapeHtml(email)}</p>
-        <p><strong>Message:</strong></p>
-        <p>${escapeHtml(message).replace(/\n/g, '<br>')}</p>
-      `,
-    }),
-  });
+  let emailRes: Response;
+  try {
+    emailRes = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${cfEnv.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: cfEnv.CONTACT_FROM_EMAIL,
+        to: cfEnv.CONTACT_TO_EMAIL,
+        reply_to: email,
+        subject: `New contact form message from ${name}`,
+        text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
+        html: `
+          <p><strong>Name:</strong> ${escapeHtml(name)}</p>
+          <p><strong>Email:</strong> ${escapeHtml(email)}</p>
+          <p><strong>Message:</strong></p>
+          <p>${escapeHtml(message).replace(/\n/g, '<br>')}</p>
+        `,
+      }),
+    });
+  } catch (error) {
+    console.error('Resend request failed:', error instanceof Error ? error.message : 'Unknown network error');
+    return json({ error: 'Could not send your message. Please try again later.' }, 502);
+  }
 
   if (!emailRes.ok) {
-    const resendError = await emailRes.text();
-    console.error('Resend API error:', resendError);
-    // TEMPORARY DIAGNOSTIC — surfaces Resend's own rejection reason (not a
-    // secret) to debug a delivery failure. Remove once resolved.
-    return json({ error: 'Could not send your message. Please try again later.', debugResendError: resendError }, 502);
+    const resendError = parseResendError(await emailRes.text());
+    console.error('Resend API error:', {
+      httpStatus: emailRes.status,
+      providerStatus: resendError.statusCode,
+      name: resendError.name,
+      message: resendError.message,
+    });
+    return json({ error: 'Could not send your message. Please try again later.' }, 502);
   }
 
   return json({ ok: true });

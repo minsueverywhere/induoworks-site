@@ -7,13 +7,17 @@ interface Props {
   title: string;
   description?: string;
   noindex?: boolean;
+  /** Omit for the site-wide card; pass null for pages that must not inherit it. */
+  image?: string | null;
+  imageAlt?: string;
 }
 
-const { lang, title, description, noindex = false } = Astro.props;
+const { lang, title, description, noindex = false, image = '/og.png', imageAlt } = Astro.props;
 const dict = t(lang);
 const finalDescription = description ?? dict.meta.description;
 const pageTitle = title === site.name ? site.name : `${title} · ${site.name}`;
 const canonicalURL = new URL(Astro.url.pathname, site.url);
+const imageURL = image === null ? undefined : new URL(image, site.url);
 
 // hreflang alternates: same page, every locale, so search engines know these
 // are translations of each other rather than duplicate content.
@@ -38,7 +42,11 @@ const alternates = locales.map((l) => ({
 <meta property="og:url" content={canonicalURL} />
 <meta property="og:site_name" content={site.name} />
 <meta property="og:locale" content={lang === 'ko' ? 'ko_KR' : 'en_US'} />
+{imageURL && <meta property="og:image" content={imageURL} />}
+{imageURL && <meta property="og:image:alt" content={imageAlt ?? pageTitle} />}
 
-<meta name="twitter:card" content="summary" />
+<meta name="twitter:card" content={imageURL ? 'summary_large_image' : 'summary'} />
 <meta name="twitter:title" content={pageTitle} />
 <meta name="twitter:description" content={finalDescription} />
+{imageURL && <meta name="twitter:image" content={imageURL} />}
+{imageURL && <meta name="twitter:image:alt" content={imageAlt ?? pageTitle} />}

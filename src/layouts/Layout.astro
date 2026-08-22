@@ -10,9 +10,11 @@ interface Props {
   title: string;
   description?: string;
   noindex?: boolean;
+  image?: string | null;
+  imageAlt?: string;
 }
 
-const { lang, title, description, noindex } = Astro.props;
+const { lang, title, description, noindex, image, imageAlt } = Astro.props;
 const dict = t(lang);
 ---
 
@@ -24,7 +26,7 @@ const dict = t(lang);
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
 
-    <SEO lang={lang} title={title} description={description} noindex={noindex} />
+    <SEO lang={lang} title={title} description={description} noindex={noindex} image={image} imageAlt={imageAlt} />
 
     <!--
       Blocking, inline, and tiny on purpose: sets the theme before first paint

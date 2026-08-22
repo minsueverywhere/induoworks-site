@@ -1,5 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { Image } from 'astro:assets';
+import ProjectGallery from '../components/ProjectGallery.astro';
 import type { Project } from '../config';
 import { t, localizePath, type Locale } from '../i18n';
 
@@ -12,14 +14,21 @@ const { lang, project } = Astro.props;
 const dict = t(lang);
 ---
 
-<Layout lang={lang} title={project.title[lang]} description={project.summary[lang]}>
-  <article class="mx-auto max-w-3xl px-6 pb-24 pt-16 sm:pt-20">
+<Layout
+  lang={lang}
+  title={project.title[lang]}
+  description={project.summary[lang]}
+  image={project.cover?.src ?? null}
+  imageAlt={project.title[lang]}
+>
+  <article class="mx-auto max-w-5xl px-6 pb-24 pt-16 sm:pt-20">
     <a href={localizePath('/work/', lang)} class="focus-ring rounded text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)]">{dict.workDetail.back}</a>
 
-    <h1 class="mt-4 text-3xl font-semibold tracking-tight">{project.title[lang]}</h1>
-    <p class="mt-3 text-[var(--color-text-muted)]">{project.summary[lang]}</p>
+    <p class="technical-label mt-8 text-[var(--color-wood)]">CASE STUDY / {project.kind}</p>
+    <h1 class="mt-3 max-w-3xl text-3xl font-semibold tracking-tight sm:text-5xl">{project.title[lang]}</h1>
+    <p class="mt-4 max-w-2xl text-lg leading-relaxed text-[var(--color-text-muted)]">{project.summary[lang]}</p>
 
-    <dl class="mt-8 grid grid-cols-2 gap-6 border-y border-[var(--color-border)] py-6 text-sm sm:grid-cols-4">
+    <dl class="workshop-panel mt-10 grid grid-cols-2 gap-6 rounded-xl border border-[var(--color-border)] p-6 text-sm sm:grid-cols-4">
       <div>
         <dt class="text-[var(--color-text-muted)]">{dict.workDetail.year}</dt>
         <dd class="mt-1 font-medium">{project.year}</dd>
@@ -28,21 +37,40 @@ const dict = t(lang);
         <dt class="text-[var(--color-text-muted)]">{dict.workDetail.role}</dt>
         <dd class="mt-1 font-medium">{project.role[lang]}</dd>
       </div>
-      <div class="col-span-2">
+      <div>
+        <dt class="text-[var(--color-text-muted)]">{dict.workDetail.status}</dt>
+        <dd class="mt-1 font-medium">{project.status === 'shipped' ? dict.workDetail.shipped : dict.workDetail.inProgress}</dd>
+      </div>
+      <div>
         <dt class="text-[var(--color-text-muted)]">{dict.workDetail.stack}</dt>
         <dd class="mt-1 font-medium">{project.stack.join(', ')}</dd>
       </div>
     </dl>
 
-    {project.repo && (
-      <a
-        href={project.repo}
-        target="_blank"
-        rel="noopener noreferrer"
-        class="focus-ring mt-8 inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] px-4 py-2 text-sm hover:border-[var(--color-accent)]"
-      >
-        {dict.workDetail.viewSource}
-      </a>
+    <div class="mt-8 flex flex-wrap gap-3">
+      {project.href && <a href={project.href} target="_blank" rel="noopener noreferrer" class="focus-ring rounded-full bg-[var(--color-text)] px-5 py-2.5 text-sm font-medium text-[var(--color-bg)] hover:opacity-90">{dict.workDetail.visitProject}</a>}
+      {project.steamUrl && <a href={project.steamUrl} target="_blank" rel="noopener noreferrer" class="focus-ring rounded-full border border-[var(--color-border)] px-5 py-2.5 text-sm hover:border-[var(--color-accent)]">{dict.workDetail.viewOnSteam}</a>}
+      {project.repo && <a href={project.repo} target="_blank" rel="noopener noreferrer" class="focus-ring rounded-full border border-[var(--color-border)] px-5 py-2.5 text-sm hover:border-[var(--color-accent)]">{dict.workDetail.viewSource}</a>}
+    </div>
+
+    {project.cover && (
+      <Image src={project.cover} alt={project.title[lang]} widths={[720, 1080, 1440]} sizes="(min-width: 1024px) 976px, 100vw" class="mt-12 aspect-[16/9] w-full rounded-xl border border-[var(--color-border)] object-cover" />
+    )}
+
+    <div class="mt-16 grid gap-10 lg:grid-cols-[12rem_1fr]">
+      <h2 class="technical-label text-[var(--color-wood)]">01 / {dict.workDetail.challenge}</h2>
+      <p class="max-w-2xl leading-relaxed text-[var(--color-text-muted)]">{project.challenge[lang]}</p>
+      <h2 class="technical-label text-[var(--color-wood)]">02 / {dict.workDetail.approach}</h2>
+      <p class="max-w-2xl leading-relaxed text-[var(--color-text-muted)]">{project.approach[lang]}</p>
+      <h2 class="technical-label text-[var(--color-wood)]">03 / {dict.workDetail.outcome}</h2>
+      <p class="max-w-2xl leading-relaxed text-[var(--color-text-muted)]">{project.outcome[lang]}</p>
+    </div>
+
+    {project.gallery && project.gallery.length > 0 && (
+      <section class="mt-20" aria-labelledby="project-gallery-heading">
+        <h2 id="project-gallery-heading" class="technical-label mb-6 text-[var(--color-wood)]">{dict.workDetail.gallery}</h2>
+        <ProjectGallery items={project.gallery} lang={lang} />
+      </section>
     )}
   </article>
 </Layout>

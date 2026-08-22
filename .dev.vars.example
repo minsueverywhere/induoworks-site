@@ -5,5 +5,8 @@
 
 RESEND_API_KEY=
 CONTACT_TO_EMAIL=
-CONTACT_FROM_EMAIL=onboarding@resend.dev
+# For production, this must use a domain already verified in Resend.
+# onboarding@resend.dev only works when CONTACT_TO_EMAIL is the email address
+# associated with the Resend account.
+CONTACT_FROM_EMAIL=
 TURNSTILE_SECRET_KEY=

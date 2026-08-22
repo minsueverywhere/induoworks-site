@@ -1,0 +1,31 @@
+---
+import { Image } from 'astro:assets';
+import type { ProjectGalleryItem } from '../config';
+import type { Locale } from '../i18n';
+
+interface Props {
+  items: ProjectGalleryItem[];
+  lang: Locale;
+}
+
+const { items, lang } = Astro.props;
+---
+
+<div class="grid gap-6 sm:grid-cols-2">
+  {items.map((item) => (
+    <figure class="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)]">
+      <Image
+        src={item.src}
+        alt={item.alt[lang]}
+        widths={[640, 960, 1280]}
+        sizes="(min-width: 640px) 50vw, 100vw"
+        class="aspect-[4/3] w-full object-cover"
+      />
+      {item.caption && (
+        <figcaption class="px-4 py-3 text-sm text-[var(--color-text-muted)]">
+          {item.caption[lang]}
+        </figcaption>
+      )}
+    </figure>
+  ))}
+</div>

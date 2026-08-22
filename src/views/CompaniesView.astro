@@ -9,18 +9,20 @@ interface Props {
 
 const { lang } = Astro.props;
 const dict = t(lang);
+const visibleCompanies = companies.filter((company) => company.published !== false);
 ---
 
-<Layout lang={lang} title={dict.companies.title} description={dict.companies.description}>
+<Layout lang={lang} title={dict.companies.title} description={dict.companies.description} noindex={visibleCompanies.length === 0}>
   <section class="mx-auto max-w-5xl px-6 pb-24 pt-16 sm:pt-20">
-    <h1 class="text-3xl font-semibold tracking-tight">{dict.companies.heading}</h1>
+    <p class="technical-label text-[var(--color-wood)]">GROUP / DIRECTORY</p>
+    <h1 class="mt-3 text-3xl font-semibold tracking-tight">{dict.companies.heading}</h1>
     <p class="mt-3 max-w-xl text-[var(--color-text-muted)]">
       {dict.companies.intro}
     </p>
 
     <div class="mt-10 grid gap-6 sm:grid-cols-2">
-      {companies.map((c) => (
-        <div class="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-6 sm:p-8">
+      {visibleCompanies.map((c) => (
+        <div class="workshop-panel wood-rule rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-6 pl-7 sm:p-8 sm:pl-9">
           <div class="flex items-center gap-4">
             {c.logo ? (
               <img src={c.logo} alt={`${c.name} logo`} class="h-12 w-12 rounded-xl object-contain" width="48" height="48" />
@@ -47,6 +49,9 @@ const dict = t(lang);
           )}
         </div>
       ))}
+      {visibleCompanies.length === 0 && (
+        <p class="text-sm text-[var(--color-text-muted)]">{dict.companies.empty}</p>
+      )}
     </div>
   </section>
 </Layout>
