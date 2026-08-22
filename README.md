@@ -33,24 +33,36 @@ security headers).
 ```text
 /
 ├── public/
-│   ├── _headers           # security headers (CSP, HSTS, etc.) — base rules;
+│   ├── logos/              # company logos for the /companies page (see below)
+│   ├── _headers            # security headers (CSP, HSTS, etc.) — base rules;
 │   │                       # scripts/generate-csp.mjs appends script hashes at build time
 │   └── robots.txt
 ├── src/
-│   ├── components/        # Header, Footer, SEO, ThemeToggle
+│   ├── components/         # Header, Footer, SEO, ThemeToggle — all locale-aware
+│   ├── views/               # actual page markup, one file per page, takes a `lang` prop
 │   ├── layouts/Layout.astro
-│   ├── middleware.ts       # redirects www.induo.works -> induo.works
+│   ├── middleware.ts        # redirects www.induo.works -> induo.works
+│   ├── i18n.ts               # locale list + all UI copy (nav, buttons, headings)
 │   ├── pages/
-│   │   ├── api/contact.ts  # contact form endpoint (prerender = false)
-│   │   └── ...              # routes: /, /work, /showcase, /careers, /contact
-│   └── config.ts           # <- edit site copy, projects, roles here
+│   │   ├── api/contact.ts    # contact form endpoint (prerender = false)
+│   │   ├── ko/                # Korean routes — thin wrappers around src/views/*
+│   │   └── ...                 # English (default) routes, same pattern
+│   └── config.ts             # <- edit site copy, projects, companies, roles here
 ├── astro.config.mjs
-└── wrangler.jsonc          # Cloudflare Worker config (name, assets, bindings)
+└── wrangler.jsonc            # Cloudflare Worker config (name, assets, bindings)
 ```
 
-Most day-to-day content edits (projects, showcase items, open roles, site copy)
-happen in [`src/config.ts`](src/config.ts) — you shouldn't need to touch the page
-templates for routine updates.
+Most day-to-day content edits (projects, showcase items, companies, open
+roles) happen in [`src/config.ts`](src/config.ts) — translatable fields are
+`{ en, ko }` pairs right next to the field. UI labels/buttons live in
+[`src/i18n.ts`](src/i18n.ts). Actual page layout lives once per page in
+`src/views/`; the files under `src/pages/` (and `src/pages/ko/`) are thin
+wrappers that just pick a language.
+
+**Adding a company logo**: drop the image at `public/logos/<name>.svg` (or
+`.png`), then set `logo: '/logos/<name>.svg'` on that company's entry in
+`src/config.ts`. No logo set — it shows a monogram badge instead, so nothing
+breaks in the meantime.
 
 ## Local development
 

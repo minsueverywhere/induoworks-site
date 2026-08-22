@@ -1,0 +1,45 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { roles } from '../config';
+import { t, localizePath, type Locale } from '../i18n';
+
+interface Props {
+  lang: Locale;
+}
+
+const { lang } = Astro.props;
+const dict = t(lang);
+const openRoles = roles.filter((r) => r.open);
+---
+
+<Layout lang={lang} title={dict.careers.title} description={dict.careers.description}>
+  <section class="mx-auto max-w-5xl px-6 pb-24 pt-16 sm:pt-20">
+    <h1 class="text-3xl font-semibold tracking-tight">{dict.careers.title}</h1>
+    <p class="mt-3 max-w-xl text-[var(--color-text-muted)]">
+      {openRoles.length > 0 ? dict.careers.introOpen : dict.careers.introClosed}
+    </p>
+
+    <div class="mt-10 space-y-4">
+      {openRoles.map((r) => (
+        <div class="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-6 sm:p-8">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h2 class="font-semibold">{r.title[lang]}</h2>
+            <span class="rounded-full border border-[var(--color-border)] px-2.5 py-1 text-xs text-[var(--color-text-muted)]">
+              {r.type[lang]} · {r.location[lang]}
+            </span>
+          </div>
+          <p class="mt-2 text-sm text-[var(--color-text-muted)]">{r.summary[lang]}</p>
+          <ul class="mt-4 list-disc space-y-1 pl-5 text-sm text-[var(--color-text-muted)]">
+            {r.responsibilities.map((item) => <li>{item[lang]}</li>)}
+          </ul>
+          <a
+            href={localizePath('/contact/', lang)}
+            class="focus-ring mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--color-text)] px-4 py-2 text-sm font-medium text-[var(--color-bg)] hover:opacity-90"
+          >
+            {dict.careers.apply}
+          </a>
+        </div>
+      ))}
+    </div>
+  </section>
+</Layout>

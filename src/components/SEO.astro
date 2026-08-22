@@ -1,28 +1,44 @@
 ---
 import { site } from '../config';
+import { t, locales, localizePath, stripLocale, type Locale } from '../i18n';
 
 interface Props {
+  lang: Locale;
   title: string;
   description?: string;
   noindex?: boolean;
 }
 
-const { title, description = site.description, noindex = false } = Astro.props;
+const { lang, title, description, noindex = false } = Astro.props;
+const dict = t(lang);
+const finalDescription = description ?? dict.meta.description;
 const pageTitle = title === site.name ? site.name : `${title} · ${site.name}`;
 const canonicalURL = new URL(Astro.url.pathname, site.url);
+
+// hreflang alternates: same page, every locale, so search engines know these
+// are translations of each other rather than duplicate content.
+const { path: basePath } = stripLocale(Astro.url.pathname);
+const alternates = locales.map((l) => ({
+  lang: l,
+  href: new URL(localizePath(basePath, l), site.url).toString(),
+}));
 ---
 
 <title>{pageTitle}</title>
-<meta name="description" content={description} />
+<meta name="description" content={finalDescription} />
 <link rel="canonical" href={canonicalURL} />
 {noindex && <meta name="robots" content="noindex, nofollow" />}
 
+{alternates.map((a) => <link rel="alternate" hreflang={a.lang} href={a.href} />)}
+<link rel="alternate" hreflang="x-default" href={new URL(basePath, site.url).toString()} />
+
 <meta property="og:type" content="website" />
 <meta property="og:title" content={pageTitle} />
-<meta property="og:description" content={description} />
+<meta property="og:description" content={finalDescription} />
 <meta property="og:url" content={canonicalURL} />
 <meta property="og:site_name" content={site.name} />
+<meta property="og:locale" content={lang === 'ko' ? 'ko_KR' : 'en_US'} />
 
 <meta name="twitter:card" content="summary" />
 <meta name="twitter:title" content={pageTitle} />
-<meta name="twitter:description" content={description} />
+<meta name="twitter:description" content={finalDescription} />

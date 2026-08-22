@@ -1,13 +1,21 @@
 ---
 import { site } from '../config';
+import { t, localizePath, type Locale } from '../i18n';
+
+interface Props {
+  lang: Locale;
+}
+
+const { lang } = Astro.props;
+const dict = t(lang);
 const year = new Date().getFullYear();
 ---
 
 <footer class="mt-24 border-t border-[var(--color-border)]">
   <div class="mx-auto flex max-w-5xl flex-col gap-3 px-6 py-10 text-sm text-[var(--color-text-muted)] sm:flex-row sm:items-center sm:justify-between">
-    <p>&copy; {year} {site.name}. All rights reserved.</p>
+    <p>&copy; {year} {site.name}. {dict.footer.rights}</p>
     <div class="flex gap-5">
-      <a href="/contact/" class="focus-ring rounded hover:text-[var(--color-text)]">Contact</a>
+      <a href={localizePath('/contact/', lang)} class="focus-ring rounded hover:text-[var(--color-text)]">{dict.nav.contact}</a>
       <a href={site.github} target="_blank" rel="noopener noreferrer" class="focus-ring rounded hover:text-[var(--color-text)]">GitHub</a>
     </div>
   </div>

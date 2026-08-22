@@ -1,6 +1,6 @@
 ---
-import WorkDetailView from '../../../views/WorkDetailView.astro';
-import { projects } from '../../../config';
+import WorkDetailView from '../../../../views/WorkDetailView.astro';
+import { projects } from '../../../../config';
 
 export function getStaticPaths() {
   return projects.map((p) => ({ params: { slug: p.slug }, props: { project: p } }));
@@ -9,4 +9,4 @@ export function getStaticPaths() {
 const { project } = Astro.props;
 ---
 
-<WorkDetailView lang="en" project={project} />
+<WorkDetailView lang="ko" project={project} />

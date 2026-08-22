@@ -1,12 +1,20 @@
 ---
 // Inline, dependency-free theme toggle. The blocking snippet in Layout.astro
 // sets data-theme before first paint, so there is no flash-of-wrong-theme.
+import { t, type Locale } from '../i18n';
+
+interface Props {
+  lang: Locale;
+}
+
+const { lang } = Astro.props;
+const dict = t(lang);
 ---
 
 <button
   id="theme-toggle"
   type="button"
-  aria-label="Toggle color theme"
+  aria-label={dict.misc.toggleTheme}
   class="focus-ring inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-border)] text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)]"
 >
   <svg

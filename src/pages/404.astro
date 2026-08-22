@@ -1,14 +1,5 @@
 ---
-import Layout from '../layouts/Layout.astro';
+import NotFoundView from '../views/NotFoundView.astro';
 ---
 
-<Layout title="Page not found" noindex>
-  <section class="mx-auto flex max-w-xl flex-col items-start px-6 py-32 text-left">
-    <p class="text-sm font-medium text-[var(--color-accent)]">404</p>
-    <h1 class="mt-3 text-2xl font-semibold tracking-tight">Page not found</h1>
-    <p class="mt-3 text-[var(--color-text-muted)]">The page you're looking for doesn't exist or moved.</p>
-    <a href="/" class="focus-ring mt-6 rounded-full bg-[var(--color-text)] px-5 py-2.5 text-sm font-medium text-[var(--color-bg)] hover:opacity-90">
-      Back to home
-    </a>
-  </section>
-</Layout>
+<NotFoundView lang="en" />

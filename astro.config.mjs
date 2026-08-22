@@ -11,10 +11,25 @@ export default defineConfig({
   site: 'https://induo.works',
   output: 'static',
 
+  i18n: {
+    locales: ['en', 'ko'],
+    defaultLocale: 'en',
+    routing: {
+      prefixDefaultLocale: false,
+    },
+  },
+
   vite: {
     plugins: [tailwindcss()],
   },
 
-  integrations: [sitemap()],
+  integrations: [
+    sitemap({
+      i18n: {
+        defaultLocale: 'en',
+        locales: { en: 'en-US', ko: 'ko-KR' },
+      },
+    }),
+  ],
   adapter: cloudflare(),
 });
