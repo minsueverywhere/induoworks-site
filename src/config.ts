@@ -112,39 +112,15 @@ export type ShowcaseItem = {
 
 export const showcase: ShowcaseItem[] = [
   {
-    tags: ['Performance', 'Astro', 'Cloudflare'],
-    title: { en: 'Edge-first static delivery', ko: '엣지 우선 정적 배포' },
+    tags: ['Tag'],
+    title: { en: 'Title', ko: '제목' },
     blurb: {
-      en: "Every page is prebuilt HTML served from Cloudflare's global edge.",
-      ko: '모든 페이지는 미리 빌드된 HTML로, Cloudflare의 전 세계 엣지에서 제공됩니다.',
+      en: 'Description',
+      ko: '설명',
     },
     detail: {
-      en: "No server to wait on, no cold starts, and no database round trip. Pages are rendered at build time and served from Cloudflare's global edge.",
-      ko: '기다릴 서버도, 콜드 스타트도, 데이터베이스 왕복도 없습니다. 페이지는 빌드 시점에 렌더링되어 Cloudflare의 전 세계 엣지에서 제공됩니다.',
-    },
-  },
-  {
-    tags: ['Performance', 'Accessibility'],
-    title: { en: 'Zero-JavaScript baseline', ko: '기본 JS 제로' },
-    blurb: {
-      en: 'Interactive only where interaction is the point.',
-      ko: '인터랙션이 꼭 필요한 곳에만 인터랙션을 넣었습니다.',
-    },
-    detail: {
-      en: 'Astro ships no client-side framework runtime by default. The handful of interactive pieces here — theme toggle, mobile menu, contact form — are small, self-contained scripts, so the site stays usable on slow connections and old hardware.',
-      ko: 'Astro는 기본적으로 클라이언트 프레임워크 런타임을 전송하지 않습니다. 테마 전환, 모바일 메뉴, 문의 폼처럼 꼭 필요한 인터랙션만 작고 독립적인 스크립트로 처리해서, 느린 네트워크나 오래된 기기에서도 문제없이 동작합니다.',
-    },
-  },
-  {
-    tags: ['Security', 'Cloudflare'],
-    title: { en: 'Hardened by default', ko: '기본값부터 단단하게' },
-    blurb: {
-      en: 'Strict security headers, no secrets in the repository.',
-      ko: '엄격한 보안 헤더, 저장소엔 비밀값 없음.',
-    },
-    detail: {
-      en: 'A content security policy, frame denial, and strict referrer rules ship with every response. The contact endpoint validates input, uses a honeypot and Turnstile against abuse, and reads credentials from encrypted environment bindings.',
-      ko: '모든 응답에 콘텐츠 보안 정책(CSP), 프레임 차단, 엄격한 리퍼러 규칙이 적용됩니다. 문의 엔드포인트는 입력값을 검증하고 허니팟과 Turnstile로 남용을 막으며, 인증 정보는 암호화된 환경 바인딩에서만 읽습니다.',
+      en: '',
+      ko: '',
     },
   },
 ];

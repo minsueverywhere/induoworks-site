@@ -52,12 +52,12 @@ export const ui = {
       contact: 'Contact',
     },
     meta: {
-      tagline: 'Software that earns its keep.',
+      tagline: 'Where imagination becomes built reality.',
       description:
-        'InduoWorks builds fast, reliable web software — portfolio, engineering showcase, and open roles.',
+        'A home for small independent makers shaping practical ideas into lasting software.',
     },
     home: {
-      heading: 'Building fast, reliable software — and showing the work.',
+      heading: 'Independent, Together!',
       viewWork: 'View work',
       getInTouch: 'Get in touch',
       featuredWork: 'Featured work',
@@ -174,11 +174,11 @@ export const ui = {
       contact: '문의',
     },
     meta: {
-      tagline: '제 몫을 하는 소프트웨어.',
-      description: 'InduoWorks는 빠르고 안정적인 웹 소프트웨어를 만듭니다 — 포트폴리오, 엔지니어링 쇼케이스, 채용 정보.',
+      tagline: '상상은 현실이 되는 곳.',
+      description: '작은 독립 작업자가 다듬은 생각을, 오래 쓰일 실용적 소프트웨어로 이어 붙이는 공간입니다.',
     },
     home: {
-      heading: '빠르고 신뢰할 수 있는 소프트웨어를 만들고, 그 과정을 보여줍니다.',
+      heading: '독립적으로, 함께.',
       viewWork: '작업 보기',
       getInTouch: '문의하기',
       featuredWork: '주요 프로젝트',
