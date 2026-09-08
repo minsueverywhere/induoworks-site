@@ -75,6 +75,32 @@ export const projects: Project[] = [
       ko: '클라이언트 프레임워크 런타임 없이 전 세계에 캐싱되는 가벼운 사이트, 이중 언어 canonical 경로, 엄격한 보안 헤더와 보호된 이메일 문의 흐름을 완성했습니다.',
     },
   },
+  {
+    slug: 'grench-boss',
+    year: '2026',
+    stack: ['Godot', 'GDScript', 'GDExtension (C++)'],
+    kind: 'game',
+    status: 'in-progress',
+    featured: true,
+    title: { en: 'GRENCH BOSS', ko: 'GRENCH BOSS' },
+    summary: {
+      en: 'A co-op base-defense game built in Godot — fortify against waves of enemies, then take the fight further with a pilotable airship. In active development.',
+      ko: 'Godot로 만드는 협동 기지 방어 게임입니다 — 적의 파도를 막아내고, 이제는 직접 조종하는 비행선으로 전선을 넓혀갑니다. 한창 개발 중입니다.',
+    },
+    role: { en: 'Design & engineering', ko: '기획 및 개발' },
+    challenge: {
+      en: 'Keep a co-op base-defense game responsive and fair when the screen fills with enemies, while giving players new ways to reach and defend territory beyond a single fixed base.',
+      ko: '적으로 화면이 가득 차도 반응성과 공정함을 유지하면서, 하나의 고정된 기지를 넘어 새로운 방식으로 영역을 오가고 지킬 방법을 찾는 것이 과제였습니다.',
+    },
+    approach: {
+      en: 'A lightweight custom simulation lets ordinary enemies move and fight without full physics bodies, freeing up budget for a modular base-building system and, most recently, a pilotable airship players can land to open new combat zones.',
+      ko: '일반 적은 완전한 물리 바디 없이도 움직이고 싸울 수 있는 경량 시뮬레이션으로 처리해 여유를 확보하고, 그 여유를 모듈형 기지 건설 시스템과 최근 추가한 조종 가능한 비행선에 씁니다. 비행선은 착륙시켜 새로운 전투 구역을 엽니다.',
+    },
+    outcome: {
+      en: 'The result stays smooth with large numbers of enemies on screen, with an airship-based expansion currently in active development ahead of a planned Steam demo.',
+      ko: '많은 수의 적이 몰려도 매끄럽게 동작하며, 지금은 Steam 데모 공개를 목표로 비행선 기반 확장을 한창 개발 중입니다.',
+    },
+  },
 ];
 
 export type Lab = {
@@ -112,15 +138,39 @@ export type ShowcaseItem = {
 
 export const showcase: ShowcaseItem[] = [
   {
-    tags: ['Tag'],
-    title: { en: 'Title', ko: '제목' },
+    tags: ['Performance', 'Astro', 'Cloudflare'],
+    title: { en: 'Edge-first static delivery', ko: '엣지 우선 정적 배포' },
     blurb: {
-      en: 'Description',
-      ko: '설명',
+      en: "Every page is prebuilt HTML served from Cloudflare's global edge.",
+      ko: '모든 페이지는 미리 빌드된 HTML로, Cloudflare의 전 세계 엣지에서 제공됩니다.',
     },
     detail: {
-      en: '',
-      ko: '',
+      en: 'No server to wait on, no cold starts, no database round trip. Pages are rendered at build time and cached in 300+ cities, so first paint is limited by the speed of light rather than by our infrastructure.',
+      ko: '기다릴 서버도, 콜드 스타트도, 데이터베이스 왕복도 없습니다. 페이지는 빌드 시점에 렌더링되어 300여 개 도시에 캐싱되므로, 첫 화면 표시 속도는 인프라가 아니라 사실상 빛의 속도로만 제한됩니다.',
+    },
+  },
+  {
+    tags: ['Performance', 'Accessibility'],
+    title: { en: 'Zero-JavaScript baseline', ko: '기본 JS 제로' },
+    blurb: {
+      en: 'Interactive only where interaction is the point.',
+      ko: '인터랙션이 꼭 필요한 곳에만 인터랙션을 넣었습니다.',
+    },
+    detail: {
+      en: 'Astro ships no client-side framework runtime by default. The handful of interactive pieces here — theme toggle, mobile menu, contact form — are small, self-contained scripts, so the site stays usable on slow connections and old hardware.',
+      ko: 'Astro는 기본적으로 클라이언트 프레임워크 런타임을 전송하지 않습니다. 테마 전환, 모바일 메뉴, 문의 폼처럼 꼭 필요한 인터랙션만 작고 독립적인 스크립트로 처리해서, 느린 네트워크나 오래된 기기에서도 문제없이 동작합니다.',
+    },
+  },
+  {
+    tags: ['Security', 'Cloudflare'],
+    title: { en: 'Hardened by default', ko: '기본값부터 단단하게' },
+    blurb: {
+      en: 'Strict security headers, no secrets in the repository.',
+      ko: '엄격한 보안 헤더, 저장소엔 비밀값 없음.',
+    },
+    detail: {
+      en: 'A content security policy, frame denial, and strict referrer rules ship with every response. The one server-side path — the contact endpoint — validates input, rate-limits by IP, and reads its API credentials from encrypted environment bindings that never touch source control.',
+      ko: '모든 응답에 콘텐츠 보안 정책(CSP), 프레임 차단, 엄격한 리퍼러 규칙이 기본 적용됩니다. 유일한 서버 로직인 문의 엔드포인트는 입력값을 검증하고, IP 기준으로 속도를 제한하며, API 인증 정보는 소스 코드에 닿지 않는 암호화된 환경 바인딩에서만 읽어옵니다.',
     },
   },
 ];
