@@ -31,7 +31,7 @@ export type Project = {
   year: string;
   stack: string[];
   kind: 'site' | 'game' | 'experiment';
-  status: 'shipped' | 'in-progress';
+  status: 'shipped' | 'in-progress' | 'paused';
   href?: string;
   repo?: string;
   steamUrl?: string;
@@ -99,6 +99,56 @@ export const projects: Project[] = [
     outcome: {
       en: 'The result stays smooth with large numbers of enemies on screen, with an airship-based expansion currently in active development ahead of a planned Steam demo.',
       ko: '많은 수의 적이 몰려도 매끄럽게 동작하며, 지금은 Steam 데모 공개를 목표로 비행선 기반 확장을 한창 개발 중입니다.',
+    },
+  },
+  {
+    slug: 'yggbound',
+    year: '2025',
+    stack: ['Godot'],
+    kind: 'game',
+    status: 'paused',
+    title: { en: 'Yggbound', ko: 'Yggbound' },
+    summary: {
+      en: 'A Godot game explored early on, paused to focus on GRENCH BOSS.',
+      ko: 'GRENCH BOSS에 집중하기 위해 보류한, 초기 단계에서 탐색했던 Godot 게임입니다.',
+    },
+    role: { en: 'Design & engineering', ko: '기획 및 개발' },
+    challenge: {
+      en: 'Prototyped before committing full-time to a single project.',
+      ko: '한 프로젝트에 전념하기 전, 프로토타입으로 탐색한 단계였습니다.',
+    },
+    approach: {
+      en: 'Built far enough in Godot to validate the core idea.',
+      ko: '핵심 아이디어를 검증할 수 있을 만큼 Godot으로 구현했습니다.',
+    },
+    outcome: {
+      en: 'Paused early in development; may return to it later.',
+      ko: '개발 초기 단계에서 보류했으며, 나중에 다시 다룰 수도 있습니다.',
+    },
+  },
+  {
+    slug: 'rooftop-alien',
+    year: '2025',
+    stack: ['Godot'],
+    kind: 'game',
+    status: 'paused',
+    title: { en: 'Rooftop Alien', ko: 'Rooftop Alien' },
+    summary: {
+      en: 'Another early Godot prototype, paused to focus on GRENCH BOSS.',
+      ko: 'GRENCH BOSS에 집중하기 위해 보류한, 또 다른 초기 Godot 프로토타입입니다.',
+    },
+    role: { en: 'Design & engineering', ko: '기획 및 개발' },
+    challenge: {
+      en: 'A short prototyping pass to test a different idea in Godot.',
+      ko: 'Godot에서 다른 아이디어를 시험해본 짧은 프로토타이핑 단계였습니다.',
+    },
+    approach: {
+      en: 'Kept to a minimal build while the idea was still being evaluated.',
+      ko: '아이디어를 검토하는 동안 최소한의 형태로만 만들었습니다.',
+    },
+    outcome: {
+      en: 'Paused early in development; no public details beyond this yet.',
+      ko: '개발 초기 단계에서 보류했으며, 아직 이 이상의 공개 정보는 없습니다.',
     },
   },
 ];

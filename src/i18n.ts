@@ -91,6 +91,7 @@ export const ui = {
       status: 'Status',
       shipped: 'Shipped',
       inProgress: 'In progress',
+      paused: 'Paused',
     },
     labs: {
       title: 'Labs',
@@ -211,6 +212,7 @@ export const ui = {
       status: '상태',
       shipped: '출시 완료',
       inProgress: '진행 중',
+      paused: '보류',
     },
     labs: {
       title: '실험실',

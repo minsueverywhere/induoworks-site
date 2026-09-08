@@ -39,7 +39,7 @@ const dict = t(lang);
       </div>
       <div>
         <dt class="text-[var(--color-text-muted)]">{dict.workDetail.status}</dt>
-        <dd class="mt-1 font-medium">{project.status === 'shipped' ? dict.workDetail.shipped : dict.workDetail.inProgress}</dd>
+        <dd class="mt-1 font-medium">{{ shipped: dict.workDetail.shipped, 'in-progress': dict.workDetail.inProgress, paused: dict.workDetail.paused }[project.status]}</dd>
       </div>
       <div>
         <dt class="text-[var(--color-text-muted)]">{dict.workDetail.stack}</dt>
