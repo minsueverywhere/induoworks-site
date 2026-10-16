@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createTutorial } from '../src/scripts/village-tutorial.mjs';
+import { createTutorial, tutorialSteps } from '../src/scripts/village-tutorial.mjs';
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import { pinchPoints, zoomCamera, panCamera, isDrag } from '../src/scripts/village-camera.mjs';
@@ -12,18 +12,19 @@ test('tutorial advances only for the current task and can be skipped or replayed
   assert.equal(shown, undefined);
   tutorial.start();
   assert.equal(shown, 'drag');
+  assert.deepEqual(tutorialSteps, ['drag','zoom','house','music','exit']);
   tutorial.complete('zoom');
   tutorial.complete('house');
   assert.equal(shown, 'drag');
-  for (const [action, next] of [['drag','house'], ['house','zoom'], ['zoom','done']]) {
+  for (const [i, action] of tutorialSteps.entries()) {
     tutorial.complete(action);
-    assert.equal(shown, next);
+    assert.equal(shown, tutorialSteps[i+1] || 'done');
   }
-  tutorial.complete('zoom');
+  tutorial.complete('exit');
   assert.equal(shown, 'done');
-  for (let count = 0; count <= 3; count++) {
+  for (let count = 0; count <= tutorialSteps.length; count++) {
     tutorial.start();
-    for (const action of ['drag','house','zoom'].slice(0,count)) tutorial.complete(action);
+    for (const action of tutorialSteps.slice(0,count)) tutorial.complete(action);
     tutorial.close();
     assert.equal(shown, null);
     tutorial.complete('zoom');

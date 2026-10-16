@@ -1,6 +1,7 @@
 import { SIZE, MIN_ZOOM, MAX_ZOOM, toScreen, clampCamera, panCamera, clampZoom, defaultZoom, snapZoom, isDrag, zoomCamera, pinchPoints } from './village-camera.mjs';
 import { isPond, isPath, signLetterLayout, landscapeNoise as noise } from './village-layout.mjs';
-import { createTutorial } from './village-tutorial.mjs';
+import { createTutorial, tutorialSteps } from './village-tutorial.mjs';
+import { createVillageMusic } from './village-music.mjs';
 import { popupPosition } from './village-popup.mjs';
 const root = document.getElementById('village-section');
 const villageCenter = toScreen(9,9);
@@ -16,6 +17,7 @@ let hovered = '';
 const canvas = $('canvas'), ctx = canvas.getContext('2d');
 const popup = $('popup');
 const zoomRange = $('zoom-range');
+const wallLinks = [...$('social').querySelectorAll('a')];
 let zoomPointer = false;
 let popupTrigger = null;
 let popupObject = null, tutorialStep = null;
@@ -37,6 +39,7 @@ const buttons = new Map([...root.querySelectorAll('[data-object]')].map(b => [b.
 let width = 0, height = 0, dpr = 1, scale = 1, camera = {...villageCenter}, frame = 0;
 const tutorialPanel = $('tutorial'), tutorialSkip = $('tutorial-skip');
 const tutorialHouse = places.find(p=>p.id==='induo-works'&&p.shape==='house');
+const tutorialJukebox = places.find(p=>p.owner==='induo-works'&&p.shape==='jukebox');
 const tutorial = createTutorial(step=>{
   tutorialStep=step;
   tutorialPanel.hidden=!step;
@@ -44,22 +47,39 @@ const tutorial = createTutorial(step=>{
   $('tutorial-gesture').hidden=!step;
   helpToggle.setAttribute('aria-expanded',String(Boolean(step)));
   buttons.forEach(b=>b.classList.remove('tutorial-target'));
+  $('back').classList.remove('tutorial-target');
   if(!step)return;
   const touch=matchMedia('(pointer: coarse)').matches;
   const gestureIcon=$('tutorial-gesture');
   gestureIcon.dataset.step=step;
-  gestureIcon.textContent=step==='drag'?'↔️':step==='house'?'👇':step==='zoom'?(touch?'🤏':'🖱️'):'✨';
-  $('tutorial-progress').textContent=step==='done'?'✓':(['drag','house','zoom'].indexOf(step)+1)+' / 3';
+  gestureIcon.hidden=step==='done';
+  $('tutorial-progress').textContent=step==='done'?'✓':(tutorialSteps.indexOf(step)+1)+' / '+tutorialSteps.length;
   $('tutorial-message').textContent=text.tutorial[step==='zoom'?(touch?'pinch':'wheel'):step];
   tutorialSkip.textContent=step==='done'?text.tutorial.finish:text.tutorial.skip;
-  if(step==='house'&&tutorialHouse) {
-    camera=toScreen(tutorialHouse.x,tutorialHouse.y); requestDraw();
-    buttons.get(tutorialHouse.id)?.classList.add('tutorial-target');
+  const target=step==='house'?tutorialHouse:step==='music'?tutorialJukebox:null;
+  if(target) {
+    camera=toScreen(target.x,target.y);
+    buttons.get(target.id)?.classList.add('tutorial-target');
   }
+  if(step==='exit'){$('back').classList.add('tutorial-target');$('back').focus({preventScroll:true});}
   requestDraw();
 });
 tutorialSkip.addEventListener('click',()=>{tutorial.close();canvas.focus({preventScroll:true});});
-let playing = false, audio = null, master = null, timer = 0, note = 0, audioBusy = false;
+let playing = false;
+const music = createVillageMusic({sources:JSON.parse(root.dataset.music).sources,onState:state=>{
+  playing=state==='playing';sprites.clear();
+  const chip=$('now-playing');
+  // The chip appears with the first play and then stays as the pause/resume control.
+  if(state!=='stopped')chip.hidden=false;
+  chip.dataset.state=state;chip.setAttribute('aria-pressed',String(playing));
+  chip.setAttribute('aria-label',(playing?text.pause:text.play)+' · '+text.music);
+  $('now-label').textContent=state==='error'?text.error:state==='loading'?text.loading:text.music;
+  $('music').textContent=state==='loading'?text.loading:playing?text.pause:text.play;
+  $('music').setAttribute('aria-pressed',String(playing));
+  $('music-status').textContent=state==='error'?text.error:state==='loading'?text.loading:playing?text.music:'';
+  if(playing)tutorial.complete('music');
+  requestDraw();
+}});
 const trees = [];
 for (let tx = 1; tx < SIZE-1; tx++) for (let ty = 1; ty < SIZE-1; ty++) {
   if(noise(tx,ty,9)>.14)continue;
@@ -167,7 +187,7 @@ function sprite(object, hover) {
   const c = art.getContext('2d');c.scale(2,2);c.translate(-left,-top);object.draw(c,object);
   if(object.interactive===false){sprites.set(key,art);return art;}
   const mask = document.createElement('canvas');mask.width=art.width;mask.height=art.height;
-  const m = mask.getContext('2d');m.drawImage(art,0,0);m.globalCompositeOperation='source-in';m.fillStyle=hover?'#007f9f':'#725d3c';m.fillRect(0,0,art.width,art.height);
+  const m = mask.getContext('2d');m.drawImage(art,0,0);m.globalCompositeOperation='source-in';m.fillStyle=hover?'#edcba9':'#725d3c';m.fillRect(0,0,art.width,art.height);
   const result = document.createElement('canvas');result.width=art.width;result.height=art.height;
   const r = result.getContext('2d');
   const edge=hover?6:2;
@@ -220,7 +240,17 @@ function draw() {
   scene.dataset.camera = camera.x.toFixed(1)+','+camera.y.toFixed(1);
   scene.dataset.zoom = scale.toFixed(3);
   scene.dataset.hover = hovered;
+  positionWallLinks(ox,oy);
   positionPopup(); positionTutorial();
+}
+function positionWallLinks(ox,oy) {
+  $('social').hidden=area!=='room'||activeWorker?.id!=='induo-works';
+  if($('social').hidden)return;
+  wallLinks.forEach((a,i)=>{
+    const slope=i<4?-.5:.5,x=i<4?-220+i*56:8+(i-4)*56,y=slope*x-82;
+    a.style.left=(ox+x*scale)+'px';a.style.top=(oy+y*scale)+'px';
+    a.style.transform=`matrix(${scale},${slope*scale},0,${scale},0,0)`;
+  });
 }
 function positionPopup() {
   if(popup.hidden||!popupObject)return;
@@ -235,12 +265,14 @@ function positionTutorial() {
   if(!tutorialStep)return;
   const r=scene.getBoundingClientRect();
   let focus=r;
-  if(tutorialStep==='house')focus=buttons.get(tutorialHouse.id).getBoundingClientRect();
+  if(tutorialStep==='house'||tutorialStep==='music')focus=buttons.get(tutorialStep==='house'?tutorialHouse.id:tutorialJukebox.id).getBoundingClientRect();
+  if(tutorialStep==='exit')focus=$('back').getBoundingClientRect();
   const spotlight=$('tutorial-spotlight'), icon=$('tutorial-gesture');
   spotlight.style.left=(focus.left-6)+'px';spotlight.style.top=(focus.top-6)+'px';
   spotlight.style.width=(focus.width+12)+'px';spotlight.style.height=(focus.height+12)+'px';
-  icon.style.left=(tutorialStep==='house'?focus.left-r.left+focus.width/2:r.width/2)+'px';
-  icon.style.top=(tutorialStep==='house'?focus.top-r.top-32:r.height*.58)+'px';
+  const focused=['house','music','exit'].includes(tutorialStep);
+  icon.style.left=(focused?focus.left-r.left+focus.width/2:r.width/2)+'px';
+  icon.style.top=(focused?focus.top-r.top-22:r.height*.58)+'px';
 }
 window.addEventListener('scroll',positionTutorial,{passive:true});
 window.addEventListener('resize',positionTutorial);
@@ -256,12 +288,16 @@ function changeArea(next) {
   if(next==='room') {savedVillage={camera:{...camera},scale};camera=toScreen(4.5,4.5);scale=defaultZoom(width,height,'room');if(!roomTerrain.width||roomTerrain.width===300)makeRoom();}
   else {camera=savedVillage?.camera||{...villageCenter};scale=savedVillage?.scale||defaultZoom(width,height);}
   area=next;hovered='';closePopup();
+  if(next==='room'&&activeWorker.id==='induo-works')wallLinks.forEach(a=>{const image=a.querySelector('img');if(!image.hasAttribute('src'))image.src=image.dataset.src;});
   $('back').hidden=area!=='room';$('caption').textContent=area==='room'?activeWorker.name.toUpperCase():text.title.toUpperCase();
   canvas.setAttribute('aria-label',area==='room'?activeWorker.name+' · '+text.room:text.title);
   pointers.clear();gesture=null;pinch=null;requestDraw();canvas.focus({preventScroll:true});
   if(matchMedia('(max-width: 639px)').matches)scene.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
 }
-$('back').addEventListener('click',()=>changeArea('village'));
+$('back').addEventListener('click',()=>{
+  if(tutorialStep==='music')tutorial.close();
+  changeArea('village');tutorial.complete('exit');
+});
 function closePopup(restoreFocus = false) {
   popup.hidden = true;
   popupObject=null;
@@ -270,7 +306,7 @@ function closePopup(restoreFocus = false) {
 }
 function visit(id, focusMap = false, trigger = null) {
   const p = places.find(p => p.id === id); if (!p) return;
-  if(tutorialStep==='drag'||(tutorialStep==='house'&&id!==tutorialHouse.id))return;
+  if(tutorialStep==='drag'||tutorialStep==='zoom'||(tutorialStep==='house'&&id!==tutorialHouse.id)||(tutorialStep==='music'&&id!==tutorialJukebox.id))return;
   if(p.shape==='house'){activeWorker=workers.find(w=>w.id===id);changeArea('room');tutorial.complete('house');return;}
   if(!popup.hidden&&popupObject===id){closePopup(Boolean(trigger));return;}
   popupObject=id;
@@ -294,7 +330,7 @@ function visit(id, focusMap = false, trigger = null) {
   }
   popup.hidden = false;
   positionPopup();
-  if(p.shape==='jukebox')void toggleMusic();
+  if(p.shape==='jukebox')void music.toggle();
   buttons.forEach((b,key) => b.setAttribute('aria-pressed',String(key === id)));
   if (focusMap) { camera = clampCamera(toScreen(p.x,p.y),worldSize()); requestDraw(); }
   if (matchMedia('(max-width: 639px)').matches) scene.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
@@ -404,31 +440,11 @@ canvas.addEventListener('keydown',e => {
   else return;
   closePopup(); requestDraw();
 });
-const melody = [60,64,67,72,71,67,64,62,60,64,69,67,64,62,60,null];
-function scheduleNote() {
-  const pitch = melody[note++%melody.length]; if (pitch === null) return;
-  const voice=audio.createOscillator(),gain=audio.createGain(),now=audio.currentTime;
-  voice.type='sine';voice.frequency.value=440*2**((pitch-69)/12);gain.gain.setValueAtTime(0,now);gain.gain.linearRampToValueAtTime(.35,now+.015);gain.gain.exponentialRampToValueAtTime(.001,now+.35);voice.connect(gain);gain.connect(master);voice.start(now);voice.stop(now+.4);voice.onended=()=>{voice.disconnect();gain.disconnect();};
-}
-function stopMusic() {
-  sprites.clear();
-  clearInterval(timer); timer=0; playing=false;
-  if(audio && audio.state === 'running') void audio.suspend();
-  $('stop').hidden=true; $('music').textContent=text.play; $('music').setAttribute('aria-pressed','false'); $('music-status').textContent='';requestDraw();
-}
-async function toggleMusic() {
-  if(audioBusy) return; if(playing) { stopMusic();return; } audioBusy=true;
-  try {
-    if(!audio) { audio=new AudioContext();master=audio.createGain();master.gain.value=Number($('volume').value)/100;master.connect(audio.destination); }
-    await audio.resume(); if(document.hidden) {stopMusic();return;}
-    playing=true;sprites.clear();$('stop').hidden=false;scheduleNote();timer=setInterval(scheduleNote,420);$('music').textContent=text.stop;$('music').setAttribute('aria-pressed','true');$('music-status').textContent=text.music;requestDraw();
-  } catch { $('music-status').textContent=text.error; } finally { audioBusy=false; }
-}
-$('stop').addEventListener('click',stopMusic);
-$('music').addEventListener('click',() => void toggleMusic());
-$('volume').addEventListener('input',() => {if(master) master.gain.value=Number($('volume').value)/100;});
-document.addEventListener('visibilitychange',() => {if(document.hidden) {gesture=null;pinch=null;pointers.clear();scene.classList.remove('is-dragging');stopMusic();}});
-window.addEventListener('pagehide',() => {clearInterval(timer);cancelAnimationFrame(frame);if(audio) void audio.close();});
+$('now-playing').addEventListener('click',() => void music.toggle());
+$('music').addEventListener('click',() => void music.toggle());
+$('volume').addEventListener('input',() => music.setVolume(Number($('volume').value)/100));
+document.addEventListener('visibilitychange',() => {if(document.hidden) {gesture=null;pinch=null;pointers.clear();scene.classList.remove('is-dragging');music.stop();}});
+window.addEventListener('pagehide',() => {cancelAnimationFrame(frame);music.stop();});
 makeGround();root.classList.add('ready');resize();new ResizeObserver(resize).observe(canvas);
 const requestedWorker=new URLSearchParams(location.search).get('worker');
 if(requestedWorker&&workers.some(w=>w.id===requestedWorker))visit(requestedWorker);
