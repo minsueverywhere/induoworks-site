@@ -25,8 +25,9 @@
 }
 html { color-scheme: light; }
 html[data-theme="dark"] { color-scheme: dark; }
-body { background: var(--color-bg); color: var(--color-text); font-family: var(--font-sans); }
-main { position: relative; }
+body { display: flex; flex-direction: column; min-height: 100svh; background: var(--color-bg); color: var(--color-text); font-family: var(--font-sans); }
+main { position: relative; flex: 1; }
+main:has(> .village) { display: flex; flex-direction: column; }
 .workshop-panel { background: var(--color-bg-elevated); }
 .technical-label { font-size: .8rem; font-weight: 500; }
 ::selection { background: var(--color-text); color: var(--color-bg); }
@@ -38,6 +39,6 @@ main { position: relative; }
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
 }
 
-.page-main { max-width: 64rem; margin: 0 auto; padding: 4rem 1.5rem 0; }
+.page-main { max-width: 64rem; margin: 0 auto; padding: 2rem 1.5rem 0; }
 .page-title { font-size: 1.875rem; line-height: 1.25; font-weight: 600; letter-spacing: -.025em; }
 .page-intro { margin-top: .75rem; max-width: 42rem; color: var(--color-text-muted); font-size: .875rem; line-height: 1.75; }

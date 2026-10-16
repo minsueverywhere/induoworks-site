@@ -13,24 +13,36 @@ const year = new Date().getFullYear();
         {socialLinks.map(social=><a href={social.href} target="_blank" rel="noopener noreferrer" aria-label={social.name} title={social.name} class="focus-ring"><img src={'/social/'+social.icon+'.svg'} width="21" height="21" alt="" class="social-icon" /></a>)}
       </nav>
     </div>
+    <div class="footer-bottom">
     <nav class="footer-links" aria-label={lang==='ko'?'사이트 안내':'Site information'}>
       <a href={localizePath('/showcase/',lang)} class="focus-ring">About this site</a>
       <a href={localizePath('/contact/',lang)} class="focus-ring">Contact</a>
     </nav>
     <p class="footer-copyright">© {year} {site.name}</p>
+    </div>
   </div>
 </footer>
 <style>
-  .site-footer { margin-top: 4rem; border-top: 1px solid var(--color-border); }
-  .footer-inner { max-width: 64rem; margin: 0 auto; padding: 2rem 1.5rem; }
+  .site-footer { flex-shrink: 0; margin-top: 2rem; border-top: 1px solid var(--color-border); }
+  .footer-inner { max-width: 64rem; margin: 0 auto; padding: 1.5rem 1.5rem; }
   .footer-top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
   .footer-tagline { font-size: .875rem; font-weight: 400; }
   .footer-social { display: flex; flex-wrap: wrap; gap: .25rem; }
-  .footer-social a { display: inline-flex; width: 44px; height: 44px; align-items: center; justify-content: center; }
-  .footer-links { display: flex; justify-content: center; flex-wrap: wrap; gap: 1.25rem; margin-top: 1rem; }
+  .footer-social a { display: inline-flex; width: 28px; height: 44px; align-items: center; justify-content: center; }
+  .footer-bottom { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; column-gap: 1.25rem; margin-top: .5rem; }
+  .footer-links { display: flex; gap: 1.25rem; }
   .footer-links a { display: inline-flex; align-items: center; min-height: 44px; font-size: .8rem; color: var(--color-text-muted); text-decoration: underline; text-underline-offset: 4px; }
-  .footer-copyright { margin-top: .25rem; text-align: center; color: var(--color-text-muted); font-size: .7rem; }
-  .social-icon { opacity: .85; }
+  .footer-copyright { color: var(--color-text-muted); font-size: .7rem; white-space: nowrap; }
+  .social-icon { width: 14px; height: 14px; opacity: .85; }
   :global([data-theme="dark"]) .social-icon { filter: invert(1); }
-  @media(max-width:639px) { .footer-social { gap: 0; } .footer-social a { width: 32px; } }
+  @media(max-width:639px) {
+    .footer-top { flex-wrap: nowrap; gap: .5rem; }
+    .footer-tagline { font-size: .75rem; white-space: nowrap; }
+    .footer-social { flex-wrap: nowrap; gap: 2px; }
+    .footer-social a { width: 18px; }
+    .footer-bottom, .footer-links { column-gap: .75rem; }
+    .footer-links a { font-size: .75rem; }
+    .footer-copyright { font-size: .65rem; }
+  }
+  @media(max-width:359px) { .footer-social { gap: 0; } .footer-social a { width: 16px; } }
 </style>
