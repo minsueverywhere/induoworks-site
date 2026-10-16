@@ -11,7 +11,7 @@ export function signLetterLayout(metrics,gap=4) {
 }
 export function isPond(x,y) { return x >= 16 && x <= 21 && y >= 15 && y <= 20; }
 export function isPath(x,y) {
-  return (x===10&&y>=8&&y<24) || (x>=9&&x<=11&&y>=9&&y<=11) || (y===8&&x>=8&&x<=10) || (x===8&&y===7);
+  return (x===10&&y>=8&&y<24) || (x>=9&&x<=11&&y>=9&&y<=11) || (y===8&&x>=6&&x<=12) || ((x===6||x===12)&&y>=5&&y<=8);
 }
 // Fixed coordinate noise keeps the landscape stable across redraws and visits.
 export function landscapeNoise(x,y,salt=0) {

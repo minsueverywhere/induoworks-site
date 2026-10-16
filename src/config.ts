@@ -70,23 +70,24 @@ export const projects: Project[] = [
     href: 'https://induo.works',
     repo: 'https://github.com/minsueverywhere/induoworks-site',
     featured: true,
+    workerIds: ['induo-works'],
     title: { en: 'Induo Works Site', ko: 'Induo Works 웹사이트' },
     summary: {
-      en: 'The Induo Works website. Built with Astro and hosted on Cloudflare.',
-      ko: 'Induo Works의 웹사이트입니다. Astro로 만들고 Cloudflare에서 운영합니다.',
+      en: 'A small village of independent creators, with workshops to visit and work to discover.',
+      ko: '독립 창작자들의 작은 마을입니다. 작업실을 둘러보고 게임과 아트워크를 만나보세요.',
     },
     role: { en: 'Design & build', ko: '설계 및 개발' },
     challenge: {
-      en: 'A website for our projects and contact information, in English and Korean.',
-      ko: '프로젝트와 연락처를 영어와 한국어로 소개하는 사이트입니다.',
+      en: 'Make discovering creators and their work feel like exploring a village, on phones, tablets and computers.',
+      ko: '휴대폰, 태블릿, PC에서 마을을 탐험하듯 창작자와 작업물을 발견할 수 있는 공간을 만듭니다.',
     },
     approach: {
-      en: 'Content pages are static HTML. A Cloudflare Worker handles messages from the contact form.',
-      ko: '콘텐츠는 정적 HTML로 제공하고, 문의 폼은 Cloudflare Worker에서 처리합니다.',
+      en: 'Astro serves static pages. A lightweight Canvas village supports drag, pinch and wheel zoom, with an optional hands-on tutorial. Works offers searchable views, and the village and Workers share creator data. Artwork originals load only when requested.',
+      ko: 'Astro의 정적 페이지에 가벼운 Canvas 마을을 더했습니다. 드래그·핀치·휠로 둘러보고 짧은 튜토리얼을 체험할 수 있습니다. Works에서 검색과 보기 방식을 선택하며, 마을과 Workers는 제작자 정보를 공유합니다. 고용량 아트워크 원본은 요청할 때만 불러옵니다.',
     },
     outcome: {
-      en: 'The site is online. Content and layout are updated as the work changes.',
-      ko: '사이트를 운영 중입니다. 작업 내용에 맞춰 문구와 구성을 수정합니다.',
+      en: 'Live in Korean and English, with light and dark themes, workshop visits, social links, a protected contact form and an email-app option.',
+      ko: '한국어·영어와 밝은·어두운 테마로 운영합니다. 작업실 방문, 소셜 링크, 봇·반복 요청을 제한하는 문의 폼과 메일 앱 연결을 제공합니다.',
     },
   },
   {
@@ -247,6 +248,15 @@ export type Worker = {
 };
 
 export const workers: Worker[] = [{
+  id: 'induo-works',
+  name: 'Induo Works',
+  description: {
+    en: 'Independent, Together! Visit the village hub and find our website and social channels.',
+    ko: 'Independent, Together! 마을의 중심에서 웹사이트와 소셜 채널을 만나보세요.',
+  },
+  href: site.url,
+  house: { x: 5, y: 5 },
+}, {
   id: 'frondward',
   name: 'Frondward',
   description: {
@@ -254,7 +264,7 @@ export const workers: Worker[] = [{
     ko: '독립 게임 개발사입니다. 이 작업실에서 만드는 게임들을 만나보세요.',
   },
   logoMediaId: 'frondward-logo',
-  house: { x: 7, y: 7 },
+  house: { x: 11, y: 5 },
 }];
 
 export const villageNotices: { id: string; title: LocalizedText; body: LocalizedText; href?: string; linkLabel?: LocalizedText }[] = [{

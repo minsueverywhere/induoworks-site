@@ -1,6 +1,7 @@
 import { SIZE, MIN_ZOOM, MAX_ZOOM, toScreen, clampCamera, panCamera, clampZoom, defaultZoom, snapZoom, isDrag, zoomCamera, pinchPoints } from './village-camera.mjs';
 import { isPond, isPath, signLetterLayout, landscapeNoise as noise } from './village-layout.mjs';
 import { createTutorial } from './village-tutorial.mjs';
+import { popupPosition } from './village-popup.mjs';
 const root = document.getElementById('village-section');
 const $ = id => document.getElementById('village-' + id);
 const workers = JSON.parse(root.dataset.workers);
@@ -16,6 +17,7 @@ const popup = $('popup');
 const zoomRange = $('zoom-range');
 let zoomPointer = false;
 let popupTrigger = null;
+let popupObject = null, tutorialStep = null;
 const scene = $('scene'), terrain = document.createElement('canvas'), ground = terrain.getContext('2d');
 const help = $('help'), helpToggle = $('help-toggle'), guide = $('hint');
 function showGuide(open) { guide.hidden=!open; }
@@ -33,19 +35,27 @@ document.addEventListener('keydown',event=>{if(event.key==='Escape') {showGuide(
 const buttons = new Map([...root.querySelectorAll('[data-object]')].map(b => [b.dataset.object, b]));
 let width = 0, height = 0, dpr = 1, scale = 1, camera = toScreen(10, 10), frame = 0;
 const tutorialPanel = $('tutorial'), tutorialSkip = $('tutorial-skip');
-const tutorialHouse = places.find(p=>p.shape==='house'&&p.area==='village');
+const tutorialHouse = places.find(p=>p.id==='induo-works'&&p.shape==='house');
 const tutorial = createTutorial(step=>{
+  tutorialStep=step;
   tutorialPanel.hidden=!step;
+  $('tutorial-spotlight').hidden=!step;
+  $('tutorial-gesture').hidden=!step;
   helpToggle.setAttribute('aria-expanded',String(Boolean(step)));
   buttons.forEach(b=>b.classList.remove('tutorial-target'));
   if(!step)return;
+  const touch=matchMedia('(pointer: coarse)').matches;
+  const gestureIcon=$('tutorial-gesture');
+  gestureIcon.dataset.step=step;
+  gestureIcon.textContent=step==='drag'?'↔️':step==='house'?'👇':step==='zoom'?(touch?'🤏':'🖱️'):'✨';
   $('tutorial-progress').textContent=step==='done'?'✓':(['drag','house','zoom'].indexOf(step)+1)+' / 3';
-  $('tutorial-message').textContent=text.tutorial[step==='zoom'?(matchMedia('(pointer: coarse)').matches?'pinch':'wheel'):step];
+  $('tutorial-message').textContent=text.tutorial[step==='zoom'?(touch?'pinch':'wheel'):step];
   tutorialSkip.textContent=step==='done'?text.tutorial.finish:text.tutorial.skip;
   if(step==='house'&&tutorialHouse) {
     camera=toScreen(tutorialHouse.x,tutorialHouse.y); requestDraw();
     buttons.get(tutorialHouse.id)?.classList.add('tutorial-target');
   }
+  requestDraw();
 });
 tutorialSkip.addEventListener('click',()=>{tutorial.close();canvas.focus({preventScroll:true});});
 let playing = false, audio = null, master = null, timer = 0, note = 0, audioBusy = false;
@@ -58,7 +68,7 @@ for (let tx = 1; tx < SIZE-1; tx++) for (let ty = 1; ty < SIZE-1; ty++) {
   if(trees.some(t=>Math.hypot(t.x-x,t.y-y)<2.3))continue;
   trees.push({x,y,size:.8+noise(tx,ty,12)*.35,draw:tree});
 }
-const objects = [...trees.map(t=>({...t,area:'village'})), ...places.map(p => ({...p, draw: {house, sign, board, game, jukebox, artwork}[p.shape]})), {x:9,y:10,draw:character,area:'village'}].sort((a,b)=>a.x+a.y-b.x-b.y);
+const objects = [...trees.map(t=>({...t,area:'village'})), ...places.map(p => ({...p, draw: {house, postSign, sign, board, game, jukebox, artwork}[p.shape]})), {x:9,y:10,draw:character,area:'village'}].sort((a,b)=>a.x+a.y-b.x-b.y);
 function polygon(c, points, fill) { c.fillStyle = fill; c.beginPath(); points.forEach(([x,y],i) => i ? c.lineTo(x,y) : c.moveTo(x,y)); c.closePath(); c.fill(); }
 function tile(c, x, y, color) { const p = toScreen(x,y); polygon(c, [[p.x,p.y-12],[p.x+24,p.y],[p.x,p.y+12],[p.x-24,p.y]], color); }
 function box(c,x,y,w,d,h,colors) { polygon(c,[[x,y-h],[x+w,y+d-h],[x,y+2*d-h],[x-w,y+d-h]],colors[0]); polygon(c,[[x-w,y+d-h],[x,y+2*d-h],[x,y+2*d],[x-w,y+d]],colors[1]); polygon(c,[[x,y+2*d-h],[x+w,y+d-h],[x+w,y+d],[x,y+2*d]],colors[2]); }
@@ -86,17 +96,20 @@ function makeGround() {
 }
 function house(c, object){
   box(c,0,-18,43,21,50,['#e8d3a1','#ddc18c','#bea877']);
-  polygon(c,[[-43,-47],[0,-72],[43,-47],[0,-25]],'#ad6245');polygon(c,[[-43,-47],[-43,-56],[0,-85],[0,-72]],'#ca7b51');polygon(c,[[0,-85],[43,-56],[43,-47],[0,-72]],'#98563d');
-  // Local wall coordinates keep the door and logo aligned with the isometric faces.
+  const roof=object.id==='induo-works'?['#456c92','#6088ac','#234567']:['#ad6245','#ca7b51','#98563d'];
+  polygon(c,[[-43,-47],[0,-72],[43,-47],[0,-25]],roof[0]);polygon(c,[[-43,-47],[-43,-56],[0,-85],[0,-72]],roof[1]);polygon(c,[[0,-85],[43,-56],[43,-47],[0,-72]],roof[2]);
+  // The door follows the right wall's isometric face.
   c.save(); c.transform(1,-21/43,0,1,0,-26);
   c.fillStyle='#705a3b';c.fillRect(12,19,15,31);c.fillStyle='#ead0a1';c.fillRect(15,35,2,2);c.restore();
-  // The shop sign faces the camera, unlike the diagonal village noticeboard.
-  c.fillStyle='#745237';c.fillRect(-38,-43,3,17);c.fillRect(-11,-43,3,17);
-  c.fillStyle='#b88d58';c.fillRect(-43,-29,42,23);c.fillStyle='#e3c78e';c.fillRect(-41,-27,38,19);
-  const badge = badges.get(object.badge);
-  if (badge?.complete && badge.naturalWidth) c.drawImage(badge,-40,-26,36,17);
-  else { c.strokeStyle='#3e6548';c.lineWidth=1.5;c.beginPath();c.moveTo(-23,-11);c.lineTo(-19,-24);c.stroke();for(let i=0;i<4;i++){c.fillStyle='#476b46';c.beginPath();c.ellipse(-22+i*.8,-14-i*2.6,4,1.6,-.5,0,Math.PI*2);c.fill();} }
   box(c,14,-69,5,3,16,['#d0b392','#ac8e76','#866d5d']);
+}
+function postSign(c,object) {
+  c.fillStyle='#745237';c.fillRect(-3,-19,6,32);
+  c.fillStyle='#8d6543';c.fillRect(-42,-43,84,30);
+  c.fillStyle='#c59c68';c.fillRect(-40,-41,80,26);
+  c.fillStyle='#ae8657';c.fillRect(-39,-33,78,1);c.fillRect(-39,-24,78,1);
+  c.fillStyle='#59482f';c.font='600 10px system-ui, sans-serif';c.textAlign='center';c.fillText(object.title,0,-23,74);
+  c.fillStyle='#715539';c.fillRect(-36,-37,2,2);c.fillRect(34,-19,2,2);
 }
 function tree(c,object){c.save();c.scale(object.size,object.size);c.fillStyle='#7c7050';c.fillRect(-3,-13,6,19);polygon(c,[[-20,-12],[0,-51],[20,-12]],'#587b59');polygon(c,[[-16,-25],[0,-63],[16,-25]],'#719366');polygon(c,[[-11,-41],[0,-71],[11,-41]],'#8da773');c.restore();}
 function sign(c,object) {
@@ -209,7 +222,31 @@ function draw() {
   scene.dataset.camera = camera.x.toFixed(1)+','+camera.y.toFixed(1);
   scene.dataset.zoom = scale.toFixed(3);
   scene.dataset.hover = hovered;
+  positionPopup(); positionTutorial();
 }
+function positionPopup() {
+  if(popup.hidden||!popupObject)return;
+  const target=buttons.get(popupObject), r=scene.getBoundingClientRect(), b=target.getBoundingClientRect();
+  const anchor={x:b.left-r.left,y:b.top-r.top,width:b.width,height:b.height},top=area==='room'?64:12;
+  const space=Math.max(anchor.y-top-14,height-12-anchor.y-anchor.height-14);
+  popup.style.maxHeight=Math.max(100,Math.min(330,height-100,space))+'px';
+  const p=popupPosition(anchor,{width:popup.offsetWidth,height:popup.offsetHeight},{width,height,top});
+  popup.style.left=p.x+'px';popup.style.top=p.y+'px';popup.dataset.side=p.side;
+}
+function positionTutorial() {
+  if(!tutorialStep)return;
+  const r=scene.getBoundingClientRect();
+  let focus=r;
+  if(tutorialStep==='house')focus=buttons.get(tutorialHouse.id).getBoundingClientRect();
+  const spotlight=$('tutorial-spotlight'), icon=$('tutorial-gesture');
+  spotlight.style.left=(focus.left-6)+'px';spotlight.style.top=(focus.top-6)+'px';
+  spotlight.style.width=(focus.width+12)+'px';spotlight.style.height=(focus.height+12)+'px';
+  icon.style.left=(tutorialStep==='house'?focus.left-r.left+focus.width/2:r.width/2)+'px';
+  icon.style.top=(tutorialStep==='house'?focus.top-r.top-32:r.height*.58)+'px';
+}
+window.addEventListener('scroll',positionTutorial,{passive:true});
+window.addEventListener('resize',positionTutorial);
+new ResizeObserver(positionPopup).observe(popup);
 function resize() {
   const r = canvas.getBoundingClientRect();
   if (!width) scale = defaultZoom(r.width,r.height,area);
@@ -229,17 +266,23 @@ function changeArea(next) {
 $('back').addEventListener('click',()=>changeArea('village'));
 function closePopup(restoreFocus = false) {
   popup.hidden = true;
+  popupObject=null;
   buttons.forEach(b => b.setAttribute('aria-pressed','false'));
   if (restoreFocus && popupTrigger) popupTrigger.focus({preventScroll:true});
 }
 function visit(id, focusMap = false, trigger = null) {
   const p = places.find(p => p.id === id); if (!p) return;
+  if(tutorialStep==='drag'||(tutorialStep==='house'&&id!==tutorialHouse.id))return;
   if(p.shape==='house'){activeWorker=workers.find(w=>w.id===id);changeArea('room');tutorial.complete('house');return;}
+  if(!popup.hidden&&popupObject===id){closePopup(Boolean(trigger));return;}
+  popupObject=id;
   popupTrigger = trigger || buttons.get(id);
   $('title').textContent = p.title; $('description').textContent = p.description;
   $('links').replaceChildren();
   for (const item of p.links || []) {
-    const a = document.createElement('a'); a.textContent = item.title+' ↗'; a.href = item.href; $('links').append(a);
+    const a = document.createElement('a'); a.textContent = item.title+' ↗'; a.href = item.href;
+    if(new URL(a.href).origin!==location.origin){a.target='_blank';a.rel='noopener noreferrer';}
+    $('links').append(a);
   }
   $('player').hidden = p.shape !== 'jukebox';
   $('gallery').replaceChildren();
@@ -252,6 +295,7 @@ function visit(id, focusMap = false, trigger = null) {
     figure.append(image,caption,original);$('gallery').append(figure);
   }
   popup.hidden = false;
+  positionPopup();
   if(p.shape==='jukebox')void toggleMusic();
   buttons.forEach((b,key) => b.setAttribute('aria-pressed',String(key === id)));
   if (focusMap) { camera = clampCamera(toScreen(p.x,p.y),worldSize()); requestDraw(); }

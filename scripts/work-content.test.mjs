@@ -34,6 +34,10 @@ test('content IDs and ownership references stay valid across pages', () => {
     if (worker.house) assert.ok(Object.values(worker.house).every(n=>Number.isInteger(n)&&n>=0&&n<24),'house outside village');
   }
   assert.deepEqual(worksByWorker('frondward').map(p=>p.slug),['grench-boss','yggbound','rooftop-alien']);
+  assert.deepEqual(worksByWorker('induo-works').map(p=>p.slug),['induoworks-site']);
+  const hub=workers.find(w=>w.id==='induo-works').house,studio=workers.find(w=>w.id==='frondward').house;
+  assert.ok(hub.x+hub.y<studio.x+studio.y,'village hub should sit above Frondward');
+  assert.ok(studio.x-studio.y>hub.x-hub.y,'Frondward should sit to the right');
   for(const notice of villageNotices)assert.ok(notice.title.en&&notice.title.ko&&notice.body.en&&notice.body.ko,'notice needs bilingual copy');
 });
 
