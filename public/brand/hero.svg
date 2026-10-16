@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080"><defs><pattern id="grid" width="72" height="72" patternUnits="userSpaceOnUse"><path d="M72 0H0v72" fill="none" stroke="#58a6ff" stroke-opacity=".11"/></pattern><radialGradient id="glow"><stop stop-color="#254363" stop-opacity=".58"/><stop offset="1" stop-color="#0d1117" stop-opacity="0"/></radialGradient></defs><path fill="#0d1117" d="M0 0h1080v1080H0z"/><path fill="url(#grid)" d="M0 0h1080v1080H0z"/><ellipse cx="540" cy="540" rx="1080" ry="864" fill="url(#glow)"/><g opacity="1" transform="translate(540 486) scale(1)"><g fill="none" stroke-linejoin="round">
+  <path d="M-360 170 0-10l360 180L0 350Z" fill="#111d2b" stroke="#344b63" stroke-width="2"/>
+  <path d="M-360 170v34L0 384l360-180v-34M0 350v34" stroke="#344b63" stroke-width="2"/>
+  <path d="M-300 45 0-105 300 45 0 195Z" fill="#142334" stroke="#58a6ff" stroke-opacity=".5" stroke-width="2"/>
+  <path d="M-300 45v30L0 225 300 75V45M0 195v30" stroke="#58a6ff" stroke-opacity=".35" stroke-width="2"/>
+  <path d="M-240-80 0-200 240-80 0 40Z" fill="#192d43" stroke="#79c0ff" stroke-width="3"/>
+  <path d="M-240-80v28L0 68l240-120v-28M0 40v28" stroke="#58a6ff" stroke-width="2"/>
+  <path d="M-176-80 0-168 176-80 0 8Z" stroke="#58a6ff" stroke-opacity=".3"/>
+  <path d="M-320-140v-90h110M320 285v90H210" stroke="#c6905a" stroke-width="3"/>
+  <path d="M-410 302-210 402M-410 289v26M-210 389v26" stroke="#c6905a" stroke-opacity=".6" stroke-width="2"/>
+  <path d="M-365 324v10m35 7v10m35 7v10m35 7v10" stroke="#c6905a" stroke-opacity=".5"/>
+  <path d="M0-200v-95M360 170h100M-360 170h-100" stroke="#58a6ff" stroke-opacity=".3" stroke-dasharray="6 9"/>
+  <circle cx="0" cy="-295" r="6" fill="#c6905a" stroke="none"/>
+  <circle cx="460" cy="170" r="6" fill="#58a6ff" stroke="none"/>
+</g><g transform="matrix(1 .5 -1 .5 0 -88)"><g transform="translate(-64 -64) scale(1)"><path fill="#c6905a" d="M18 20h22v11H18z"/><path fill="#e6edf3" d="M24 41h11v67H24zM49 41h12l8 44 10-29h10l10 29 8-44h12l-14 67H94L84 79l-10 29H63z"/></g></g></g></svg>

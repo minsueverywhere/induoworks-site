@@ -10,6 +10,7 @@ import cloudflare from '@astrojs/cloudflare';
 export default defineConfig({
   site: 'https://induo.works',
   output: 'static',
+  devToolbar: { enabled: false },
 
   i18n: {
     locales: ['en', 'ko'],
@@ -31,5 +32,7 @@ export default defineConfig({
       },
     }),
   ],
-  adapter: cloudflare(),
+  // Every page is prerendered, so images are optimized at build time. This
+  // also keeps the public /_image runtime endpoint (billed per transform) off.
+  adapter: cloudflare({ imageService: 'compile' }),
 });

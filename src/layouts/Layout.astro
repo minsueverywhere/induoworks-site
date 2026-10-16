@@ -36,14 +36,14 @@ const dict = t(lang);
       (function () {
         try {
           const stored = localStorage.getItem('theme');
-          const theme = stored || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+          const theme = stored === 'dark' ? 'dark' : 'light';
           document.documentElement.setAttribute('data-theme', theme);
         } catch (e) {}
       })();
     </script>
   </head>
   <body class="min-h-screen antialiased">
-    <a href="#main" class="skip-link focus-ring rounded bg-[var(--color-accent)] px-3 py-2 text-sm text-white">
+    <a href="#main" class="skip-link focus-ring rounded bg-[var(--color-accent)] px-3 py-2 text-sm text-[var(--color-bg)]">
       {dict.misc.skipToContent}
     </a>
     <Header lang={lang} />

@@ -1,6 +1,6 @@
 ---
-import { site, companies } from '../config';
-import { t, navItems, localizePath, stripLocale, type Locale } from '../i18n';
+import { site } from '../config';
+import { t, navItems, locales, localeNames, localizePath, stripLocale, type Locale } from '../i18n';
 import ThemeToggle from './ThemeToggle.astro';
 
 interface Props {
@@ -9,31 +9,29 @@ interface Props {
 
 const { lang } = Astro.props;
 const dict = t(lang);
-const otherLang: Locale = lang === 'en' ? 'ko' : 'en';
 
 const { path: currentBasePath } = stripLocale(Astro.url.pathname);
 const isActive = (basePath: string) =>
-  basePath === '/' ? currentBasePath === '/' : currentBasePath.startsWith(basePath);
+  basePath === '/' ? currentBasePath === '/' :
+  currentBasePath.startsWith(basePath) || (basePath === '/work/' && currentBasePath.startsWith('/labs/'));
 
-const hasPublishedCompanies = companies.some((company) => company.published !== false);
-const items = navItems.filter((item) => item.key !== 'companies' || hasPublishedCompanies).map((item) => ({
+const items = navItems.map((item) => ({
   href: localizePath(item.path, lang),
   label: dict.nav[item.key],
   active: isActive(item.path),
 }));
 
-const switchHref = localizePath(currentBasePath, otherLang);
+const languagePath = currentBasePath === '/404/' ? '/' : currentBasePath;
 ---
 
-<header class="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--color-bg)]/88 backdrop-blur-md">
-  <div class="h-px bg-gradient-to-r from-transparent via-[var(--color-wood)] to-transparent opacity-70"></div>
+<header class="border-b border-[var(--color-border)] bg-[var(--color-bg)]">
   <div class="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-    <a href={localizePath('/', lang)} class="focus-ring flex items-center gap-2.5 rounded font-semibold tracking-tight">
-      <span class="grid h-7 w-7 place-items-center border border-[var(--color-wood)] bg-[var(--color-wood-muted)] font-mono text-[10px] text-[var(--color-wood)]" aria-hidden="true">IW</span>
-      <span>{site.name}</span>
+    <a href={localizePath('/', lang)} aria-label={site.name} class="focus-ring flex items-center gap-2.5 rounded font-semibold tracking-tight">
+      <img src="/brand/dewy-profile.png" width="36" height="36" class="brand-mark h-9 w-9 rounded-full" alt="" />
+      <span class="hidden sm:inline">{site.name}</span>
     </a>
 
-    <nav class="hidden items-center gap-6 lg:flex" aria-label="Primary">
+    <nav id="primary-nav" class="desktop-nav hidden items-center gap-6 lg:flex" aria-label="Primary">
       {items.map((item) => (
         <a
           href={item.href}
@@ -48,17 +46,15 @@ const switchHref = localizePath(currentBasePath, otherLang);
           {item.label}
         </a>
       ))}
+      <span class="nav-indicator" aria-hidden="true"></span>
     </nav>
 
     <div class="flex items-center gap-2">
-      <a
-        href={switchHref}
-        class="focus-ring rounded-full border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)]"
-        aria-label={dict.misc.switchLangLabel}
-        hreflang={otherLang}
-      >
-        {dict.misc.switchLangShort}
-      </a>
+      <select id="site-language" aria-label={lang === 'ko' ? '언어' : 'Language'} class="focus-ring h-9 rounded border border-[var(--color-border)] bg-[var(--color-bg)] px-2 text-xs text-[var(--color-text)]">
+        {locales.map((locale) => (
+          <option value={localizePath(languagePath, locale)} lang={locale} selected={locale === lang}>{localeNames[locale]}</option>
+        ))}
+      </select>
       <ThemeToggle lang={lang} />
       <button
         id="menu-toggle"
@@ -79,16 +75,11 @@ const switchHref = localizePath(currentBasePath, otherLang);
     <ul class="flex flex-col gap-3">
       {items.map((item) => (
         <li>
-          <a href={item.href} class="focus-ring block rounded text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)]">
+          <a href={item.href} aria-current={item.active ? 'page' : undefined} class="focus-ring block rounded text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)]">
             {item.label}
           </a>
         </li>
       ))}
-      <li>
-        <a href={switchHref} hreflang={otherLang} class="focus-ring block rounded text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)]">
-          {dict.misc.switchLangShort}
-        </a>
-      </li>
     </ul>
   </nav>
 </header>
@@ -101,5 +92,41 @@ const switchHref = localizePath(currentBasePath, otherLang);
       const isHidden = menu?.classList.toggle('hidden');
       btn.setAttribute('aria-expanded', String(!isHidden));
     });
+
+    const language = document.getElementById('site-language');
+    language?.addEventListener('change', () => window.location.assign(language.value));
+
+    const nav = document.getElementById('primary-nav');
+    const indicator = nav?.querySelector('.nav-indicator');
+    if (!nav || !indicator) return;
+    function place(link, offset = 0) {
+      if (!link) { indicator.style.opacity = '0'; return; }
+      const rect = link.getBoundingClientRect();
+      const parent = nav.getBoundingClientRect();
+      indicator.style.width = rect.width + 'px';
+      indicator.style.transform = 'translateX(' + (rect.left - parent.left + offset) + 'px)';
+      indicator.style.opacity = '1';
+    }
+    function restore() { place(nav.querySelector('a:focus-visible') || nav.querySelector('[aria-current="page"]')); }
+    nav.addEventListener('pointermove', (event) => {
+      if (event.pointerType === 'touch') return;
+      const link = event.target.closest('a');
+      if (!link) return;
+      const rect = link.getBoundingClientRect();
+      const offset = rect.width ? ((event.clientX - rect.left) / rect.width - .5) * 6 : 0;
+      place(link, offset);
+    });
+    nav.addEventListener('pointerleave', restore);
+    nav.addEventListener('focusin', (event) => place(event.target.closest('a')));
+    nav.addEventListener('focusout', (event) => { if (!nav.contains(event.relatedTarget)) restore(); });
+    new ResizeObserver(restore).observe(nav);
+    restore();
   })();
 </script>
+
+<style>
+  .desktop-nav { position: relative; padding-block: .65rem; }
+  .nav-indicator { position: absolute; bottom: 0; left: 0; height: 1px; background: var(--color-text); pointer-events: none; opacity: 0; transition: transform 180ms ease, width 180ms ease, opacity 180ms ease; }
+  .nav-indicator::after { content: ''; position: absolute; right: 0; top: -1.5px; width: 4px; height: 4px; background: currentColor; }
+  @media (prefers-reduced-motion: reduce) { .nav-indicator { transition: none; } }
+</style>

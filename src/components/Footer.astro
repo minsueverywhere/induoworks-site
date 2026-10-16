@@ -1,23 +1,36 @@
 ---
-import { site } from '../config';
-import { t, localizePath, type Locale } from '../i18n';
-
-interface Props {
-  lang: Locale;
-}
-
+import { site, socialLinks } from '../config';
+import { localizePath, type Locale } from '../i18n';
+interface Props { lang: Locale; }
 const { lang } = Astro.props;
-const dict = t(lang);
 const year = new Date().getFullYear();
 ---
-
-<footer class="mt-24 border-t border-[var(--color-border)]">
-  <div class="h-px bg-gradient-to-r from-transparent via-[var(--color-wood)] to-transparent opacity-40"></div>
-  <div class="mx-auto flex max-w-5xl flex-col gap-3 px-6 py-10 text-sm text-[var(--color-text-muted)] sm:flex-row sm:items-center sm:justify-between">
-    <p><span class="font-mono text-[var(--color-wood)]">IW-{year}</span> · {site.name}. {dict.footer.rights}</p>
-    <div class="flex gap-5">
-      <a href={localizePath('/contact/', lang)} class="focus-ring rounded hover:text-[var(--color-text)]">{dict.nav.contact}</a>
-      <a href={site.github} target="_blank" rel="noopener noreferrer" class="focus-ring rounded hover:text-[var(--color-text)]">GitHub</a>
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-top">
+      <p class="footer-tagline">Independent, Together!</p>
+      <nav aria-label="Social media" class="footer-social">
+        {socialLinks.map(social=><a href={social.href} target="_blank" rel="noopener noreferrer" aria-label={social.name} title={social.name} class="focus-ring"><img src={'/social/'+social.icon+'.svg'} width="21" height="21" alt="" class="social-icon" /></a>)}
+      </nav>
     </div>
+    <nav class="footer-links" aria-label={lang==='ko'?'사이트 안내':'Site information'}>
+      <a href={localizePath('/showcase/',lang)} class="focus-ring">About this site</a>
+      <a href={localizePath('/contact/',lang)} class="focus-ring">Contact</a>
+    </nav>
+    <p class="footer-copyright">© {year} {site.name}</p>
   </div>
 </footer>
+<style>
+  .site-footer { margin-top: 4rem; border-top: 1px solid var(--color-border); }
+  .footer-inner { max-width: 64rem; margin: 0 auto; padding: 2rem 1.5rem; }
+  .footer-top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  .footer-tagline { font-size: .875rem; font-weight: 400; }
+  .footer-social { display: flex; flex-wrap: wrap; gap: .25rem; }
+  .footer-social a { display: inline-flex; width: 44px; height: 44px; align-items: center; justify-content: center; }
+  .footer-links { display: flex; justify-content: center; flex-wrap: wrap; gap: 1.25rem; margin-top: 1rem; }
+  .footer-links a { display: inline-flex; align-items: center; min-height: 44px; font-size: .8rem; color: var(--color-text-muted); text-decoration: underline; text-underline-offset: 4px; }
+  .footer-copyright { margin-top: .25rem; text-align: center; color: var(--color-text-muted); font-size: .7rem; }
+  .social-icon { opacity: .85; }
+  :global([data-theme="dark"]) .social-icon { filter: invert(1); }
+  @media(max-width:639px) { .footer-social { gap: 0; } .footer-social a { width: 32px; } }
+</style>

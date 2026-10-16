@@ -20,14 +20,14 @@ export const prerender = false;
  *   CONTACT_TO_EMAIL     - inbox that should receive submissions
  *   CONTACT_FROM_EMAIL   - verified sender address/domain in Resend
  *   TURNSTILE_SECRET_KEY - secret key from the Cloudflare Turnstile dashboard
- *                          (optional: if unset, Turnstile verification is skipped)
+ *                          (required: a missing key fails closed, never skips)
  */
 
 interface Env {
   RESEND_API_KEY: string;
   CONTACT_TO_EMAIL: string;
   CONTACT_FROM_EMAIL: string;
-  TURNSTILE_SECRET_KEY?: string;
+  TURNSTILE_SECRET_KEY: string;
 }
 
 interface ContactPayload {
@@ -94,7 +94,10 @@ export const POST: APIRoute = async ({ request }) => {
   try {
     payload = await request.json();
   } catch {
-    return json({ error: 'Invalid request body.' }, 400);
+    return json({ code: 'validation', error: 'Invalid request body.' }, 400);
+  }
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload) || Object.values(payload).some(value => typeof value !== 'string')) {
+    return json({ code: 'validation', error: 'Invalid request body.' }, 400);
   }
 
   // Honeypot: bots fill every field, real visitors never see this one.
@@ -107,29 +110,33 @@ export const POST: APIRoute = async ({ request }) => {
   const message = (payload.message || '').trim();
 
   if (!name || !email || !message) {
-    return json({ error: 'Name, email, and message are required.' }, 400);
+    return json({ code: 'validation', error: 'Name, email, and message are required.' }, 400);
   }
   if (name.length > MAX_LEN.name || email.length > MAX_LEN.email || message.length > MAX_LEN.message) {
-    return json({ error: 'One or more fields exceed the maximum length.' }, 400);
+    return json({ code: 'validation', error: 'One or more fields exceed the maximum length.' }, 400);
   }
   if (!EMAIL_RE.test(email)) {
-    return json({ error: 'Please provide a valid email address.' }, 400);
+    return json({ code: 'validation', error: 'Please provide a valid email address.' }, 400);
   }
   if (message.length < MIN_MESSAGE_LEN) {
-    return json({ error: 'Please enter at least 10 characters.' }, 400);
+    return json({ code: 'validation', error: 'Please enter at least 10 characters.' }, 400);
   }
 
-  if (cfEnv?.TURNSTILE_SECRET_KEY) {
-    const ip = request.headers.get('CF-Connecting-IP') || '';
-    const verified = await verifyTurnstile(payload['cf-turnstile-response'], cfEnv.TURNSTILE_SECRET_KEY, ip);
-    if (!verified) {
-      return json({ error: 'Verification failed. Please retry.' }, 403);
-    }
-  }
-
-  if (!cfEnv?.RESEND_API_KEY || !cfEnv?.CONTACT_TO_EMAIL || !cfEnv?.CONTACT_FROM_EMAIL) {
+  if (!cfEnv?.RESEND_API_KEY || !cfEnv?.CONTACT_TO_EMAIL || !cfEnv?.CONTACT_FROM_EMAIL || !cfEnv?.TURNSTILE_SECRET_KEY) {
     console.error('Contact form is missing required environment configuration.');
-    return json({ error: 'The contact form is temporarily unavailable. Please try again later.' }, 500);
+    return json({ code: 'unavailable', error: 'The contact form is temporarily unavailable. Please try again later.' }, 503);
+  }
+
+  const ip = request.headers.get('CF-Connecting-IP') || '';
+  let verified: boolean;
+  try {
+    verified = await verifyTurnstile(payload['cf-turnstile-response'], cfEnv.TURNSTILE_SECRET_KEY, ip);
+  } catch {
+    console.error('Turnstile verification service is unavailable.');
+    return json({ code: 'unavailable', error: 'Verification is temporarily unavailable.' }, 503);
+  }
+  if (!verified) {
+    return json({ code: 'verification', error: 'Verification failed. Please retry.' }, 403);
   }
 
   let emailRes: Response;
@@ -156,7 +163,7 @@ export const POST: APIRoute = async ({ request }) => {
     });
   } catch (error) {
     console.error('Resend request failed:', error instanceof Error ? error.message : 'Unknown network error');
-    return json({ error: 'Could not send your message. Please try again later.' }, 502);
+    return json({ code: 'unavailable', error: 'Could not send your message. Please try again later.' }, 502);
   }
 
   if (!emailRes.ok) {
@@ -167,7 +174,7 @@ export const POST: APIRoute = async ({ request }) => {
       name: resendError.name,
       message: resendError.message,
     });
-    return json({ error: 'Could not send your message. Please try again later.' }, 502);
+    return json({ code: 'unavailable', error: 'Could not send your message. Please try again later.' }, 502);
   }
 
   return json({ ok: true });

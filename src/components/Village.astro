@@ -1,0 +1,146 @@
+---
+import { projects, workers, worksByWorker, villageNotices } from '../config';
+import { villageMedia } from '../village-media';
+import { t, localizePath, type Locale } from '../i18n';
+import { MIN_ZOOM, MAX_ZOOM } from '../scripts/village-camera.mjs';
+import { villageSign, noticeboard } from '../scripts/village-layout.mjs';
+interface Props { lang: Locale }
+const { lang } = Astro.props;
+const ko = lang === 'ko';
+const text = {
+  title: t(lang).nav.home,
+  hint: ko ? '드래그로 둘러보기 · 두 손가락 또는 휠로 확대·축소 · 집을 눌러 작품 만나기' : 'Drag to explore · Pinch or scroll to zoom · Tap a house to discover its work',
+  back: ko ? '← 마을로' : '← Village',
+  room: ko ? '작업실' : 'Workshop',
+  play: ko ? '예시음 재생' : 'Play sample', stop: ko ? '음악 멈추기' : 'Stop music',
+  error: ko ? '소리를 시작하지 못했어요. 다시 눌러주세요.' : 'Could not start audio. Please try again.',
+  music: ko ? '주크박스 · 예시음' : 'Jukebox · sample',
+  original: ko ? '원본 보기' : 'View original',
+  mediaError: ko ? '이미지를 불러오지 못했어요.' : 'Could not load this image.',
+};
+const places = [
+  ...workers.filter(worker=>worker.house).map(worker=>({
+    id: worker.id, area: 'village', shape: 'house', ...worker.house!, width: 96, height: 96,
+    label: worker.name, title: worker.name, description: worker.description[lang],
+  })),
+  { id: 'welcome', area: 'village', shape: 'sign', ...villageSign, width: 336, height: 216,
+    label: ko ? text.title+' · 마을 소개' : 'About '+text.title, title: text.title,
+    description: ko ? '게임과 음악, 아트를 만드는 사람들의 마을입니다. 집을 눌러 제작자와 그 안의 작품들을 만나보세요.' : 'A meeting place for people making games, music and art. Visit a house to discover its maker and their work.' },
+  { id: 'noticeboard', area: 'village', shape: 'board', ...noticeboard, width: 116, height: 104,
+    label: ko?'마을 공고판':'Noticeboard', title: ko?'마을 공고판':'Noticeboard',
+    description: villageNotices.map(n=>n.title[lang]+' — '+n.body[lang]).join('\n\n'),
+    links: villageNotices.filter(n=>n.href).map(n=>({title:n.linkLabel?.[lang]||n.title[lang],href:n.href!.startsWith('/')?localizePath(n.href!,lang):n.href!})),
+    notes: villageNotices.length, noteTitle: villageNotices[0]?.title[lang], interactive: villageNotices.length>0 },
+];
+const welcome = places.find(p=>p.id==='welcome')!;
+const roomPlaces = workers.filter(worker=>worker.house).flatMap(worker=>[
+  // shortcut: one room holds nine project stands; add room pagination when a studio outgrows it.
+  ...worksByWorker(worker.id).map((p,i)=>({id:worker.id+':'+p.slug,owner:worker.id,area:'room',shape:'game',x:1+(i%3)*3+(Math.floor(i/3)),y:7-(i%3)*3+(Math.floor(i/3)),width:72,height:78,label:p.title[lang],title:p.title[lang],description:p.summary[lang],links:[{title:ko?'작품 소개':'About this work',href:localizePath('/work/'+p.slug+'/',lang)}]})),
+  {id:worker.id+'-jukebox',owner:worker.id,area:'room',shape:'jukebox',x:7,y:6,width:58,height:78,label:ko?'주크박스':'Jukebox',title:ko?'작업실의 주크박스':'Workshop jukebox',description:ko?'작업실에서 잠깐 음악을 듣고 가세요. 지금은 짧은 예시음을 재생합니다.':'Stay for a little music. A short sample melody is available for now.'},
+  ...villageMedia.filter(m=>m.workerIds.includes(worker.id)).map((m,i)=>({id:worker.id+':'+m.id,owner:worker.id,area:'room',shape:'artwork',x:1+i*2,y:3,width:70,height:90,label:m.title[lang],title:m.title[lang],description:ko?'미리보기를 둘러보고 원하는 작품의 원본을 열어보세요.':'Browse the preview and open the original for a closer look.',media:[m.id],badge:m.badge})),
+]);
+const villageWorkers=workers.filter(w=>w.house).map(w=>({id:w.id,name:w.name,description:w.description[lang]}));
+const allPlaces = [...places,...roomPlaces];
+const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interactive!==false);
+---
+<section id="village-section" class="village page-main" aria-labelledby="village-heading" data-places={JSON.stringify(allPlaces)} data-text={JSON.stringify(text)} data-workers={JSON.stringify(villageWorkers)} data-media={JSON.stringify(villageMedia.map(m => ({...m,title:m.title[lang]})))}>
+  <div class="village-heading">
+    <h1 id="village-heading" class="page-title">{text.title}</h1>
+    <div id="village-help" class="village-help">
+      <button id="village-help-toggle" type="button" aria-label={ko?'조작 가이드':'Controls guide'} aria-expanded="false" aria-controls="village-hint"><span aria-hidden="true">❔</span></button>
+      <div id="village-hint" class="village-guide" role="note" aria-label={ko?'조작 가이드':'Controls guide'} hidden>
+        <p>{ko?'드래그로 마을 둘러보기':'Drag to explore the village'}</p>
+        <p>{ko?'휠 또는 두 손가락으로 확대·축소':'Scroll or pinch with two fingers to zoom'}</p>
+        <p id="village-zoom-hint">{ko?'오른쪽 아래 바를 움직여 배율 조절 · 100% 근처에서 자동으로 맞춰집니다.':'Drag the bar at the bottom right to zoom. It snaps near 100%.'}</p>
+        <p>{ko?'배율 숫자를 누르면 현재 화면 크기에 맞는 기본 배율로 복귀':'Tap the zoom percentage to restore the default zoom for this screen size'}</p>
+        <p>{ko?'집과 물체를 눌러 작품 만나기':'Tap houses and objects to discover their work'}</p>
+        <p>{ko?'INDUOHOOD 간판을 누르면 마을 소개':'Tap the INDUOHOOD sign to learn about the village'}</p>
+        <p>{ko?'지도 선택 후 키보드: 방향키 이동 · +/− 확대·축소 · Home 시점 복귀 · Esc 닫기/돌아가기':'With the map focused: arrows to pan · +/− to zoom · Home to recenter · Esc to close/go back'}</p>
+      </div>
+    </div>
+  </div>
+  <div class="village-scene" id="village-scene">
+    <canvas id="village-canvas" tabindex="0" aria-label={text.title} aria-describedby="village-hint">{text.hint}</canvas>
+    <div class="village-places">
+      {interactivePlaces.map(p => <button type="button" class="village-place" data-object={p.id} data-area={p.area} data-owner={'owner' in p ? p.owner : undefined} hidden={p.area === 'room'} aria-label={p.label} aria-pressed="false" aria-controls="village-popup"><span>{p.label}</span></button>)}
+    </div>
+    <section id="village-popup" class="village-popup" role="dialog" aria-modal="false" aria-labelledby="village-title" tabindex="-1" hidden>
+      <button id="village-close" type="button" aria-label={ko ? '설명 닫기' : 'Close details'}>×</button>
+      <h3 id="village-title">{welcome.title}</h3>
+      <p id="village-description">{welcome.description}</p>
+      <nav id="village-links" aria-label={ko ? '작업실의 작품' : 'Workshop projects'}></nav>
+      <div id="village-gallery"></div>
+      <div id="village-player" hidden>
+        <p>{text.music}</p>
+        <button id="village-music" type="button" aria-pressed="false">{text.play}</button>
+        <label>{ko ? '음량' : 'Volume'} <input id="village-volume" type="range" min="0" max="100" value="20" /></label>
+      </div>
+    </section>
+    <button id="village-back" class="village-back" type="button" data-ui hidden>{text.back}</button>
+    <span id="village-caption" class="village-caption" aria-hidden="true">{text.title.toUpperCase()}</span>
+    <div class="village-hud" data-ui role="group" aria-label={ko?'지도 배율':'Map zoom'}>
+      <div class="village-zoom-track">
+        <input id="village-zoom-range" type="range" min={MIN_ZOOM*100} max={MAX_ZOOM*100} step="1" value="100" aria-label={ko?'지도 확대·축소':'Map zoom level'} aria-describedby="village-zoom-hint" />
+        <span class="village-zoom-tick" aria-hidden="true" style={'left:'+((1-MIN_ZOOM)/(MAX_ZOOM-MIN_ZOOM)*100)+'%'}></span>
+      </div>
+      <button id="village-zoom" type="button" aria-label={ko?'화면에 맞는 기본 배율로 초기화':'Reset to default zoom for this screen'} title={ko?'현재 화면에 맞는 기본 배율로':'Restore default zoom for this screen'}>100%</button>
+    </div>
+  </div>
+  <button id="village-stop" type="button" hidden>{text.stop}</button>
+  <p id="village-music-status" class="village-status" role="status"></p>
+  <noscript><p>{ko ? 'JavaScript를 켜면 마을 지도를 이용할 수 있습니다.' : 'Enable JavaScript to explore the village map.'}</p><ul>{projects.filter(p => p.kind === 'game').map(p => <li><a href={localizePath('/work/' + p.slug + '/', lang)}>{p.title[lang]}</a></li>)}</ul></noscript>
+</section>
+<script>import '../scripts/village.js';</script>
+<style>
+  .village { max-width: 64rem; margin: 0 auto; padding: 4rem 1.5rem 0; }
+  .village-heading { position: relative; display: flex; align-items: center; gap: .25rem; margin-bottom: 1rem; }
+  h1 { font-size: 1.875rem; line-height: 1.25; font-weight: 600; letter-spacing: -.025em; }
+  .village-help { display: flex; align-items: center; }
+  #village-help-toggle { cursor: help; background: transparent; font-size: .875rem; }
+  .village-guide { position: absolute; top: 100%; left: 0; z-index: 5; width: min(340px,100%); padding: 1rem; border: 1px solid var(--color-border); border-radius: .75rem; background: var(--color-bg); color: var(--color-text); box-shadow: 0 6px 20px #0002; font-size: .8rem; line-height: 1.7; }
+  .village-guide p+p { margin-top: .5rem; }
+  .village-scene { position: relative; height: 480px; overflow: hidden; border: 1px solid var(--color-border); border-radius: 1rem; background: #e9e5d6; cursor: grab; user-select: none; }
+  .village-scene.is-dragging { cursor: grabbing; }
+  canvas { width: 100%; height: 100%; display: block; outline-offset: -4px; touch-action: none; }
+  .village-place { display: none; position: absolute; transform: translate(-50%,-100%); border: 0; background: transparent; cursor: pointer; color: #30422e; touch-action: none; }
+  .village.ready .village-place:not([hidden]) { display: block; }
+  .village-place span { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); width: max-content; max-width: 140px; padding: 3px 6px; border: 1px solid #a3a384; border-radius: 4px; background: #faf4dd; font-size: 11px; line-height: 1.3; box-shadow: 0 2px 3px #33452516; opacity: 0; visibility: hidden; pointer-events: none; }
+  .village-place:hover span, .village-place:focus-visible span { opacity: 1; visibility: visible; }
+  .village-place[aria-pressed="true"] span { background: #304c3a; color: #fff4d5; }
+  .village-back { position: absolute; top: 12px; left: 12px; z-index: 3; padding: .5rem .8rem; border: 1px solid #89916e; border-radius: .5rem; background: #faf6e8; color: #30422e; font-size: .8rem; cursor: pointer; }
+  .village-hud { position: absolute; bottom: 0; right: 8px; display: flex; align-items: center; gap: 4px; color: #30422e; font: 10px monospace; letter-spacing: .04em; cursor: auto; opacity: .6; transition: opacity 150ms ease; }
+  .village-hud:hover, .village-hud:focus-within, .village-hud:active { opacity: 1; }
+  .village-hud button { min-width: 44px; min-height: 44px; background: transparent; cursor: pointer; font: inherit; }
+  .village-hud button:hover { color: #006e7e; text-decoration: underline; }
+  .village-hud #village-zoom { min-width: 48px; }
+  .village-zoom-track { position: relative; width: 96px; }
+  #village-zoom-range { display: block; appearance: none; width: 100%; min-height: 44px; margin: 0; background: transparent; cursor: ew-resize; touch-action: pan-y; --zoom-progress: 55.56%; }
+  #village-zoom-range::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right,#30422e var(--zoom-progress),#faf6e8 var(--zoom-progress)); box-shadow: 0 0 0 1px #30422e60; }
+  #village-zoom-range::-moz-range-track { height: 4px; border-radius: 2px; background: linear-gradient(to right,#30422e var(--zoom-progress),#faf6e8 var(--zoom-progress)); box-shadow: 0 0 0 1px #30422e60; }
+  #village-zoom-range::-webkit-slider-thumb { appearance: none; width: 8px; height: 8px; margin-top: -2px; border: 1px solid #faf6e8; border-radius: 50%; background: #30422e; }
+  #village-zoom-range::-moz-range-thumb { width: 6px; height: 6px; border: 1px solid #faf6e8; border-radius: 50%; background: #30422e; }
+  #village-zoom-range:focus-visible { outline: 2px solid #006e7e; outline-offset: -3px; border-radius: 4px; }
+  .village-zoom-tick { position: absolute; top: calc(50% - 5px); width: 1px; height: 10px; background: #30422e; pointer-events: none; }
+  .village-caption { position: absolute; bottom: 12px; left: 14px; color: #5f7050; font: 10px monospace; letter-spacing: .14em; pointer-events: none; }
+  button { min-width: 44px; min-height: 44px; }
+  button:focus-visible, a:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }
+  #village-stop, #village-music { border: 1px solid var(--color-border); border-radius: .5rem; padding: .5rem .7rem; background: var(--color-bg-elevated); cursor: pointer; font-size: .8rem; }
+  #village-stop { margin-top: .5rem; }
+  .village-popup { position: absolute; z-index: 2; right: 12px; top: 12px; width: min(310px,calc(100% - 24px)); max-height: calc(100% - 24px); overflow-y: auto; padding: 1rem; border: 1px solid #a3a384; border-radius: .75rem; background: #faf6e8; color: #30422e; box-shadow: 0 8px 24px #30422e26; cursor: auto; user-select: text; touch-action: pan-y; }
+  #village-close { float: right; margin: -.5rem -.5rem 0 .5rem; font-size: 1.5rem; cursor: pointer; }
+  h3 { font-size: 1rem; font-weight: 600; line-height: 1.5; margin: 0 0 .5rem; padding-top: .25rem; }
+  #village-description { font-size: .8rem; line-height: 1.7; }
+  #village-links { display: grid; margin-top: .5rem; }
+  #village-links :global(a) { display: flex; align-items: center; min-height: 44px; text-decoration: underline; text-underline-offset: 3px; font-size: .875rem; }
+  #village-player { margin-top: .75rem; padding-top: .75rem; border-top: 1px solid #b7b99d; font-size: .75rem; }
+  #village-music { margin: .5rem 0; background: #faf6e8; color: #30422e; border-color: #b7b99d; }
+  #village-player label { display: flex; align-items: center; gap: .5rem; white-space: nowrap; }
+  input { flex: 1; width: 0; min-width: 0; min-height: 44px; }
+  #village-gallery :global(figure) { margin-top: .75rem; }
+  #village-gallery :global(img) { display: block; width: 100%; max-height: 120px; object-fit: contain; border-radius: .25rem; background: #fffaf1; }
+  #village-gallery :global(figcaption) { font-size: .7rem; margin-top: .25rem; }
+  #village-gallery :global(a) { display: inline-flex; align-items: center; min-height: 44px; font-size: .75rem; text-decoration: underline; }
+  .village-status { font-size: .75rem; color: var(--color-text-muted); }
+  .village-status:not(:empty) { margin-bottom: .5rem; }
+  @media(max-width: 639px) { .village-scene { height: 400px; } .village-popup { top: auto; bottom: 48px; max-height: calc(100% - 110px); } }
+</style>

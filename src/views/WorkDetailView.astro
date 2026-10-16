@@ -2,7 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 import { Image } from 'astro:assets';
 import ProjectGallery from '../components/ProjectGallery.astro';
-import type { Project } from '../config';
+import { workers, type Project } from '../config';
 import { t, localizePath, type Locale } from '../i18n';
 
 interface Props {
@@ -24,10 +24,11 @@ const dict = t(lang);
   <article class="mx-auto max-w-5xl px-6 pb-24 pt-16 sm:pt-20">
     <a href={localizePath('/work/', lang)} class="focus-ring rounded text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)]">{dict.workDetail.back}</a>
 
-    <p class="technical-label mt-8 text-[var(--color-wood)]">CASE STUDY / {project.kind}</p>
+    
     <h1 class="mt-3 max-w-3xl text-3xl font-semibold tracking-tight sm:text-5xl">{project.title[lang]}</h1>
     <p class="mt-4 max-w-2xl text-lg leading-relaxed text-[var(--color-text-muted)]">{project.summary[lang]}</p>
 
+    {(project.workerIds?.length || 0)>0 && <p class="mt-4 flex flex-wrap gap-4 text-sm">{workers.filter(w=>project.workerIds?.includes(w.id)).map(w=><a class="focus-ring underline underline-offset-4" href={localizePath('/workers/#'+w.id,lang)}>{w.name}</a>)}</p>}
     <dl class="workshop-panel mt-10 grid grid-cols-2 gap-6 rounded-xl border border-[var(--color-border)] p-6 text-sm sm:grid-cols-4">
       <div>
         <dt class="text-[var(--color-text-muted)]">{dict.workDetail.year}</dt>
@@ -58,11 +59,11 @@ const dict = t(lang);
     )}
 
     <div class="mt-16 grid gap-10 lg:grid-cols-[12rem_1fr]">
-      <h2 class="technical-label text-[var(--color-wood)]">01 / {dict.workDetail.challenge}</h2>
+      <h2 class="technical-label text-[var(--color-wood)]">{dict.workDetail.challenge}</h2>
       <p class="max-w-2xl leading-relaxed text-[var(--color-text-muted)]">{project.challenge[lang]}</p>
-      <h2 class="technical-label text-[var(--color-wood)]">02 / {dict.workDetail.approach}</h2>
+      <h2 class="technical-label text-[var(--color-wood)]">{dict.workDetail.approach}</h2>
       <p class="max-w-2xl leading-relaxed text-[var(--color-text-muted)]">{project.approach[lang]}</p>
-      <h2 class="technical-label text-[var(--color-wood)]">03 / {dict.workDetail.outcome}</h2>
+      <h2 class="technical-label text-[var(--color-wood)]">{dict.workDetail.outcome}</h2>
       <p class="max-w-2xl leading-relaxed text-[var(--color-text-muted)]">{project.outcome[lang]}</p>
     </div>
 

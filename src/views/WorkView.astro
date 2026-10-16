@@ -1,39 +1,114 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { projects } from '../config';
+import { workers } from '../config';
+import { workCatalog } from '../work-catalog';
 import { t, localizePath, type Locale } from '../i18n';
-
-interface Props {
-  lang: Locale;
-}
-
-const { lang } = Astro.props;
-const dict = t(lang);
+interface Props { lang: Locale; }
+const { lang }=Astro.props;
+const dict=t(lang),ko=lang==='ko',entries=workCatalog(lang);
+const kinds=[{id:'game',label:dict.work.games},{id:'music',label:dict.work.music},{id:'artwork',label:dict.work.artwork},{id:'other',label:dict.work.other}];
+const statuses=[{id:'in-progress',label:dict.workDetail.inProgress},{id:'paused',label:dict.workDetail.paused},{id:'shipped',label:dict.workDetail.shipped},{id:'experiment',label:ko?'실험':'Experiment'}];
+const tags=[...new Set(entries.flatMap(e=>e.tags))].sort();
+const views=[{id:'gallery',label:ko?'갤러리':'Gallery'},{id:'mosaic',label:ko?'모자이크':'Mosaic'},{id:'posts',label:ko?'게시글':'Posts'}];
 ---
-
 <Layout lang={lang} title={dict.work.title} description={dict.work.description}>
-  <section class="mx-auto max-w-5xl px-6 pb-24 pt-16 sm:pt-20">
-    <h1 class="text-3xl font-semibold tracking-tight">{dict.work.title}</h1>
-    <p class="mt-3 max-w-xl text-[var(--color-text-muted)]">{dict.work.intro}</p>
-
-    <div class="mt-10 grid gap-6 sm:grid-cols-2">
-      {projects.map((p) => (
-        <a
-          href={localizePath(`/work/${p.slug}/`, lang)}
-          class="workshop-panel wood-rule focus-ring group rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-6 pl-7 transition-colors hover:border-[var(--color-accent)]"
-        >
-          <div class="flex items-center justify-between">
-            <h2 class="font-semibold">{p.title[lang]}</h2>
-            <span class="text-xs text-[var(--color-text-muted)]">{p.year}</span>
+  <section class="page-main" id="work-board" data-entries={JSON.stringify(entries.map(({id,search,kind,status,workerIds,tags})=>({id,search,kind,status,workerIds,tags})))} data-count={ko?'{count}개의 작품':'{count} works'}>
+    <h1 class="page-title">{dict.work.title}</h1>
+    <p class="page-intro">{ko?'게임, 음악, 아트워크를 둘러보고 만드는 사람과 분야로 찾아보세요.':'Explore games, music and artwork. Find work by its maker, field or tags.'}</p>
+    <details class="work-filter-panel" open><summary id="work-filter-summary" data-label={ko?'검색·필터':'Search & filters'}>{ko?'검색·필터':'Search & filters'}</summary>
+    <form id="work-filters" class="work-filters" role="search" aria-label={ko?'작품 검색':'Search works'}>
+      <label class="search-field">{ko?'검색':'Search'}<input type="search" name="q" placeholder={ko?'제목, 태그, 개발사 검색':'Search titles, tags or makers'} autocomplete="off" /></label>
+      <label>{ko?'개발사·개인':'Studio / maker'}<select name="worker"><option value="">{ko?'전체':'All'}</option>{workers.map(w=><option value={w.id}>{w.name}</option>)}</select></label>
+      <label>{ko?'분야':'Field'}<select name="kind"><option value="">{ko?'전체':'All'}</option>{kinds.map(k=><option value={k.id}>{k.label}</option>)}</select></label>
+      <label>{ko?'상태':'Status'}<select name="status"><option value="">{ko?'전체':'All'}</option>{statuses.map(s=><option value={s.id}>{s.label}</option>)}</select></label>
+      <label>{ko?'태그':'Tag'}<select name="tag"><option value="">{ko?'전체':'All'}</option>{tags.map(tag=><option value={tag}>{tag}</option>)}</select></label>
+      <button type="reset">{ko?'초기화':'Reset'}</button>
+    </form></details>
+    <div class="work-toolbar"><p id="work-count" role="status" aria-live="polite">{ko?entries.length+'개의 작품':entries.length+' works'}</p><div class="work-views" role="group" aria-label={ko?'보기 방식':'View style'}>{views.map(v=><button type="button" data-view={v.id} aria-pressed={v.id==='posts'}>{v.label}</button>)}</div></div>
+    <div id="work-grid" data-view="posts">
+      {entries.map(entry=><article class="work-card" data-entry={entry.id}>
+        <a class="work-preview focus-ring" href={entry.href} aria-label={entry.title} target={entry.file?'_blank':undefined} rel={entry.file?'noopener noreferrer':undefined}>
+          <div class="work-image" style={entry.image?{'--work-art':`url("${entry.image}")`}:undefined}>
+            {entry.image?<img src={entry.image} alt={entry.imageAlt} loading="lazy" decoding="async" width={entry.imageWidth} height={entry.imageHeight} />:<div class="work-placeholder" aria-hidden="true"><span>{entry.title.split(/[\s-]+/).map(w=>w[0]).slice(0,2).join('').toUpperCase()}</span><small>{ko?'이미지 준비 중':'Image coming soon'}</small></div>}
           </div>
-          <p class="mt-2 text-sm text-[var(--color-text-muted)]">{p.summary[lang]}</p>
-          <ul class="mt-4 flex flex-wrap gap-2">
-            {p.stack.map((s) => (
-              <li class="rounded-full border border-[var(--color-border)] px-2.5 py-1 text-xs text-[var(--color-text-muted)]">{s}</li>
-            ))}
-          </ul>
         </a>
-      ))}
+        <div class="work-info" id={'work-info-'+entry.id}>
+        <a class="work-open focus-ring" href={entry.href} target={entry.file?'_blank':undefined} rel={entry.file?'noopener noreferrer':undefined}>
+          <div class="work-copy"><p class="work-category">{kinds.find(k=>k.id===entry.kind)?.label} {entry.year&&'· '+entry.year} {entry.imageCaption&&'· '+entry.imageCaption}</p><h2>{entry.title} <span aria-hidden="true">↗</span></h2><p class="work-summary">{entry.summary}</p></div>
+        </a>
+        <div class="work-tags">{entry.tags.map(tag=><button type="button" data-tag={tag}>{tag}</button>)}</div>
+        <div class="work-meta"><p>{entry.creators.map(creator=><a class="focus-ring" href={localizePath('/workers/#'+creator.id,lang)}>{creator.name}</a>)}</p><span class="work-status">{statuses.find(s=>s.id===entry.status)?.label}</span></div>
+        </div>
+        <button type="button" class="work-info-toggle" aria-label={(ko?'작품 정보: ':'Work information: ')+entry.title} aria-controls={'work-info-'+entry.id} aria-expanded="false">ⓘ</button>
+      </article>)}
     </div>
+    <p id="work-empty" hidden>{ko?'조건에 맞는 작품이 없습니다. 검색어나 필터를 바꿔보세요.':'No matching work. Try another search or filter.'}</p>
+    <noscript><p>{ko?'모든 작품을 표시하고 있습니다. JavaScript를 켜면 검색·필터·보기 전환을 이용할 수 있습니다.':'All work is shown. Enable JavaScript to search, filter and switch views.'}</p></noscript>
   </section>
 </Layout>
+<script>import '../scripts/work-board.js';</script>
+<style>
+  .work-filter-panel { display: none; margin-top: 1.5rem; }
+  .ready .work-filter-panel { display: block; }
+  summary { width: fit-content; cursor: pointer; padding: .5rem 0; font-size: .8rem; color: var(--color-text-muted); }
+  .work-filters { display: none; grid-template-columns: minmax(180px,2fr) repeat(4,minmax(0,1fr)) auto; align-items: end; gap: .75rem; margin-top: .75rem; }
+  .ready .work-filters { display: grid; }
+  label { display: grid; gap: .4rem; font-size: .75rem; color: var(--color-text-muted); min-width: 0; }
+  input,select,.work-filters button { width: 100%; min-width: 0; min-height: 44px; padding: .6rem .65rem; color: var(--color-text); background: var(--color-bg-elevated); border: 1px solid var(--color-border); border-radius: .5rem; font-size: .8rem; }
+  button { cursor: pointer; }
+  input:focus-visible,select:focus-visible,button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }
+  .work-toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem; padding: 1.25rem 0; font-size: .8rem; color: var(--color-text-muted); }
+  .work-views { display: none; gap: .25rem; }
+  .ready .work-views { display: flex; }
+  .work-views button { min-height: 44px; padding: .5rem .75rem; border: 1px solid var(--color-border); border-radius: .5rem; }
+  .work-views button[aria-pressed="true"] { color: var(--color-bg); background: var(--color-text); border-color: var(--color-text); }
+  #work-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 1.25rem; }
+  .work-card { position: relative; min-width: 0; overflow: hidden; border: 1px solid var(--color-border); border-radius: .75rem; }
+  .work-card[hidden] { display: none !important; }
+  .work-open,.work-preview { display: block; }
+  .work-image { position: relative; isolation: isolate; aspect-ratio: 4/3; overflow: hidden; background: var(--color-bg-elevated); }
+  [data-view="gallery"] .work-image::before { content: ''; position: absolute; inset: 0; background-image: var(--work-art,none); background-position: center; background-size: cover; filter: blur(16px); transform: scale(1.15); opacity: .65; pointer-events: none; }
+  .work-image img { position: relative; display: block; width: 100%; height: 100%; object-fit: contain; }
+  .work-placeholder { height: 100%; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 1rem; background: color-mix(in srgb,var(--color-border) 25%,var(--color-bg)); }
+  .work-placeholder span { font-size: 3rem; font-weight: 400; color: var(--color-text-muted); }
+  .work-placeholder small { font-size: .65rem; color: var(--color-text-muted); }
+  .work-info { position: absolute; bottom: 0; left: 0; right: 0; max-height: 100%; overflow-y: auto; padding: 2rem 1rem 1rem; background: linear-gradient(transparent,var(--color-bg) 2rem); opacity: 0; visibility: hidden; transition: opacity 140ms ease; }
+  .work-card:focus-within:not(:has(>.work-info-toggle:focus)) .work-info,.work-card[data-info-open="true"] .work-info { opacity: 1; visibility: visible; }
+  @media(min-width:640px) and (hover:hover) and (pointer:fine) { .work-card:not([data-info-dismissed]):hover .work-info { opacity: 1; visibility: visible; } }
+  .work-info-toggle { display: none; position: absolute; top: .5rem; right: .5rem; width: 36px; height: 36px; border: 1px solid var(--color-border); border-radius: 50%; color: var(--color-text); background: var(--color-bg); font-size: 1.2rem; opacity: 0; pointer-events: none; }
+  .ready .work-info-toggle { display: block; }
+  .work-info-toggle:focus-visible { opacity: 1; pointer-events: auto; }
+  @media(hover:none),(pointer:coarse),(max-width:639px) { .ready .work-info-toggle { opacity: 1; pointer-events: auto; } }
+  .work-copy { padding: 0 0 .5rem; }
+  .work-category { font-size: .65rem; color: var(--color-text-muted); }
+  h2 { margin-top: .5rem; font-size: 1.1rem; font-weight: 600; }
+  .work-open:hover h2 { text-decoration: underline; text-underline-offset: 4px; }
+  h2 span { font-size: .8rem; }
+  .work-summary { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; margin-top: .5rem; font-size: .8rem; color: var(--color-text-muted); line-height: 1.75; }
+  .work-meta { padding-top: .5rem; display: flex; align-items: end; justify-content: space-between; gap: .5rem; font-size: .7rem; color: var(--color-text-muted); }
+  .work-meta p { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .work-status { white-space: nowrap; }
+  .work-meta a { text-decoration: underline; text-underline-offset: 3px; }
+  .work-tags { display: flex; flex-wrap: wrap; column-gap: .6rem; margin-top: .5rem; }
+  .work-tags button { min-height: 32px; font-size: .65rem; color: var(--color-text-muted); text-decoration: underline; text-decoration-color: var(--color-border); text-underline-offset: 3px; }
+  #work-grid[data-view="mosaic"] { display: block; columns: 3; column-gap: 1.25rem; }
+  [data-view="mosaic"] .work-card { display: inline-block; width: 100%; break-inside: avoid; margin-bottom: 1.25rem; }
+  [data-view="mosaic"] .work-image { aspect-ratio: auto; }
+  [data-view="mosaic"] img { height: auto; }
+  [data-view="mosaic"] .work-placeholder { min-height: 220px; }
+  #work-grid[data-view="posts"] { grid-template-columns: minmax(0,1fr); gap: 0; }
+  [data-view="posts"] .work-card { border-width: 1px 0 0; border-radius: 0; display: grid; grid-template-columns: 120px minmax(0,1fr); gap: 1rem; padding: 1.25rem 0; }
+  [data-view="posts"] .work-info { position: static; max-height: none; overflow: visible; opacity: 1; visibility: visible; background: none; padding: 0; display: grid; grid-template-columns: minmax(0,1fr) 150px; grid-template-rows: auto 1fr; gap: .25rem 1rem; }
+  [data-view="posts"] .work-info-toggle { display: none; }
+  [data-view="posts"] .work-copy { padding: 0; }
+  [data-view="posts"] .work-image { aspect-ratio: 1; border-radius: .5rem; background: transparent; }
+  [data-view="posts"] .work-tags { grid-column: 1; align-self: start; margin-top: 0; }
+  [data-view="posts"] .work-placeholder span { font-size: 2rem; }
+  [data-view="posts"] .work-placeholder { background: transparent; }
+  [data-view="posts"] .work-placeholder small { display: none; }
+  [data-view="posts"] .work-meta { grid-column: 2; grid-row: 1 / span 2; padding: 0; flex-direction: column; align-items: flex-end; }
+  #work-empty { padding: 3rem 0; color: var(--color-text-muted); font-size: .875rem; }
+  @media(max-width:900px) { .work-filters { grid-template-columns: repeat(3,minmax(0,1fr)); }.search-field { grid-column: span 2; } #work-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } #work-grid[data-view="mosaic"] { columns: 2; } }
+  @media(max-width:639px) { .work-filters { grid-template-columns: repeat(2,minmax(0,1fr)); } .search-field { grid-column: 1/-1; } #work-grid { grid-template-columns: minmax(0,1fr); } #work-grid[data-view="mosaic"] { columns: 1; } [data-view="posts"] .work-card { grid-template-columns: 72px minmax(0,1fr); } [data-view="posts"] .work-info { grid-template-columns: minmax(0,1fr); } [data-view="posts"] .work-meta { grid-column: 1; grid-row: auto; flex-direction: row; } [data-view="posts"] .work-placeholder span { font-size: 1.4rem; } }
+  @media(prefers-reduced-motion:reduce) { .work-info { transition: none; } }
+</style>

@@ -26,7 +26,7 @@ security headers).
 - **`src/pages/api/contact.ts`** — the *only* on-demand (non-prerendered) route,
   handling the contact form
 - **Resend** — transactional email for contact form delivery
-- **Cloudflare Turnstile** — bot protection on the contact form (optional but recommended)
+- **Cloudflare Turnstile** — bot protection on the contact form (required: the endpoint refuses to send without it)
 
 ## Project structure
 
@@ -75,8 +75,6 @@ breaks in the meantime.
 - Add short experiments to the `labs` array. The bilingual list/detail routes
   are generated automatically; connect a new interactive component in
   `src/views/LabDetailView.astro`.
-- WebGPU demos belong on their own Lab detail route. Feature-detect WebGPU,
-  initialize it only after user interaction, and retain a non-WebGPU fallback.
 
 ## Local development
 
@@ -88,7 +86,8 @@ npm run dev        # http://localhost:4321 — fast iteration, no Cloudflare bin
 `npm run dev` is enough for everything except the contact form (it needs
 Cloudflare env bindings, which only exist under `wrangler`). To test the
 contact form locally, copy `.dev.vars.example` to `.dev.vars`, fill in real
-values, then:
+values, then (Cloudflare's always-pass Turnstile test keys work locally:
+site key `1x00000000000000000000AA`, secret `1x0000000000000000000000000000000AA`):
 
 ```bash
 npm run worker:dev   # builds + runs via `wrangler dev`, so /api/contact works
@@ -138,7 +137,8 @@ One-time setup (already done for this project, kept here for reference):
 
 - No database, no user accounts, no cookies — nothing to breach.
 - The only server-side logic is the contact endpoint, which validates input,
-  checks a honeypot field, optionally verifies Turnstile, and forwards to
+  checks a honeypot field, verifies Turnstile (failing closed if the secret
+  is missing), and forwards to
   email via Resend. It never stores submissions anywhere.
 - Secrets live only in Cloudflare's encrypted environment variables, never in git.
 - `public/_headers` sets a Content-Security-Policy, HSTS, frame-denial, and

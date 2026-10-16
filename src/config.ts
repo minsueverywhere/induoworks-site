@@ -10,13 +10,24 @@ import type { ImageMetadata } from 'astro';
  */
 
 export const site = {
-  name: 'InduoWorks',
+  name: 'Induo Works',
   url: 'https://induo.works',
   // Public contact email shown on the site — set this or leave the contact
   // form as the only channel (see src/pages/contact/index.astro).
   email: '',
   github: 'https://github.com/minsueverywhere',
 } as const;
+
+export const socialLinks = [
+  { name: 'Discord', icon: 'discord', href: 'https://discord.gg/VnnvH22ZKJ' },
+  { name: 'YouTube', icon: 'youtube', href: 'https://www.youtube.com/@InduoWorks' },
+  { name: 'Patreon', icon: 'patreon', href: 'https://www.patreon.com/c/induoworks' },
+  { name: 'Instagram', icon: 'instagram', href: 'https://www.instagram.com/induoworks/' },
+  { name: 'X', icon: 'x', href: 'https://x.com/induoworks' },
+  { name: 'Facebook', icon: 'facebook', href: 'https://www.facebook.com/profile.php?id=61595485407391' },
+  { name: 'TikTok', icon: 'tiktok', href: 'https://www.tiktok.com/@induoworks' },
+  { name: 'GitHub', icon: 'github', href: site.github },
+] as const;
 
 export type LocalizedText = { en: string; ko: string };
 
@@ -30,14 +41,17 @@ export type Project = {
   slug: string;
   year: string;
   stack: string[];
-  kind: 'site' | 'game' | 'experiment';
+  kind: 'site' | 'game' | 'music' | 'artwork' | 'experiment';
   status: 'shipped' | 'in-progress' | 'paused';
   href?: string;
   repo?: string;
   steamUrl?: string;
   cover?: ImageMetadata;
+  thumbnail?: { src: string; width: number; height: number; alt: LocalizedText; caption: LocalizedText };
   gallery?: ProjectGalleryItem[];
   featured?: boolean;
+  workerIds?: string[];
+  tags?: string[];
   title: LocalizedText;
   summary: LocalizedText;
   role: LocalizedText;
@@ -56,27 +70,33 @@ export const projects: Project[] = [
     href: 'https://induo.works',
     repo: 'https://github.com/minsueverywhere/induoworks-site',
     featured: true,
-    title: { en: 'InduoWorks Site', ko: 'InduoWorks 웹사이트' },
+    title: { en: 'Induo Works Site', ko: 'Induo Works 웹사이트' },
     summary: {
-      en: 'This site. An Astro project on Cloudflare Workers — zero-JS by default, edge-cached worldwide, with serverless contact handling.',
-      ko: '지금 보고 계신 이 사이트입니다. Cloudflare Workers 위에서 동작하는 Astro 빌드로, 기본적으로 JS를 거의 쓰지 않고 전 세계에 엣지 캐싱되며, 문의 처리도 서버리스로 이루어집니다.',
+      en: 'The Induo Works website. Built with Astro and hosted on Cloudflare.',
+      ko: 'Induo Works의 웹사이트입니다. Astro로 만들고 Cloudflare에서 운영합니다.',
     },
     role: { en: 'Design & build', ko: '설계 및 개발' },
     challenge: {
-      en: 'Build a bilingual studio site that feels immediate on any device while keeping one dependable server-side contact path and no database.',
-      ko: '어떤 기기에서도 즉시 열리는 이중 언어 스튜디오 사이트를 만들되, 데이터베이스 없이 신뢰할 수 있는 서버 문의 경로 하나를 유지하는 것이 목표였습니다.',
+      en: 'A website for our projects and contact information, in English and Korean.',
+      ko: '프로젝트와 연락처를 영어와 한국어로 소개하는 사이트입니다.',
     },
     approach: {
-      en: 'Astro prerenders every content page. Cloudflare Workers handles only the contact endpoint, while small dependency-free scripts cover theme, navigation, and form interactions.',
-      ko: '모든 콘텐츠 페이지는 Astro로 미리 렌더링하고, Cloudflare Workers는 문의 엔드포인트만 처리합니다. 테마·내비게이션·폼 인터랙션은 의존성 없는 작은 스크립트로 구성했습니다.',
+      en: 'Content pages are static HTML. A Cloudflare Worker handles messages from the contact form.',
+      ko: '콘텐츠는 정적 HTML로 제공하고, 문의 폼은 Cloudflare Worker에서 처리합니다.',
     },
     outcome: {
-      en: 'The result is a compact, globally cached site with no client framework runtime, bilingual canonical routes, strict security headers, and a protected email workflow.',
-      ko: '클라이언트 프레임워크 런타임 없이 전 세계에 캐싱되는 가벼운 사이트, 이중 언어 canonical 경로, 엄격한 보안 헤더와 보호된 이메일 문의 흐름을 완성했습니다.',
+      en: 'The site is online. Content and layout are updated as the work changes.',
+      ko: '사이트를 운영 중입니다. 작업 내용에 맞춰 문구와 구성을 수정합니다.',
     },
   },
   {
     slug: 'grench-boss',
+    thumbnail: {
+      src: '/work/media/grench-boss-concept-f042c0ca4feb.webp', width: 640, height: 360,
+      alt: { en: 'GRENCH BOSS concept art with a goblin, a grounded airship and a jungle coast', ko: '고블린과 좌초된 비행선, 정글 해안이 있는 GRENCH BOSS 콘셉트 아트' },
+      caption: { en: 'Concept art', ko: '콘셉트 아트' },
+    },
+    workerIds: ['frondward'],
     year: '2026',
     stack: ['Godot', 'GDScript', 'GDExtension (C++)'],
     kind: 'game',
@@ -84,71 +104,78 @@ export const projects: Project[] = [
     featured: true,
     title: { en: 'GRENCH BOSS', ko: 'GRENCH BOSS' },
     summary: {
-      en: 'A co-op base-defense game built in Godot — fortify against waves of enemies, then take the fight further with a pilotable airship. In active development.',
-      ko: 'Godot로 만드는 협동 기지 방어 게임입니다 — 적의 파도를 막아내고, 이제는 직접 조종하는 비행선으로 전선을 넓혀갑니다. 한창 개발 중입니다.',
+      en: 'A co-op base-defense game with building, enemy waves, and a pilotable airship. In development.',
+      ko: '기지를 짓고 적을 막아내는 협동 게임입니다. 직접 조종하는 비행선이 있습니다. 개발 중입니다.',
     },
     role: { en: 'Design & engineering', ko: '기획 및 개발' },
     challenge: {
-      en: 'Keep a co-op base-defense game responsive and fair when the screen fills with enemies, while giving players new ways to reach and defend territory beyond a single fixed base.',
-      ko: '적으로 화면이 가득 차도 반응성과 공정함을 유지하면서, 하나의 고정된 기지를 넘어 새로운 방식으로 영역을 오가고 지킬 방법을 찾는 것이 과제였습니다.',
+      en: 'Players build and defend a base together. An airship lets them travel to other combat areas.',
+      ko: '여러 플레이어가 함께 기지를 짓고 방어합니다. 비행선으로 다른 전투 구역을 오갈 수 있습니다.',
     },
     approach: {
-      en: 'A lightweight custom simulation lets ordinary enemies move and fight without full physics bodies, freeing up budget for a modular base-building system and, most recently, a pilotable airship players can land to open new combat zones.',
-      ko: '일반 적은 완전한 물리 바디 없이도 움직이고 싸울 수 있는 경량 시뮬레이션으로 처리해 여유를 확보하고, 그 여유를 모듈형 기지 건설 시스템과 최근 추가한 조종 가능한 비행선에 씁니다. 비행선은 착륙시켜 새로운 전투 구역을 엽니다.',
+      en: 'Built in Godot. Current work includes enemy movement, modular base building, and airship controls.',
+      ko: 'Godot로 개발합니다. 적 이동, 모듈형 기지 건설, 비행선 조작을 작업하고 있습니다.',
     },
     outcome: {
-      en: 'The result stays smooth with large numbers of enemies on screen, with an airship-based expansion currently in active development ahead of a planned Steam demo.',
-      ko: '많은 수의 적이 몰려도 매끄럽게 동작하며, 지금은 Steam 데모 공개를 목표로 비행선 기반 확장을 한창 개발 중입니다.',
+      en: 'In development. Work on the airship and a Steam demo is ongoing.',
+      ko: '비행선 기능과 Steam 데모를 작업 중입니다.',
     },
   },
   {
     slug: 'yggbound',
+    thumbnail: {
+      src: '/work/media/yggbound-logo-eb79ac87fa35.webp', width: 640, height: 480,
+      alt: { en: 'Yggbound logo with a world tree and runic ornaments', ko: '세계수와 룬 장식이 있는 Yggbound 로고' },
+      caption: { en: 'Logo artwork', ko: '로고 아트워크' },
+    },
+    workerIds: ['frondward'],
     year: '2025',
     stack: ['Godot'],
     kind: 'game',
     status: 'paused',
     title: { en: 'Yggbound', ko: 'Yggbound' },
     summary: {
-      en: 'A Godot game explored early on, paused to focus on GRENCH BOSS.',
-      ko: 'GRENCH BOSS에 집중하기 위해 보류한, 초기 단계에서 탐색했던 Godot 게임입니다.',
+      en: 'An early Godot game project. Paused while we work on GRENCH BOSS.',
+      ko: '초기에 만들던 Godot 게임입니다. GRENCH BOSS 개발 중에는 보류합니다.',
     },
     role: { en: 'Design & engineering', ko: '기획 및 개발' },
     challenge: {
-      en: 'Prototyped before committing full-time to a single project.',
-      ko: '한 프로젝트에 전념하기 전, 프로토타입으로 탐색한 단계였습니다.',
+      en: 'An early game prototype.',
+      ko: '초기 게임 프로토타입입니다.',
     },
     approach: {
-      en: 'Built far enough in Godot to validate the core idea.',
-      ko: '핵심 아이디어를 검증할 수 있을 만큼 Godot으로 구현했습니다.',
+      en: 'The first prototype was built in Godot.',
+      ko: 'Godot로 첫 프로토타입을 만들었습니다.',
     },
     outcome: {
-      en: 'Paused early in development; may return to it later.',
-      ko: '개발 초기 단계에서 보류했으며, 나중에 다시 다룰 수도 있습니다.',
+      en: 'Paused. No release date.',
+      ko: '개발을 보류했습니다. 출시일은 정하지 않았습니다.',
     },
   },
   {
     slug: 'rooftop-alien',
+    workerIds: ['frondward'],
     year: '2025',
     stack: ['Godot'],
     kind: 'game',
     status: 'paused',
     title: { en: 'Rooftop Alien', ko: 'Rooftop Alien' },
     summary: {
-      en: 'Another early Godot prototype, paused to focus on GRENCH BOSS.',
-      ko: 'GRENCH BOSS에 집중하기 위해 보류한, 또 다른 초기 Godot 프로토타입입니다.',
+      en: 'A Godot game prototype. Currently paused.',
+      ko: 'Godot 게임 프로토타입입니다. 현재 개발을 보류했습니다.',
     },
     role: { en: 'Design & engineering', ko: '기획 및 개발' },
     challenge: {
-      en: 'A short prototyping pass to test a different idea in Godot.',
-      ko: 'Godot에서 다른 아이디어를 시험해본 짧은 프로토타이핑 단계였습니다.',
+      en: 'A small game prototype made to try an idea.',
+      ko: '아이디어를 시험하기 위해 만든 작은 게임 프로토타입입니다.',
     },
     approach: {
-      en: 'Kept to a minimal build while the idea was still being evaluated.',
-      ko: '아이디어를 검토하는 동안 최소한의 형태로만 만들었습니다.',
+      en: 'Only a basic prototype was made.',
+      ko: '기본적인 프로토타입까지 만들었습니다.',
     },
     outcome: {
-      en: 'Paused early in development; no public details beyond this yet.',
-      ko: '개발 초기 단계에서 보류했으며, 아직 이 이상의 공개 정보는 없습니다.',
+      en: 'Paused. No release date.',
+      ko: '개발을 보류했습니다. 출시일은 정하지 않았습니다.',
     },
   },
 ];
@@ -162,22 +189,7 @@ export type Lab = {
   description: LocalizedText;
 };
 
-export const labs: Lab[] = [
-  {
-    slug: 'gpu-interference',
-    year: '2026',
-    stack: ['WebGPU', 'WGSL', 'TypeScript'],
-    title: { en: 'GPU Interference', ko: 'GPU 인터퍼런스' },
-    summary: {
-      en: 'A small, interactive interference field rendered entirely on the GPU.',
-      ko: 'GPU에서 전부 렌더링하는 작고 인터랙티브한 간섭무늬 실험입니다.',
-    },
-    description: {
-      en: 'Two moving wave sources are evaluated for every pixel in a WGSL fragment shader. The demo loads no GPU resources until you start it, pauses when the tab is hidden, and keeps a static fallback for browsers without WebGPU.',
-      ko: 'WGSL 프래그먼트 셰이더가 모든 픽셀에서 움직이는 두 파동의 간섭을 계산합니다. 시작 버튼을 누르기 전에는 GPU 리소스를 만들지 않고, 탭이 숨겨지면 멈추며, WebGPU를 지원하지 않는 브라우저에는 정적 대체 화면을 제공합니다.',
-    },
-  },
-];
+export const labs: Lab[] = [];
 
 export type ShowcaseItem = {
   tags: string[];
@@ -189,41 +201,76 @@ export type ShowcaseItem = {
 export const showcase: ShowcaseItem[] = [
   {
     tags: ['Performance', 'Astro', 'Cloudflare'],
-    title: { en: 'Edge-first static delivery', ko: '엣지 우선 정적 배포' },
+    title: { en: 'Static pages', ko: '정적 페이지' },
     blurb: {
-      en: "Every page is prebuilt HTML served from Cloudflare's global edge.",
-      ko: '모든 페이지는 미리 빌드된 HTML로, Cloudflare의 전 세계 엣지에서 제공됩니다.',
+      en: "Pages are built with Astro and served by Cloudflare.",
+      ko: 'Astro로 빌드한 HTML을 Cloudflare에서 제공합니다.',
     },
     detail: {
-      en: 'No server to wait on, no cold starts, no database round trip. Pages are rendered at build time and cached in 300+ cities, so first paint is limited by the speed of light rather than by our infrastructure.',
-      ko: '기다릴 서버도, 콜드 스타트도, 데이터베이스 왕복도 없습니다. 페이지는 빌드 시점에 렌더링되어 300여 개 도시에 캐싱되므로, 첫 화면 표시 속도는 인프라가 아니라 사실상 빛의 속도로만 제한됩니다.',
+      en: 'Astro generates the content pages at build time. Cloudflare serves the files. The contact form is the only server endpoint.',
+      ko: 'Astro로 콘텐츠 페이지를 미리 빌드하고 Cloudflare에서 제공합니다. 문의 폼만 서버에서 처리합니다.',
     },
   },
   {
     tags: ['Performance', 'Accessibility'],
-    title: { en: 'Zero-JavaScript baseline', ko: '기본 JS 제로' },
+    title: { en: 'Browser scripts', ko: '브라우저 스크립트' },
     blurb: {
-      en: 'Interactive only where interaction is the point.',
-      ko: '인터랙션이 꼭 필요한 곳에만 인터랙션을 넣었습니다.',
+      en: 'Small scripts handle navigation, themes, and the contact form.',
+      ko: '메뉴, 테마, 문의 폼에 작은 스크립트를 사용합니다.',
     },
     detail: {
-      en: 'Astro ships no client-side framework runtime by default. The handful of interactive pieces here — theme toggle, mobile menu, contact form — are small, self-contained scripts, so the site stays usable on slow connections and old hardware.',
-      ko: 'Astro는 기본적으로 클라이언트 프레임워크 런타임을 전송하지 않습니다. 테마 전환, 모바일 메뉴, 문의 폼처럼 꼭 필요한 인터랙션만 작고 독립적인 스크립트로 처리해서, 느린 네트워크나 오래된 기기에서도 문제없이 동작합니다.',
+      en: 'Most pages use HTML and CSS. Small scripts handle the village, work filters, menu, theme switch, and contact form.',
+      ko: '대부분의 페이지는 HTML과 CSS로 구성합니다. 마을, 작업물 필터, 메뉴, 테마 전환, 문의 폼에는 스크립트를 사용합니다.',
     },
   },
   {
     tags: ['Security', 'Cloudflare'],
-    title: { en: 'Hardened by default', ko: '기본값부터 단단하게' },
+    title: { en: 'Contact form', ko: '문의 폼' },
     blurb: {
-      en: 'Strict security headers, no secrets in the repository.',
-      ko: '엄격한 보안 헤더, 저장소엔 비밀값 없음.',
+      en: 'Messages are checked and sent by a Cloudflare Worker.',
+      ko: 'Cloudflare Worker에서 메시지를 확인하고 전달합니다.',
     },
     detail: {
-      en: 'A content security policy, frame denial, and strict referrer rules ship with every response. The one server-side path — the contact endpoint — validates input, rate-limits by IP, and reads its API credentials from encrypted environment bindings that never touch source control.',
-      ko: '모든 응답에 콘텐츠 보안 정책(CSP), 프레임 차단, 엄격한 리퍼러 규칙이 기본 적용됩니다. 유일한 서버 로직인 문의 엔드포인트는 입력값을 검증하고, IP 기준으로 속도를 제한하며, API 인증 정보는 소스 코드에 닿지 않는 암호화된 환경 바인딩에서만 읽어옵니다.',
+      en: 'The contact endpoint validates messages, limits repeated requests, and sends email through Resend. API keys are stored in server environment bindings.',
+      ko: '문의 엔드포인트에서 입력값을 확인하고 반복 요청을 제한한 뒤 Resend로 이메일을 보냅니다. API 키는 서버 환경 변수로 관리합니다.',
     },
   },
 ];
+
+export type Worker = {
+  id: string;
+  name: string;
+  description: LocalizedText;
+  href?: string;
+  logoMediaId?: string;
+  house?: { x: number; y: number };
+};
+
+export const workers: Worker[] = [{
+  id: 'frondward',
+  name: 'Frondward',
+  description: {
+    en: 'An independent game studio. Explore the games being made in this workshop.',
+    ko: '독립 게임 개발사입니다. 이 작업실에서 만드는 게임들을 만나보세요.',
+  },
+  logoMediaId: 'frondward-logo',
+  house: { x: 7, y: 7 },
+}];
+
+export const villageNotices: { id: string; title: LocalizedText; body: LocalizedText; href?: string; linkLabel?: LocalizedText }[] = [{
+  id: 'residents-wanted',
+  title: { en: 'Residents wanted', ko: '주민 모집' },
+  body: {
+    en: 'Make yourself at home in Induohood. Independent creators and studios making games, music, art and other works are welcome. Get in touch if you would like to share your work in a workshop here.',
+    ko: '인듀오후드에 함께할 주민을 찾습니다. 게임, 음악, 아트 등 자신만의 작품을 만드는 개인 창작자와 개발사 모두 환영해요. 이곳에 작업실을 열고 작품을 소개하고 싶다면 연락해 주세요.',
+  },
+  href: '/contact/',
+  linkLabel: { en: 'Contact · Join the village', ko: 'Contact · 참여 문의' },
+}];
+
+export function worksByWorker(workerId: string) {
+  return projects.filter(project => project.workerIds?.includes(workerId));
+}
 
 export type Company = {
   slug: string;

@@ -1,0 +1,52 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { workers } from '../config';
+import { workCatalog } from '../work-catalog';
+import { villageMedia } from '../village-media';
+import { t, localizePath, type Locale } from '../i18n';
+interface Props { lang: Locale; }
+const { lang } = Astro.props;
+const dict=t(lang),ko=lang==='ko';
+const catalog=workCatalog(lang);
+---
+<Layout lang={lang} title={dict.workers.title} description={dict.workers.description} noindex={workers.length===0}>
+  <section class="page-main">
+    <h1 class="page-title">{dict.workers.title}</h1>
+    <p class="page-intro">{ko?'함께하는 개발사와 개인, 그리고 그들이 만드는 작품들입니다.':'Meet the studios and individuals, and the work they make.'}</p>
+    <div class="worker-list">
+      {workers.map(worker=>{
+        const works=catalog.filter(work=>work.workerIds.includes(worker.id)),logo=villageMedia.find(m=>m.id===worker.logoMediaId);
+        return <article id={worker.id} class="worker-card">
+          <div>
+            {logo&&<img class="worker-logo" src={logo.preview} alt={logo.title[lang]} width={logo.width} height={logo.height} loading="lazy" decoding="async" />}
+            <h2>{worker.name}</h2>
+            <p>{worker.description[lang]}</p>
+            {worker.href&&<a class="focus-ring" href={worker.href} target="_blank" rel="noopener noreferrer">{dict.workers.website} ↗</a>}
+            {worker.house&&<a class="focus-ring worker-village" href={localizePath('/?worker='+worker.id,lang)}>{ko?'마을의 작업실 방문':'Visit their village workshop'} ↗</a>}
+          </div>
+          <div>
+            <h3>{dict.workers.works} <span>{works.length}</span></h3>
+            <ul>{works.map(work=><li><a class="focus-ring" href={work.href} target={work.file?'_blank':undefined} rel={work.file?'noopener noreferrer':undefined}><strong>{work.title}</strong><span>{work.summary}</span></a></li>)}</ul>
+            <a class="focus-ring worker-all" href={localizePath('/work/?worker='+worker.id,lang)}>{ko?'이 개발사의 모든 작품':'All work by this studio'} ↗</a>
+          </div>
+        </article>;
+      })}
+      {workers.length===0&&<p>{dict.workers.empty}</p>}
+    </div>
+  </section>
+</Layout>
+<style>
+  .worker-list { margin-top: 2rem; }
+  .worker-card { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.4fr); gap: 3rem; padding: 2rem 0; border-top: 1px solid var(--color-border); scroll-margin-top: 2rem; }
+  .worker-logo { width: 150px; height: 112px; object-fit: contain; margin-bottom: 1rem; border-radius: .5rem; }
+  h2 { font-size: 1.5rem; font-weight: 600; }
+  h3 { font-size: .875rem; font-weight: 600; }
+  h3 span { margin-left: .4rem; font-weight: 400; color: var(--color-text-muted); }
+  p { margin: .75rem 0; font-size: .875rem; line-height: 1.8; color: var(--color-text-muted); }
+  .worker-village,.worker-all { display: inline-flex; min-height: 44px; align-items: center; font-size: .8rem; text-decoration: underline; text-underline-offset: 4px; }
+  li { border-bottom: 1px solid var(--color-border); }
+  li a { display: block; padding: 1rem 0; }
+  li strong { display: block; font-size: 1rem; }
+  li span { display: block; margin-top: .5rem; font-size: .8rem; line-height: 1.7; color: var(--color-text-muted); }
+  @media(max-width:639px) { .worker-card { grid-template-columns: minmax(0,1fr); gap: 1.5rem; } }
+</style>
