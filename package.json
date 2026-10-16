@@ -11,7 +11,7 @@
     "test": "node --test scripts/*.test.mjs",
     "preview": "astro preview",
     "astro": "astro",
-    "check": "astro check",
+    "check": "npm run generate-types && astro check",
     "worker:dev": "npm run build && wrangler dev",
     "worker:deploy": "npm run build && wrangler deploy",
     "generate-types": "wrangler types"
