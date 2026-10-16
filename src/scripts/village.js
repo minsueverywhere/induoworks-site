@@ -1,5 +1,6 @@
 import { SIZE, MIN_ZOOM, MAX_ZOOM, toScreen, clampCamera, panCamera, clampZoom, defaultZoom, snapZoom, isDrag, zoomCamera, pinchPoints } from './village-camera.mjs';
 import { isPond, isPath, signLetterLayout, landscapeNoise as noise } from './village-layout.mjs';
+import { createTutorial } from './village-tutorial.mjs';
 const root = document.getElementById('village-section');
 const $ = id => document.getElementById('village-' + id);
 const workers = JSON.parse(root.dataset.workers);
@@ -17,17 +18,36 @@ let zoomPointer = false;
 let popupTrigger = null;
 const scene = $('scene'), terrain = document.createElement('canvas'), ground = terrain.getContext('2d');
 const help = $('help'), helpToggle = $('help-toggle'), guide = $('hint');
-let guidePinned = false;
-function showGuide(open) { guide.hidden=!open;helpToggle.setAttribute('aria-expanded',String(open)); }
-helpToggle.addEventListener('click',()=>{guidePinned=!guidePinned;showGuide(guidePinned);});
+function showGuide(open) { guide.hidden=!open; }
+helpToggle.addEventListener('click',()=>{
+  closePopup(); changeArea('village'); camera=toScreen(10,10); scale=defaultZoom(width,height);
+  showGuide(false); tutorial.start(); requestDraw(); canvas.focus({preventScroll:true});
+  scene.scrollIntoView({block:'nearest',behavior:'instant'});
+});
 help.addEventListener('pointerenter',event=>{if(event.pointerType==='mouse')showGuide(true);});
-help.addEventListener('pointerleave',()=>{if(!guidePinned&&!help.contains(document.activeElement))showGuide(false);});
+help.addEventListener('pointerleave',()=>showGuide(false));
 helpToggle.addEventListener('focus',()=>showGuide(true));
-help.addEventListener('focusout',event=>{if(!guidePinned&&!help.contains(event.relatedTarget))showGuide(false);});
-document.addEventListener('click',event=>{if(!help.contains(event.target)){guidePinned=false;showGuide(false);}});
-document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!guide.hidden){guidePinned=false;showGuide(false);}});
+help.addEventListener('focusout',()=>showGuide(false));
+document.addEventListener('click',event=>{if(!help.contains(event.target))showGuide(false);});
+document.addEventListener('keydown',event=>{if(event.key==='Escape') {showGuide(false);tutorial.close();}});
 const buttons = new Map([...root.querySelectorAll('[data-object]')].map(b => [b.dataset.object, b]));
 let width = 0, height = 0, dpr = 1, scale = 1, camera = toScreen(10, 10), frame = 0;
+const tutorialPanel = $('tutorial'), tutorialSkip = $('tutorial-skip');
+const tutorialHouse = places.find(p=>p.shape==='house'&&p.area==='village');
+const tutorial = createTutorial(step=>{
+  tutorialPanel.hidden=!step;
+  helpToggle.setAttribute('aria-expanded',String(Boolean(step)));
+  buttons.forEach(b=>b.classList.remove('tutorial-target'));
+  if(!step)return;
+  $('tutorial-progress').textContent=step==='done'?'✓':(['drag','house','zoom'].indexOf(step)+1)+' / 3';
+  $('tutorial-message').textContent=text.tutorial[step==='zoom'?(matchMedia('(pointer: coarse)').matches?'pinch':'wheel'):step];
+  tutorialSkip.textContent=step==='done'?text.tutorial.finish:text.tutorial.skip;
+  if(step==='house'&&tutorialHouse) {
+    camera=toScreen(tutorialHouse.x,tutorialHouse.y); requestDraw();
+    buttons.get(tutorialHouse.id)?.classList.add('tutorial-target');
+  }
+});
+tutorialSkip.addEventListener('click',()=>{tutorial.close();canvas.focus({preventScroll:true});});
 let playing = false, audio = null, master = null, timer = 0, note = 0, audioBusy = false;
 const trees = [];
 for (let tx = 1; tx < SIZE-1; tx++) for (let ty = 1; ty < SIZE-1; ty++) {
@@ -214,7 +234,7 @@ function closePopup(restoreFocus = false) {
 }
 function visit(id, focusMap = false, trigger = null) {
   const p = places.find(p => p.id === id); if (!p) return;
-  if(p.shape==='house'){activeWorker=workers.find(w=>w.id===id);changeArea('room');return;}
+  if(p.shape==='house'){activeWorker=workers.find(w=>w.id===id);changeArea('room');tutorial.complete('house');return;}
   popupTrigger = trigger || buttons.get(id);
   $('title').textContent = p.title; $('description').textContent = p.description;
   $('links').replaceChildren();
@@ -239,7 +259,7 @@ function visit(id, focusMap = false, trigger = null) {
   if (trigger) popup.focus({preventScroll:true});
 }
 $('close').addEventListener('click',() => closePopup(true));
-root.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!guide.hidden){e.preventDefault();guidePinned=false;showGuide(false);}else if(!popup.hidden){e.preventDefault();closePopup(true);}else if(area==='room'){e.preventDefault();changeArea('village');}});
+root.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!tutorialPanel.hidden){e.preventDefault();tutorial.close();canvas.focus({preventScroll:true});}else if(!guide.hidden){e.preventDefault();showGuide(false);}else if(!popup.hidden){e.preventDefault();closePopup(true);}else if(area==='room'){e.preventDefault();changeArea('village');}});
 buttons.forEach((b,id) => {
   b.addEventListener('click',e => visit(id,false,e.detail === 0 ? b : null));
   b.addEventListener('pointerenter',e => {if(e.pointerType !== 'touch') {hovered=id;requestDraw();}});
@@ -284,17 +304,21 @@ scene.addEventListener('pointermove',e => {
   if (pinch) {
     const now = pinchPoints([...pointers.values()]);
     const next = zoomCamera(pinch.camera,pinch.scale,pinch.scale*now.distance/pinch.distance,pinch.center,now.center,worldSize());
-    scale = next.scale; camera = next.camera; requestDraw(); return;
+    scale = next.scale; camera = next.camera; requestDraw();
+    if(Math.abs(scale-pinch.scale)>.04)tutorial.complete('zoom');
+    return;
   }
   if (!gesture) return;
   const dx = point.x-gesture.point.x, dy = point.y-gesture.point.y;
   if (!gesture.drag && !isDrag(dx,dy)) return;
   if (!gesture.drag) { gesture.drag = true; scene.setPointerCapture(e.pointerId); closePopup(); }
   scene.classList.add('is-dragging'); suppressClick = true;
+  gesture.panned = true;
   camera = panCamera(gesture.camera,dx,dy,scale,worldSize()); requestDraw();
 });
 function finishGesture(e) {
   if (!pointers.has(e.pointerId)) return;
+  const dragged = e.type==='pointerup' && gesture?.panned && !pinch;
   const tapped = e.type === 'pointerup' && !suppressClick && pointers.size === 1;
   const point = pointers.get(e.pointerId);
   pointers.delete(e.pointerId);
@@ -308,6 +332,7 @@ function finishGesture(e) {
     suppressClick = true;
   }
   startGesture(); scene.classList.remove('is-dragging');
+  if(dragged&&!pointers.size)tutorial.complete('drag');
 }
 scene.addEventListener('pointerup',finishGesture);
 scene.addEventListener('pointercancel',finishGesture);
@@ -324,14 +349,16 @@ scene.addEventListener('wheel',e => {
   e.preventDefault(); closePopup();
   const delta = e.deltaY*(e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? height : 1);
   const next = zoomCamera(camera,scale,scale*Math.exp(-Math.max(-200,Math.min(200,delta))*.002),localPoint(e),localPoint(e),worldSize());
+  const zoomed=Math.abs(scale-next.scale)>.005;
   scale = next.scale; camera = next.camera; requestDraw();
+  if(zoomed)tutorial.complete('zoom');
 },{passive:false});
 canvas.addEventListener('keydown',e => {
   const moves = {ArrowLeft:[-70,0],ArrowRight:[70,0],ArrowUp:[0,-70],ArrowDown:[0,70]};
-  if (moves[e.key]) { e.preventDefault(); camera = panCamera(camera,-moves[e.key][0],-moves[e.key][1],scale,worldSize()); }
+  if (moves[e.key]) { e.preventDefault(); camera = panCamera(camera,-moves[e.key][0],-moves[e.key][1],scale,worldSize()); tutorial.complete('drag'); }
   else if (e.key === 'Home') { e.preventDefault(); camera = area==='room'?toScreen(4.5,4.5):toScreen(10,10); }
-  else if (e.key === '+' || e.key === '=') scale = clampZoom(scale*1.25);
-  else if (e.key === '-') scale = clampZoom(scale/1.25);
+  else if (e.key === '+' || e.key === '=') { scale = clampZoom(scale*1.25); tutorial.complete('zoom'); }
+  else if (e.key === '-') { scale = clampZoom(scale/1.25); tutorial.complete('zoom'); }
   else return;
   closePopup(); requestDraw();
 });

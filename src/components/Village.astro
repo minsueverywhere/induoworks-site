@@ -17,6 +17,15 @@ const text = {
   music: ko ? '주크박스 · 예시음' : 'Jukebox · sample',
   original: ko ? '원본 보기' : 'View original',
   mediaError: ko ? '이미지를 불러오지 못했어요.' : 'Could not load this image.',
+  tutorial: {
+    drag: ko ? '마을을 드래그해 둘러보세요.' : 'Drag to explore the village.',
+    house: ko ? '표시된 집을 눌러 들어가 보세요.' : 'Select the highlighted house to step inside.',
+    pinch: ko ? '두 손가락을 벌리거나 오므려 보세요.' : 'Pinch with two fingers to zoom.',
+    wheel: ko ? '마우스 휠로 화면을 확대·축소해 보세요.' : 'Scroll your mouse wheel over the scene to zoom.',
+    done: ko ? '이제 자유롭게 탐험해 보세요!' : 'You’re ready to explore!',
+    finish: ko ? '탐험하기' : 'Explore',
+    skip: ko ? '건너뛰기' : 'Skip',
+  },
 };
 const places = [
   ...workers.filter(worker=>worker.house).map(worker=>({
@@ -47,7 +56,7 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
   <div class="village-heading">
     <h1 id="village-heading" class="page-title">{text.title}</h1>
     <div id="village-help" class="village-help">
-      <button id="village-help-toggle" type="button" aria-label={ko?'마을 안내':'About the village'} aria-expanded="false" aria-controls="village-hint"><span aria-hidden="true">?</span></button>
+      <button id="village-help-toggle" type="button" aria-label={ko?'마을 튜토리얼 시작':'Start village tutorial'} aria-expanded="false" aria-controls="village-tutorial"><span aria-hidden="true">?</span></button>
       <div id="village-hint" class="village-guide" role="note" aria-label={ko?'마을 안내':'About the village'} hidden>
         <p>{ko?'마을을 탐험하고, 집 안의 작업물을 만나보세요.':'Explore the village and discover the work inside its houses.'}</p>
       </div>
@@ -55,6 +64,11 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
   </div>
   <div class="village-scene" id="village-scene">
     <canvas id="village-canvas" tabindex="0" aria-label={text.title} aria-describedby="village-hint">{text.hint}</canvas>
+    <aside id="village-tutorial" class="village-tutorial" data-ui aria-label={ko?'마을 튜토리얼':'Village tutorial'} hidden>
+      <p id="village-tutorial-progress" class="tutorial-progress"></p>
+      <p id="village-tutorial-message" role="status" aria-live="polite" aria-atomic="true"></p>
+      <button id="village-tutorial-skip" type="button">{ko?'건너뛰기':'Skip'}</button>
+    </aside>
     <div class="village-places">
       {interactivePlaces.map(p => <button type="button" class="village-place" data-object={p.id} data-area={p.area} data-owner={'owner' in p ? p.owner : undefined} hidden={p.area === 'room'} aria-label={p.label} aria-pressed="false" aria-controls="village-popup"><span>{p.label}</span></button>)}
     </div>
@@ -90,6 +104,10 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
   .village-heading { position: relative; display: flex; align-items: center; gap: .25rem; margin-bottom: 1rem; }
   h1 { font-size: 1.875rem; line-height: 1.25; font-weight: 600; letter-spacing: -.025em; }
   .village-help { display: flex; align-items: center; }
+  .village-tutorial { position: absolute; z-index: 4; right: 12px; bottom: 56px; width: min(280px,calc(100% - 24px)); padding: .75rem 1rem .25rem; border: 1px solid var(--color-border); border-radius: .6rem; background: var(--color-bg); color: var(--color-text); font-size: .8rem; line-height: 1.6; cursor: auto; user-select: text; }
+  .tutorial-progress { margin-bottom: .25rem; font-size: .65rem; color: var(--color-text-muted); }
+  #village-tutorial-skip { display: block; margin-left: auto; color: var(--color-text-muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+  .village-place.tutorial-target::after { content: ''; position: absolute; inset: -4px; border: 2px dashed #007f9f; border-radius: .5rem; pointer-events: none; }
   #village-help-toggle { display: inline-flex; align-items: center; justify-content: center; cursor: pointer; background: transparent; color: var(--color-text-muted); }
   #village-help-toggle span { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border: 1px solid color-mix(in srgb,var(--color-text) 30%,var(--color-bg)); border-radius: 50%; color: color-mix(in srgb,var(--color-text) 60%,var(--color-bg)); font-size: .7rem; line-height: 1; }
   #village-help-toggle:hover span, #village-help-toggle:focus-visible span { border-color: var(--color-text-muted); color: var(--color-text); }
