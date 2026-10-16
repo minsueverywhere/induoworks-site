@@ -3,6 +3,7 @@ import { isPond, isPath, signLetterLayout, landscapeNoise as noise } from './vil
 import { createTutorial } from './village-tutorial.mjs';
 import { popupPosition } from './village-popup.mjs';
 const root = document.getElementById('village-section');
+const villageCenter = toScreen(9,9);
 const $ = id => document.getElementById('village-' + id);
 const workers = JSON.parse(root.dataset.workers);
 let activeWorker = null;
@@ -22,7 +23,7 @@ const scene = $('scene'), terrain = document.createElement('canvas'), ground = t
 const help = $('help'), helpToggle = $('help-toggle'), guide = $('hint');
 function showGuide(open) { guide.hidden=!open; }
 helpToggle.addEventListener('click',()=>{
-  closePopup(); changeArea('village'); camera=toScreen(10,10); scale=defaultZoom(width,height);
+  closePopup(); changeArea('village'); camera={...villageCenter}; scale=defaultZoom(width,height);
   showGuide(false); tutorial.start(); requestDraw(); canvas.focus({preventScroll:true});
   scene.scrollIntoView({block:'nearest',behavior:'instant'});
 });
@@ -33,7 +34,7 @@ help.addEventListener('focusout',()=>showGuide(false));
 document.addEventListener('click',event=>{if(!help.contains(event.target))showGuide(false);});
 document.addEventListener('keydown',event=>{if(event.key==='Escape') {showGuide(false);tutorial.close();}});
 const buttons = new Map([...root.querySelectorAll('[data-object]')].map(b => [b.dataset.object, b]));
-let width = 0, height = 0, dpr = 1, scale = 1, camera = toScreen(10, 10), frame = 0;
+let width = 0, height = 0, dpr = 1, scale = 1, camera = {...villageCenter}, frame = 0;
 const tutorialPanel = $('tutorial'), tutorialSkip = $('tutorial-skip');
 const tutorialHouse = places.find(p=>p.id==='induo-works'&&p.shape==='house');
 const tutorial = createTutorial(step=>{
@@ -104,12 +105,13 @@ function house(c, object){
   box(c,14,-69,5,3,16,['#d0b392','#ac8e76','#866d5d']);
 }
 function postSign(c,object) {
-  c.fillStyle='#745237';c.fillRect(-3,-19,6,32);
-  c.fillStyle='#8d6543';c.fillRect(-42,-43,84,30);
-  c.fillStyle='#c59c68';c.fillRect(-40,-41,80,26);
-  c.fillStyle='#ae8657';c.fillRect(-39,-33,78,1);c.fillRect(-39,-24,78,1);
-  c.fillStyle='#59482f';c.font='600 10px system-ui, sans-serif';c.textAlign='center';c.fillText(object.title,0,-23,74);
-  c.fillStyle='#715539';c.fillRect(-36,-37,2,2);c.fillRect(34,-19,2,2);
+  c.save();c.transform(1,-.5,0,1,-28,-18);
+  c.fillStyle='#745237';c.fillRect(26,16,4,24);
+  c.fillStyle='#8d6543';c.fillRect(0,0,56,20);
+  c.fillStyle='#c59c68';c.fillRect(2,2,52,16);
+  c.fillStyle='#ae8657';c.fillRect(3,9,50,1);
+  c.fillStyle='#59482f';c.font='600 8px system-ui, sans-serif';c.textAlign='center';c.fillText(object.title,28,13,48);
+  c.fillStyle='#715539';c.fillRect(4,4,1,1);c.fillRect(51,15,1,1);c.restore();
 }
 function tree(c,object){c.save();c.scale(object.size,object.size);c.fillStyle='#7c7050';c.fillRect(-3,-13,6,19);polygon(c,[[-20,-12],[0,-51],[20,-12]],'#587b59');polygon(c,[[-16,-25],[0,-63],[16,-25]],'#719366');polygon(c,[[-11,-41],[0,-71],[11,-41]],'#8da773');c.restore();}
 function sign(c,object) {
@@ -256,7 +258,7 @@ function resize() {
 function changeArea(next) {
   if(next===area)return;
   if(next==='room') {savedVillage={camera:{...camera},scale};camera=toScreen(4.5,4.5);scale=defaultZoom(width,height,'room');if(!roomTerrain.width||roomTerrain.width===300)makeRoom();}
-  else {camera=savedVillage?.camera||toScreen(10,10);scale=savedVillage?.scale||defaultZoom(width,height);}
+  else {camera=savedVillage?.camera||{...villageCenter};scale=savedVillage?.scale||defaultZoom(width,height);}
   area=next;hovered='';closePopup();
   $('back').hidden=area!=='room';$('caption').textContent=area==='room'?activeWorker.name.toUpperCase():text.title.toUpperCase();
   canvas.setAttribute('aria-label',area==='room'?activeWorker.name+' · '+text.room:text.title);
@@ -400,7 +402,7 @@ scene.addEventListener('wheel',e => {
 canvas.addEventListener('keydown',e => {
   const moves = {ArrowLeft:[-70,0],ArrowRight:[70,0],ArrowUp:[0,-70],ArrowDown:[0,70]};
   if (moves[e.key]) { e.preventDefault(); camera = panCamera(camera,-moves[e.key][0],-moves[e.key][1],scale,worldSize()); tutorial.complete('drag'); }
-  else if (e.key === 'Home') { e.preventDefault(); camera = area==='room'?toScreen(4.5,4.5):toScreen(10,10); }
+  else if (e.key === 'Home') { e.preventDefault(); camera = area==='room'?toScreen(4.5,4.5):{...villageCenter}; }
   else if (e.key === '+' || e.key === '=') { scale = clampZoom(scale*1.25); tutorial.complete('zoom'); }
   else if (e.key === '-') { scale = clampZoom(scale/1.25); tutorial.complete('zoom'); }
   else return;

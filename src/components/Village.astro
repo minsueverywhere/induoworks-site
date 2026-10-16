@@ -32,7 +32,7 @@ const places = [
     id: worker.id, area: 'village', shape: 'house', ...worker.house!, width: 96, height: 96,
     label: worker.name, title: worker.name, description: worker.description[lang],
   }, {
-    id: worker.id+'-sign', area: 'village', shape: 'postSign', x: worker.house!.x-1, y: worker.house!.y+2, width: 88, height: 58,
+    id: worker.id+'-sign', area: 'village', shape: 'postSign', x: worker.house!.x-1, y: worker.house!.y+2, width: 64, height: 58,
     label: worker.name+' · '+(ko?'안내':'About'), title: worker.name, description: worker.description[lang],
     links: [{title:ko?'작업실 소개':'About this workshop',href:localizePath('/workers/#'+worker.id,lang)}],
   }] ),

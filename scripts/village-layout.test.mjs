@@ -26,7 +26,7 @@ test('noticeboard including its raised face stays outside the road',()=>{
     assert.equal(isPath(p.x,p.y),false);assert.equal(isPond(p.x,p.y),false);
   }
   assert.equal(isPath(10,23),true);
-  for(const [x,y] of [[6,5],[6,8],[10,8],[12,8],[12,5]])assert.equal(isPath(x,y),true,'workshop entrance must connect to the road');
+  for(const [x,y] of [[4,3],[4,8],[10,8],[12,8],[12,5]])assert.equal(isPath(x,y),true,'workshop entrance must connect to the road');
   assert.equal(isPath(10,24),false);
 });
 

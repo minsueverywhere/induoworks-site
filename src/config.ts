@@ -255,7 +255,7 @@ export const workers: Worker[] = [{
     ko: 'Independent, Together! 마을의 중심에서 웹사이트와 소셜 채널을 만나보세요.',
   },
   href: site.url,
-  house: { x: 5, y: 5 },
+  house: { x: 3, y: 3 },
 }, {
   id: 'frondward',
   name: 'Frondward',
