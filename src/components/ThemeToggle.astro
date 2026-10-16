@@ -64,7 +64,7 @@ const dict = t(lang);
     btn?.addEventListener('click', () => {
       const next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
       root.setAttribute('data-theme', next);
-      localStorage.setItem('theme', next);
+      try { localStorage.setItem('theme', next); } catch { /* Keep the toggle usable when storage is blocked. */ }
       sync();
     });
   })();

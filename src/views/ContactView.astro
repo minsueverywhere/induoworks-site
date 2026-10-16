@@ -20,6 +20,7 @@ const strings = {
   verificationExpired: dict.contact.verificationExpired,
   verificationError: dict.contact.verificationError,
   unavailableError: dict.contact.unavailableError,
+  rateLimitedError: dict.contact.rateLimitedError,
   validationError: dict.contact.validationError,
 };
 ---
@@ -140,6 +141,7 @@ const strings = {
         const result = await res.json().catch(() => ({}));
 
         if (!res.ok || result.ok !== true) {
+          if (res.status === 429) throw new Error(strings.rateLimitedError);
           const errors = { validation: strings.validationError, verification: strings.verificationError, unavailable: strings.unavailableError };
           throw new Error(errors[result.code] || strings.genericError);
         }

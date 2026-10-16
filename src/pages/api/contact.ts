@@ -28,6 +28,7 @@ interface Env {
   CONTACT_TO_EMAIL: string;
   CONTACT_FROM_EMAIL: string;
   TURNSTILE_SECRET_KEY: string;
+  CONTACT_RATE_LIMITER: { limit(options: { key: string }): Promise<{ success: boolean }> };
 }
 
 interface ContactPayload {
@@ -48,10 +49,10 @@ const MAX_LEN = { name: 120, email: 200, message: 4000 };
 const MIN_MESSAGE_LEN = 10;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function json(data: unknown, status = 200): Response {
+function json(data: unknown, status = 200, headers: Record<string,string> = {}): Response {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...headers },
   });
 }
 
@@ -90,6 +91,15 @@ async function verifyTurnstile(token: string | undefined, secret: string, ip: st
 const cfEnv = env as unknown as Partial<Env>;
 
 export const POST: APIRoute = async ({ request }) => {
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  try {
+    if (!cfEnv.CONTACT_RATE_LIMITER) throw new Error('Missing rate limiter');
+    const { success } = await cfEnv.CONTACT_RATE_LIMITER.limit({ key: 'contact:'+ip });
+    if (!success) return json({ code: 'rate_limited', error: 'Please wait before trying again.' }, 429, { 'Retry-After': '60' });
+  } catch {
+    console.error('Contact rate limiter is unavailable.');
+    return json({ code: 'unavailable', error: 'The contact form is temporarily unavailable.' }, 503);
+  }
   let payload: ContactPayload;
   try {
     payload = await request.json();
@@ -127,7 +137,6 @@ export const POST: APIRoute = async ({ request }) => {
     return json({ code: 'unavailable', error: 'The contact form is temporarily unavailable. Please try again later.' }, 503);
   }
 
-  const ip = request.headers.get('CF-Connecting-IP') || '';
   let verified: boolean;
   try {
     verified = await verifyTurnstile(payload['cf-turnstile-response'], cfEnv.TURNSTILE_SECRET_KEY, ip);
@@ -151,7 +160,7 @@ export const POST: APIRoute = async ({ request }) => {
         from: cfEnv.CONTACT_FROM_EMAIL,
         to: cfEnv.CONTACT_TO_EMAIL,
         reply_to: email,
-        subject: `New contact form message from ${name}`,
+        subject: `New contact form message from ${name.replace(/[\r\n\u2028\u2029]+/g, ' ')}`,
         text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
         html: `
           <p><strong>Name:</strong> ${escapeHtml(name)}</p>

@@ -1,5 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
+import { execFileSync } from 'node:child_process';
+import { loadEnv } from 'vite';
 
 import tailwindcss from '@tailwindcss/vite';
 import sitemap from '@astrojs/sitemap';
@@ -25,6 +27,17 @@ export default defineConfig({
   },
 
   integrations: [
+    {
+      name: 'site-build-safety',
+      hooks: {
+        'astro:config:setup': ({ command }) => {
+          if (command === 'build' && !loadEnv('production', process.cwd(), 'PUBLIC_').PUBLIC_TURNSTILE_SITE_KEY?.trim()) {
+            throw new Error('PUBLIC_TURNSTILE_SITE_KEY is required to build the contact form.');
+          }
+        },
+        'astro:build:done': () => { execFileSync(process.execPath, ['scripts/generate-csp.mjs'], { stdio: 'inherit' }); },
+      },
+    },
     sitemap({
       i18n: {
         defaultLocale: 'en',
