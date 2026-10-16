@@ -139,8 +139,7 @@ export const ui = {
     },
     contact: {
       title: 'Contact',
-      introWithEmail: (email: string) =>
-        `Write to ${email} or use the form below.`,
+      openMailApp: 'Send with your email app',
       introNoEmail: 'For questions about our games or other work, use this form.',
       name: 'Name',
       email: 'Email',
@@ -273,7 +272,7 @@ export const ui = {
     },
     contact: {
       title: '문의',
-      introWithEmail: (email: string) => `${email} 또는 아래 문의 폼으로 보내주세요.`,
+      openMailApp: '메일 앱에서 보내기',
       introNoEmail: '게임이나 다른 작업에 관한 질문을 보내주세요.',
       name: '이름',
       email: '이메일',

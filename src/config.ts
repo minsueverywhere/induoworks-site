@@ -14,7 +14,7 @@ export const site = {
   url: 'https://induo.works',
   // Public contact email shown on the site — set this or leave the contact
   // form as the only channel (see src/pages/contact/index.astro).
-  email: '',
+  email: 'contact@induo.works',
   github: 'https://github.com/minsueverywhere',
 } as const;
 

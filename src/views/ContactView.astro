@@ -30,8 +30,9 @@ const strings = {
     
     <h1 class="page-title">{dict.contact.title}</h1>
     <p class="page-intro">
-      {site.email ? dict.contact.introWithEmail(site.email) : dict.contact.introNoEmail}
+      {dict.contact.introNoEmail}
     </p>
+    {site.email && <p class="contact-email"><a href={'mailto:'+site.email}>{dict.contact.openMailApp} ↗</a><span>{site.email}</span></p>}
 
     <form id="contact-form" class="contact-form" data-verification={turnstileSiteKey ? 'required' : 'none'} novalidate>
       <div class="contact-identity">
@@ -169,6 +170,8 @@ const strings = {
 </Layout>
 
 <style>
+  .contact-email { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .75rem; margin-top: .5rem; font-size: .8rem; color: var(--color-text-muted); }
+  .contact-email a { display: inline-flex; align-items: center; min-height: 44px; color: var(--color-text); text-decoration: underline; text-underline-offset: 4px; }
   .contact-form { max-width: 46rem; margin-top: 2.5rem; display: grid; gap: 1.5rem; }
   .contact-identity { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1.5rem; }
   label { display: block; margin-bottom: .6rem; font-size: .8rem; font-weight: 500; }
