@@ -69,7 +69,7 @@ for (let tx = 1; tx < SIZE-1; tx++) for (let ty = 1; ty < SIZE-1; ty++) {
   if(trees.some(t=>Math.hypot(t.x-x,t.y-y)<2.3))continue;
   trees.push({x,y,size:.8+noise(tx,ty,12)*.35,draw:tree});
 }
-const objects = [...trees.map(t=>({...t,area:'village'})), ...places.map(p => ({...p, draw: {house, postSign, sign, board, game, jukebox, artwork}[p.shape]})), {x:9,y:10,draw:character,area:'village'}].sort((a,b)=>a.x+a.y-b.x-b.y);
+const objects = [...trees.map(t=>({...t,area:'village'})), ...places.map(p => ({...p, draw: {house, sign, board, game, jukebox, artwork}[p.shape]})), {x:9,y:10,draw:character,area:'village'}].sort((a,b)=>a.x+a.y-b.x-b.y);
 function polygon(c, points, fill) { c.fillStyle = fill; c.beginPath(); points.forEach(([x,y],i) => i ? c.lineTo(x,y) : c.moveTo(x,y)); c.closePath(); c.fill(); }
 function tile(c, x, y, color) { const p = toScreen(x,y); polygon(c, [[p.x,p.y-12],[p.x+24,p.y],[p.x,p.y+12],[p.x-24,p.y]], color); }
 function box(c,x,y,w,d,h,colors) { polygon(c,[[x,y-h],[x+w,y+d-h],[x,y+2*d-h],[x-w,y+d-h]],colors[0]); polygon(c,[[x-w,y+d-h],[x,y+2*d-h],[x,y+2*d],[x-w,y+d]],colors[1]); polygon(c,[[x,y+2*d-h],[x+w,y+d-h],[x+w,y+d],[x,y+2*d]],colors[2]); }
@@ -102,16 +102,12 @@ function house(c, object){
   // The door follows the right wall's isometric face.
   c.save(); c.transform(1,-21/43,0,1,0,-26);
   c.fillStyle='#705a3b';c.fillRect(12,19,15,31);c.fillStyle='#ead0a1';c.fillRect(15,35,2,2);c.restore();
+  c.save();c.transform(1,21/43,0,1,-39,-36);
+  c.fillStyle='#8d6543';c.fillRect(0,0,36,15);
+  c.fillStyle='#c59c68';c.fillRect(1,1,34,13);
+  c.fillStyle='#ae8657';c.fillRect(2,7,32,1);
+  c.fillStyle='#59482f';c.font='600 6px system-ui, sans-serif';c.textAlign='center';c.fillText(object.title,18,10,30);c.restore();
   box(c,14,-69,5,3,16,['#d0b392','#ac8e76','#866d5d']);
-}
-function postSign(c,object) {
-  c.save();c.transform(1,-.5,0,1,-28,-18);
-  c.fillStyle='#745237';c.fillRect(26,16,4,24);
-  c.fillStyle='#8d6543';c.fillRect(0,0,56,20);
-  c.fillStyle='#c59c68';c.fillRect(2,2,52,16);
-  c.fillStyle='#ae8657';c.fillRect(3,9,50,1);
-  c.fillStyle='#59482f';c.font='600 8px system-ui, sans-serif';c.textAlign='center';c.fillText(object.title,28,13,48);
-  c.fillStyle='#715539';c.fillRect(4,4,1,1);c.fillRect(51,15,1,1);c.restore();
 }
 function tree(c,object){c.save();c.scale(object.size,object.size);c.fillStyle='#7c7050';c.fillRect(-3,-13,6,19);polygon(c,[[-20,-12],[0,-51],[20,-12]],'#587b59');polygon(c,[[-16,-25],[0,-63],[16,-25]],'#719366');polygon(c,[[-11,-41],[0,-71],[11,-41]],'#8da773');c.restore();}
 function sign(c,object) {

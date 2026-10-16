@@ -264,7 +264,7 @@ export const workers: Worker[] = [{
     ko: '독립 게임 개발사입니다. 이 작업실에서 만드는 게임들을 만나보세요.',
   },
   logoMediaId: 'frondward-logo',
-  house: { x: 11, y: 5 },
+  house: { x: 13, y: 3 },
 }];
 
 export const villageNotices: { id: string; title: LocalizedText; body: LocalizedText; href?: string; linkLabel?: LocalizedText }[] = [{

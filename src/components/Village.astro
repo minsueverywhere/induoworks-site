@@ -28,14 +28,10 @@ const text = {
   },
 };
 const places = [
-  ...workers.filter(worker=>worker.house).flatMap(worker=>[{
+  ...workers.filter(worker=>worker.house).map(worker=>({
     id: worker.id, area: 'village', shape: 'house', ...worker.house!, width: 96, height: 96,
     label: worker.name, title: worker.name, description: worker.description[lang],
-  }, {
-    id: worker.id+'-sign', area: 'village', shape: 'postSign', x: worker.house!.x-1, y: worker.house!.y+2, width: 64, height: 58,
-    label: worker.name+' · '+(ko?'안내':'About'), title: worker.name, description: worker.description[lang],
-    links: [{title:ko?'작업실 소개':'About this workshop',href:localizePath('/workers/#'+worker.id,lang)}],
-  }] ),
+  })),
   { id: 'welcome', area: 'village', shape: 'sign', ...villageSign, width: 336, height: 216,
     label: ko ? text.title+' · 마을 소개' : 'About '+text.title, title: text.title,
     description: ko ? '게임과 음악, 아트를 만드는 사람들의 마을입니다. 집을 눌러 제작자와 그 안의 작품들을 만나보세요.' : 'A meeting place for people making games, music and art. Visit a house to discover its maker and their work.' },
