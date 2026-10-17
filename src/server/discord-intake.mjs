@@ -45,17 +45,21 @@ export async function discordIntake(request,env,waitUntil,fetcher=fetch){
   const row=await db.prepare("INSERT INTO studio_uploads(id,user_id,worker_id,title,description,filename,size,kind,created,expires) SELECT ?,?,?,?,?,?,?,?,?,? WHERE (SELECT COUNT(*) FROM studio_uploads WHERE user_id=? AND status IN ('receiving','pending','publishing'))<3 AND (SELECT COUNT(*) FROM studio_uploads WHERE status IN ('receiving','pending','publishing'))<100 AND (SELECT COALESCE(SUM(size),0) FROM studio_uploads WHERE status IN ('receiving','pending','publishing'))+?<=? ON CONFLICT(id) DO NOTHING RETURNING id").bind(id,user,options.worker,options.title.trim(),options.description.trim(),filename,attachment.size,kind,created,created+7*86400000,user,attachment.size,INTAKE_TOTAL_BYTES).first();
   if(!row)return reply('The submission queue is full (3 files per account, 64 MiB total). Please ask the host to review pending work.');
   waitUntil((async()=>{
-    let message;
+    let message,stage='download',httpStatus;
     try{
-      const response=await fetcher(url.href,{redirect:'error',signal:AbortSignal.timeout(15000)});if(!response.ok)throw Error('Could not download the attachment.');
-      const bytes=await limitedBytes(response,INTAKE_FILE_BYTES);if(bytes.length!==attachment.size)throw Error('The attachment size changed.');validateMediaFile(filename,bytes,INTAKE_FILE_BYTES);
+      // Workers supports follow/manual only; reject redirects without following them.
+      const response=await fetcher(url.href,{redirect:'manual',signal:AbortSignal.timeout(15000)});httpStatus=response.status;if(!response.ok)throw Error('Could not download the attachment.');
+      stage='format';const bytes=await limitedBytes(response,INTAKE_FILE_BYTES);if(bytes.length!==attachment.size)throw Error('The attachment size changed.');validateMediaFile(filename,bytes,INTAKE_FILE_BYTES);
+      stage='hash';
       const sha=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),v=>v.toString(16).padStart(2,'0')).join('');
+      stage='storage';
       const writes=[];for(let part=0,offset=0;offset<bytes.length;part++,offset+=512*1024)writes.push(db.prepare('INSERT INTO studio_upload_chunks(upload_id,part,bytes) VALUES(?,?,?)').bind(id,part,bytes.slice(offset,offset+512*1024).buffer));
       writes.push(db.prepare("UPDATE studio_uploads SET sha256=?,status='pending' WHERE id=? AND status='receiving'").bind(sha,id));await db.batch(writes);
       message='Your work is awaiting host review. If approved, it will be published on induo.works and become available for your workshop. Pending files expire after 7 days. Reference: '+id;
-    }catch{
+    }catch(error){
+      console.error('Discord work intake failed',stage,httpStatus||0,error?.name||'Error');
       await db.batch([db.prepare('DELETE FROM studio_upload_chunks WHERE upload_id=?').bind(id),db.prepare("UPDATE studio_uploads SET status='failed' WHERE id=? AND status='receiving'").bind(id)]);
-      message='The file could not be accepted. Check its real format and size, then submit again. Nothing was published.';
+      message='The file could not be accepted ('+stage+(stage==='download'&&httpStatus?' HTTP '+httpStatus:'')+'). Ask the host to check this reference: '+id+'. Nothing was published.';
     }
     try{await fetcher('https://discord.com/api/v10/webhooks/'+env.DISCORD_CLIENT_ID+'/'+interaction.token+'/messages/@original',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({content:message,allowed_mentions:{parse:[]}}),signal:AbortSignal.timeout(8000)});}catch{/* Submission state remains available to the host. */}
   })());

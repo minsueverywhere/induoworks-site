@@ -32,7 +32,7 @@ async function signed(value,time=Math.floor(Date.now()/1000)){
 async function submit(env,value=interaction(),bytes=png){
   const jobs=[],messages=[];let downloads=0;
   const response=await discordIntake(await signed(value),env,job=>jobs.push(job),async(url,options)=>{
-    if(url.startsWith('https://cdn.discordapp.com/')){downloads++;assert.equal(options.redirect,'error');return new Response(bytes);}
+    if(url.startsWith('https://cdn.discordapp.com/')){downloads++;assert.equal(options.redirect,'manual');return new Response(bytes);}
     messages.push(JSON.parse(options.body));return Response.json({id:'reply'});
   });await Promise.all(jobs);return {response,messages,downloads};
 }
@@ -76,6 +76,13 @@ test('global byte quota and chunk ordering bound storage even across simultaneou
   const insert=f.sql.prepare("INSERT INTO studio_uploads(id,user_id,worker_id,title,description,filename,size,kind,status,created,expires) VALUES(?,?,'frondward','full','queue','work.mp3',8388608,'music','pending',?,?)");
   for(let n=0;n<8;n++)insert.run('17000000000000000'+n,'other-user-'+n,Date.now(),Date.now()+86400000);
   assert.equal((await submit(f.env,interaction('180000000000000001'))).downloads,0);
+});
+
+test('Workers-compatible manual mode refuses a CDN redirect without fetching its destination',async t=>{
+  const f=fixture(t),jobs=[],urls=[];
+  await discordIntake(await signed(interaction()),f.env,job=>jobs.push(job),async(url,options)=>{
+    urls.push(url);if(url.startsWith('https://cdn.discordapp.com/')){assert.equal(options.redirect,'manual');return new Response(null,{status:302,headers:{Location:'https://private.example/file.png'}});}return Response.json({id:'reply'});
+  });await Promise.all(jobs);assert.equal(f.sql.prepare('SELECT status FROM studio_uploads').get().status,'failed');assert.ok(urls.every(url=>!url.includes('private.example')));
 });
 test('host approval imports, saves and publishes content once; rejection and uncertain deployment preserve correct state',async t=>{
   const f=fixture(t),root=await mkdtemp(join(tmpdir(),'induo-intake-test-'));
