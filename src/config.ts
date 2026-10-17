@@ -47,6 +47,7 @@ export type Project = {
   href?: string;
   repo?: string;
   steamUrl?: string;
+  externalUrl?: string;
   cover?: ImageMetadata;
   thumbnail?: { src: string; width: number; height: number; alt: LocalizedText; caption: LocalizedText };
   gallery?: ProjectGalleryItem[];

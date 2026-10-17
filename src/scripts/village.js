@@ -5,6 +5,7 @@ import { landscapeNoise as noise } from './village-layout.mjs';
 import { createTutorial, tutorialSteps as fullTutorialSteps } from './village-tutorial.mjs';
 import { createVillageMusic, musicTime } from './village-music.mjs';
 import { popupPosition } from './village-popup.mjs';
+import {mountExternal} from './external-player.mjs';
 import { loadContent } from './content-loader.mjs';
 import { villageContent } from './village-content.mjs';
 import {roomFloors,roomStack,roomElevation,roomScreen,roomPoint} from './village-room.mjs';
@@ -46,6 +47,7 @@ const wallLinks = [...$('social').querySelectorAll('a')];
 let zoomPointer = false;
 let popupTrigger = null;
 let popupObject = null, tutorialStep = null;
+let clearExternal;
 const scene = $('scene'), terrain = document.createElement('canvas'), ground = terrain.getContext('2d');
 const help = $('help'), helpToggle = $('help-toggle'), guide = $('hint');
 function showGuide(open) { guide.hidden=!open; }
@@ -343,6 +345,7 @@ $('back').addEventListener('click',()=>{
   changeArea('village');tutorial.complete('exit');
 });
 function closePopup(restoreFocus = false) {
+  clearExternal?.();clearExternal=null;
   popup.hidden = true;
   popupObject=null;
   buttons.forEach(b => b.setAttribute('aria-pressed','false'));
@@ -353,6 +356,8 @@ function visit(id, focusMap = false, trigger = null) {
   if(tutorialStep==='drag'||tutorialStep==='zoom'||(tutorialStep==='house'&&id!==tutorialHouse.id)||(tutorialStep==='music'&&id!==tutorialJukebox.id))return;
   if(p.shape==='house'){activeWorker=workers.find(w=>w.id===id);changeArea('room');tutorial.complete('house');return;}
   if(!popup.hidden&&popupObject===id){closePopup(Boolean(trigger));return;}
+  clearExternal?.();clearExternal=null;
+  if(p.externalUrl)music.stop();
   if(p.shape==='jukebox')selectMusic(p.music||JSON.parse(root.dataset.music));
   popupObject=id;
   popupTrigger = trigger || buttons.get(id);
@@ -367,6 +372,7 @@ function visit(id, focusMap = false, trigger = null) {
   }
   $('player').hidden = p.shape !== 'jukebox';
   $('gallery').replaceChildren();
+  if(p.externalUrl)clearExternal=mountExternal($('gallery'),p.externalUrl,p.title,{defer:false,lang:document.documentElement.lang.startsWith('ko')?'ko':'en'});
   for (const id of p.media || []) {
     const item = media.find(m => m.id === id);if (!item) continue;
     const figure=document.createElement('figure'),image=document.createElement('img'),caption=document.createElement('figcaption'),original=document.createElement('a');
@@ -497,6 +503,7 @@ const requestedWorker=new URLSearchParams(location.search).get('worker');
 if(requestedWorker&&workers.some(w=>w.id===requestedWorker))visit(requestedWorker);
 
 function applyVillageCatalog(catalog){
+  closePopup();
   const data=villageContent(catalog,document.documentElement.lang.startsWith('ko')?'ko':'en',text.title);
   Object.assign(sceneWorld,data.world);
   places.splice(0,places.length,...data.places);workers.splice(0,workers.length,...data.workers);media.splice(0,media.length,...data.media);

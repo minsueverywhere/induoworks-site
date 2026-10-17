@@ -6,6 +6,7 @@ import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import { createEditorStore, importEditorMedia, mediaFile, checkEditorContent } from './editor-store.mjs';
 import { MAX_FILE_BYTES } from '../src/content-schema.mjs';
+import {createDiscordReview} from './discord-review.mjs';
 const exec=promisify(execFile);
 const mime={'.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.html':'text/html','.webp':'image/webp','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.avif':'image/avif','.gif':'image/gif','.ogg':'audio/ogg','.mp3':'audio/mpeg'};
 export async function deployEditorContent(root,revision) {
@@ -18,8 +19,9 @@ export async function deployEditorContent(root,revision) {
   const result=await exec(process.execPath,['node_modules/wrangler/bin/wrangler.js','deploy','--config','content/wrangler.jsonc'],options);
   return result.stdout.slice(-10000);
 }
-export function createEditorMiddleware(root,{deploy=deployEditorContent}={}) {
+export function createEditorMiddleware(root,{deploy=deployEditorContent,intakeQuery}={}) {
   const token=randomBytes(32).toString('hex'),store=createEditorStore(root);let busy=false;
+  const intake=createDiscordReview(root,{deploy,query:intakeQuery});
   const json=(res,status,data)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(data));};
   return async(req,res,next)=>{
     const path=new URL(req.url,'http://127.0.0.1').pathname;
@@ -30,6 +32,11 @@ export function createEditorMiddleware(root,{deploy=deployEditorContent}={}) {
     res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob:; media-src 'self' blob:; frame-ancestors 'self'; base-uri 'none'; form-action 'none'");
     try {
       if(req.method==='GET') {
+        if(path==='/__editor/intake-file'){
+          if(req.headers['sec-fetch-site']!=='same-origin'&&!String(req.headers.referer||'').startsWith('http://'+host+'/'))return json(res,403,{error:'편집기에서 파일 미리보기를 열어주세요.'});
+          const result=await intake.preview(new URL(req.url,'http://127.0.0.1').searchParams.get('id'));
+          res.writeHead(200,{'Content-Type':result.mime,'Content-Length':result.bytes.length});return res.end(result.bytes);
+        }
         if(path==='/__editor/catalog')return json(res,200,await store.read());
         if(path==='/__editor/preview')return json(res,200,await store.getPreview());
         let body,type;
@@ -49,6 +56,10 @@ export function createEditorMiddleware(root,{deploy=deployEditorContent}={}) {
         const body=Buffer.concat(chunks);
         if(path==='/__editor/upload')return json(res,200,await importEditorMedia(root,decodeURIComponent(req.headers['x-file-name']||''),body));
         const payload=JSON.parse(body.toString('utf8'));
+        if(path==='/__editor/intake-list')return json(res,200,{items:await intake.list()});
+        if(path==='/__editor/intake-reject')return json(res,200,await intake.reject(payload.id));
+        if(path==='/__editor/intake-approve')return json(res,200,await intake.approve(payload));
+        if(path==='/__editor/intake-confirm')return json(res,200,await intake.confirm(payload.id));
         if(path==='/__editor/preview'){await store.preview(payload.catalog);return json(res,200,{ok:true});}
         if(path==='/__editor/save')return json(res,200,await store.save(payload.catalog,payload.revision));
         if(path==='/__editor/deploy'){

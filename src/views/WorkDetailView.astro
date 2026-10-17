@@ -30,6 +30,7 @@ const dict = t(lang);
     
     <h1 data-field="title" class="mt-3 max-w-3xl text-3xl font-semibold tracking-tight sm:text-5xl">{project.title[lang]}</h1>
     <p data-field="summary" class="mt-4 max-w-2xl text-lg leading-relaxed text-[var(--color-text-muted)]">{project.summary[lang]}</p>
+    <section id="detail-external" class="mt-6 max-w-2xl" aria-label={lang==='ko'?'외부 작품':'External work'}></section>
 
     <p id="detail-creators" class="mt-4 flex flex-wrap gap-4 text-sm">{workers.filter(w=>project.workerIds?.includes(w.id)).map(w=><a class="focus-ring underline underline-offset-4" href={localizePath('/workers/#'+w.id,lang)}>{w.name}</a>)}</p>
     <dl class="workshop-panel mt-10 grid grid-cols-2 gap-6 rounded-xl border border-[var(--color-border)] p-6 text-sm sm:grid-cols-4">

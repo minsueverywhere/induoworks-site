@@ -14,7 +14,7 @@
 		"database_id": "1f0ce821-a441-4741-bdf8-12504edaa967",
 		"migrations_dir": "migrations"
 	}],
-	"vars": {"DISCORD_CLIENT_ID": "1469603219695992895"},
+	"vars": {"DISCORD_CLIENT_ID": "1469603219695992895", "DISCORD_GUILD_ID":"1560135939290832990", "DISCORD_PUBLIC_KEY":"d350d50d10c179e7c0590ded9bbf196ade76d941a5d2cce7ac2dd1fff4bbac79"},
 	"ratelimits": [{
 		"name": "CONTACT_RATE_LIMITER",
 		"namespace_id": "2026101601",

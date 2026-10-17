@@ -20,16 +20,16 @@ const places = [
 ];
 const roomPlaces = workers.filter(worker=>worker.house).flatMap(worker=>[
   // shortcut: one room holds nine project stands; add room pagination when a studio outgrows it.
-  ...projects.filter(p=>p.workerIds?.includes(worker.id)).map((p,i)=>({id:worker.id+':'+p.slug,owner:worker.id,area:'room',shape:'game',x:1+(i%3)*3+(Math.floor(i/3)),y:7-(i%3)*3+(Math.floor(i/3)),width:72,height:78,label:p.title[lang],title:p.title[lang],description:p.summary[lang],links:[{title:ko?'작품 소개':'About this work',href:projectPath(p.slug,lang)}]})),
+  ...projects.filter(p=>p.workerIds?.includes(worker.id)).map((p,i)=>({id:worker.id+':'+p.slug,owner:worker.id,area:'room',shape:'game',x:1+(i%3)*3+(Math.floor(i/3)),y:7-(i%3)*3+(Math.floor(i/3)),width:72,height:78,label:p.title[lang],title:p.title[lang],description:p.summary[lang],externalUrl:p.externalUrl,links:[{title:ko?'작품 소개':'About this work',href:projectPath(p.slug,lang)}]})),
   {id:worker.id+'-jukebox',owner:worker.id,area:'room',shape:'jukebox',x:7,y:6,width:58,height:78,label:ko?'주크박스':'Jukebox',title:villageTrack(catalog,worker.id).title,music:villageTrack(catalog,worker.id),description:'',links:[{title:ko?'음악 Work 보기':'View music work',href:musicWorkPath(villageTrack(catalog,worker.id),lang)}]},
-  ...villageMedia.filter(m=>m.workerIds.includes(worker.id)).map((m,i)=>({id:worker.id+':'+m.id,owner:worker.id,area:'room',shape:'artwork',x:1+i*2,y:3,width:70,height:90,label:m.title[lang],title:m.title[lang],description:ko?'미리보기를 둘러보고 원하는 작품의 원본을 열어보세요.':'Browse the preview and open the original for a closer look.',media:[m.id],badge:m.badge})),
+  ...villageMedia.filter(m=>m.workerIds.includes(worker.id)).map((m,i)=>({id:worker.id+':'+m.id,owner:worker.id,area:'room',shape:'artwork',x:1+i*2,y:3,width:70,height:90,label:m.title[lang],title:m.title[lang],description:m.description?.[lang]||(ko?'미리보기를 둘러보고 원하는 작품의 원본을 열어보세요.':'Browse the preview and open the original for a closer look.'),media:[m.id],badge:m.badge})),
 ]);
 const villageWorkers=workers.filter(w=>w.house).map(w=>({id:w.id,name:w.name,description:w.description[lang],room:w.room}));
 function display(e,area,owner,floor=0){
   const item=(e.kind==='project'?projects:e.kind==='media'?villageMedia:musicTracks(catalog)).find(i=>(i.id||i.slug)===e.ref);
   if(!item)return null;
   const title=typeof item.title==='string'?item.title:item.title[lang];
-  return {...e,id:'display:'+(owner?owner+':'+floor+':':'')+e.id,worldId:e.id,editType:'exhibit',area,owner,floor,ground:groundPosition(e,'exhibit'),shape:e.kind==='project'?'game':e.kind==='media'?'artwork':'jukebox',width:72,height:90,label:title,title,description:e.kind==='project'?item.summary[lang]:'',...(e.kind==='music'?{music:item,links:[{title:ko?'음악 Work 보기':'View music work',href:musicWorkPath(item,lang)}]}:e.kind==='project'?{links:[{title:ko?'작품 소개':'About this work',href:projectPath(item.slug,lang)}]}:{media:[item.id],badge:item.badge})};
+  return {...e,id:'display:'+(owner?owner+':'+floor+':':'')+e.id,worldId:e.id,editType:'exhibit',area,owner,floor,ground:groundPosition(e,'exhibit'),shape:e.kind==='project'?'game':e.kind==='media'?'artwork':'jukebox',width:72,height:90,label:title,title,description:e.kind==='project'?item.summary[lang]:item.description?.[lang]||'',...(e.kind==='music'?{music:item,links:[{title:ko?'음악 Work 보기':'View music work',href:musicWorkPath(item,lang)}]}:e.kind==='project'?{externalUrl:item.externalUrl,links:[{title:ko?'작품 소개':'About this work',href:projectPath(item.slug,lang)}]}:{media:[item.id],badge:item.badge})};
 }
 const allPlaces = [...places,...roomPlaces.map(p=>({...p,floor:0})),...(world.exhibits||[]).map(e=>display(e,'village')),
  ...workers.filter(w=>w.house).flatMap(w=>roomFloors(w).flatMap((f,i)=>f.exhibits.map(e=>display(e,'room',w.id,i))))].filter(Boolean);

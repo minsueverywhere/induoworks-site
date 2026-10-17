@@ -14,3 +14,4 @@ body[data-area=room] .map{flex:1;height:auto;min-height:0}
 body[data-area=room] aside,body[data-area=room] .map-tools{display:none}
 body[data-area=room]{height:100dvh;overflow:hidden}
 .proposal-import{display:flex;align-items:center;max-width:175px;font-size:.75rem}.proposal-import input{max-width:110px;font-size:.7rem}
+#intake{flex-shrink:0;padding:.4rem 1rem;border-bottom:1px solid var(--color-border);font-size:.8rem}#intake summary{cursor:pointer;padding:.35rem 0}#intake-items{max-height:45dvh;overflow:auto}#intake-items section{padding:.75rem 0;border-top:1px solid var(--color-border)}#intake-items p{margin:.4rem 0;color:var(--color-text-muted);white-space:pre-wrap}#intake-items button{margin:.3rem .4rem .3rem 0}#intake-items img,#intake-items audio{display:block;margin:.5rem 0}

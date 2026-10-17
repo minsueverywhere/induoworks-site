@@ -32,6 +32,9 @@ test('participant UI adds and edits an owned Work, saves a private payload and r
   const added=ui.preview().projects.find(p=>p.slug.startsWith('work-'));assert.deepEqual([...added.workerIds],['frondward']);
   const label=elements(ui.scene).find(el=>el.tag==='label'&&el.children[0]?.textContent==='제목 · ko'),input=label.children[1];input.value='';input.events.input();input.value='내 새 작품';input.events.input();
   assert.equal(ui.preview().projects.find(p=>p.slug===added.slug).title.ko,'내 새 작품');
+  const external=elements(ui.scene).find(el=>el.tag==='label'&&el.children[0]?.textContent==='외부 작품 링크 · YouTube / SoundCloud / GitHub 파일').children[1];
+  external.value='https://youtu.be/dQw4w9WgXcQ';external.events.input();
+  assert.equal(ui.preview().projects.find(p=>p.slug===added.slug).externalUrl,external.value);
   assert.deepEqual(ui.preview().world,catalog.world);
   ui.button('작성본 저장').events.click();await new Promise(resolve=>setImmediate(resolve));
   assert.equal(ui.writes.length,1);assert.equal(ui.writes[0].payload.payload.projects.find(p=>p.slug===added.slug).title.ko,'내 새 작품');assert.ok(!('world' in ui.writes[0].payload.payload));

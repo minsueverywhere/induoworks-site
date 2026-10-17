@@ -83,15 +83,18 @@ export async function createParticipantEditor(api){
     body.append(node('small',item[key]));
     if(tab!=='tracks')for(const locale of ['ko','en'])field(body,'제목 · '+locale,item.title[locale],value=>item.title[locale]=value);
     if(tab==='projects'){
+      field(body,'외부 작품 링크 · YouTube / SoundCloud / GitHub 파일',item.externalUrl||'',value=>{if(value)item.externalUrl=value;else delete item.externalUrl;});
+      body.append(node('small','링크만 등록해 집 안에 전시할 수 있습니다. 플레이어는 전시물을 눌렀을 때 열립니다.'));
       for(const locale of ['ko','en'])for(const [key,label] of [['summary','소개'],['role','역할'],['challenge','배경'],['approach','작업 과정'],['outcome','현재 상태']])field(body,label+' · '+locale,item[key][locale],value=>item[key][locale]=value);
       field(body,'분야',item.kind,value=>item.kind=value,[['game','게임'],['music','음악'],['artwork','아트워크'],['site','웹사이트'],['experiment','실험']]);field(body,'상태',item.status,value=>item.status=value,[['in-progress','진행 중'],['shipped','완료'],['paused','보류']]);
       field(body,'연도',item.year,value=>item.year=value);field(body,'태그',item.tags?.join(', ')||'',value=>item.tags=value.split(',').map(s=>s.trim()).filter(Boolean));
       field(body,'대표 이미지',item.thumbnail?.src||'',value=>{if(!value){delete item.thumbnail;return;}const image=approved.projects.find(p=>p.thumbnail?.src===value)?.thumbnail||approved.media.find(m=>m.preview===value);item.thumbnail=image?.src?structuredClone(image):{src:image.preview,width:image.width,height:image.height,alt:structuredClone(item.title),caption:{ko:'아트워크',en:'Artwork'}};},[['','이미지 없음'],...approved.projects.filter(p=>p.thumbnail).map(p=>[p.thumbnail.src,p.title.ko]),...approved.media.map(m=>[m.preview,m.title.ko])]);
     }else if(tab==='media'){
+      for(const locale of ['ko','en'])field(body,'소개 · '+locale,item.description?.[locale]||'',value=>{item.description??={ko:'',en:''};item.description[locale]=value;});
       field(body,'호스트가 등록한 이미지',item.original,value=>{const source=approved.media.find(m=>m.original===value);for(const key of ['original','preview','badge','width','height','bytes'])item[key]=source[key];},approved.media.map(m=>[m.original,m.title.ko]));
     }else{
       field(body,'곡명',item.title,value=>item.title=value);field(body,'작곡가·팀',item.artist||'',value=>item.artist=value);field(body,'관련 작품',item.project,value=>item.project=value);
-      field(body,'등록된 음원',item.sources.ogg,value=>{const source=[approved.music,...(approved.tracks||[])].find(t=>t.sources.ogg===value);for(const key of ['sources','duration','sourceSha256'])item[key]=structuredClone(source[key]);},[approved.music,...(approved.tracks||[])].map(t=>[t.sources.ogg,t.title]));
+      field(body,'등록된 음원',item.sources.ogg||item.sources.mp3,value=>{const source=[approved.music,...(approved.tracks||[])].find(t=>(t.sources.ogg||t.sources.mp3)===value);for(const key of ['sources','duration','sourceSha256'])item[key]=structuredClone(source[key]);},[approved.music,...(approved.tracks||[])].map(t=>[t.sources.ogg||t.sources.mp3,t.title]));
     }
     body.append(node('p','새 파일은 호스트에게 등록을 요청하세요. 여기서는 등록된 파일을 선택합니다.'));
   }

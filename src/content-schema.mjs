@@ -1,5 +1,6 @@
 import { validateWorld, validHouse } from './scripts/village-world.mjs';
 import {validateRoom} from './scripts/village-room.mjs';
+import {externalWork} from './external-work.mjs';
 export const MAX_FILE_BYTES = 25 * 1024 * 1024;
 export const MAX_FILES = 20000;
 export const CONTENT_ORIGIN = 'https://induoworks-content.rlaalstn0910.workers.dev';
@@ -40,10 +41,12 @@ export function validateCatalog(data) {
   check(data.workers.some(w=>w.id==='induo-works'), 'Missing Induo Works profile');
   for(const e of [...(data.world?.exhibits||[]),...data.workers.flatMap(w=>w.room?.floors.flatMap(f=>f.exhibits)||[])])check((e.kind==='project'?data.projects:e.kind==='media'?data.media:[{...data.music,id:'legacy'},...tracks]).some(item=>(item.id||item.slug)===e.ref),'Unknown outdoor exhibit reference');
   for (const item of [...data.projects,...data.media]) {
+    if(item.description!==undefined)check(localized(item.description),'Invalid artwork description');
     check(localized(item.title) && ids(item.workerIds || []) && (item.workerIds || []).every(id=>owners.has(id)), 'Invalid work owner or title');
     check(Array.isArray(item.tags || []) && (item.tags || []).every(text), 'Invalid tags');
   }
   for (const p of data.projects) {
+    if(p.externalUrl!==undefined)externalWork(p.externalUrl);
     check(p.slug!=='detail', 'Reserved project slug');
     check(['site','game','music','artwork','experiment'].includes(p.kind) && ['shipped','in-progress','paused'].includes(p.status), 'Invalid work category');
     check(['summary','role','challenge','approach','outcome'].every(k=>localized(p[k])) && text(p.year) && Array.isArray(p.stack) && p.stack.every(text), 'Invalid project copy');
@@ -57,7 +60,8 @@ export function validateCatalog(data) {
     if(track.artist!==undefined)check(text(track.artist),'Invalid music artist');
     check(text(track?.title) && text(track.project) && Number.isFinite(track.duration) && track.duration>0 && text(track.sourceSha256), 'Invalid music');
     check(ids(track.workerIds||[]) && (track.workerIds||[]).every(id=>owners.has(id)), 'Invalid music owner');
-    for(const ext of ['ogg','mp3'])check(safeUrl(track.sources?.[ext]) && new URL(track.sources[ext],CONTENT_ORIGIN).pathname.endsWith('.'+ext),'Use Ogg and MP3 music');
+    check(track.sources&&Object.keys(track.sources).length>0&&Object.keys(track.sources).every(ext=>['ogg','mp3'].includes(ext)),'Use Opus Ogg or MP3 music');
+    for(const [ext,path]of Object.entries(track.sources))check(safeUrl(path)&&new URL(path,CONTENT_ORIGIN).pathname.endsWith('.'+ext),'Use Opus Ogg or MP3 music');
   }
   return data;
 }
@@ -76,6 +80,6 @@ export function resolveMedia(data, origin) {
   const url = path => new URL(path, origin).href;
   for (const p of result.projects) if (p.thumbnail) p.thumbnail.src=url(p.thumbnail.src);
   for (const m of result.media) for (const key of ['badge','preview','original']) m[key]=url(m[key]);
-  for(const track of [result.music,...(result.tracks||[])])for(const ext of ['ogg','mp3'])track.sources[ext]=url(track.sources[ext]);
+  for(const track of [result.music,...(result.tracks||[])])for(const ext of Object.keys(track.sources))track.sources[ext]=url(track.sources[ext]);
   return result;
 }

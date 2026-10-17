@@ -14,7 +14,7 @@ export function createVillageMusic({sources, onState, onProgress=()=>{}, volume 
       try {
         if(!audio) {
           audio=createAudio();audio.preload='none';audio.loop=true;audio.volume=volume;
-          audio.src=audio.canPlayType('audio/ogg; codecs="opus"')?sources.ogg:sources.mp3;
+          audio.src=sources.ogg&&audio.canPlayType('audio/ogg; codecs="opus"')?sources.ogg:sources.mp3||sources.ogg;
           for(const event of ['timeupdate','loadedmetadata','durationchange','seeked'])audio.addEventListener(event,progress);
           audio.addEventListener('error',()=>{
             if(requested) { requested=false;generation++;audio.pause();onState('error'); }

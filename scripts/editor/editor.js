@@ -18,6 +18,32 @@ function roomControls(){
 const clone=value=>JSON.parse(JSON.stringify(value));
 const node=(tag,text)=>{const el=document.createElement(tag);if(text!==undefined)el.textContent=text;return el;};
 function status(message,error=false){$('status').textContent=message;$('status').dataset.error=String(error);}
+async function reviewIntake(){
+  const {items}=await api('intake-list',{}),container=$('intake-items');container.querySelectorAll('audio').forEach(a=>a.pause());container.replaceChildren();
+  if(!items.length)container.append(node('p','검토 대기 중인 작품이 없습니다.'));
+  for(const item of items){
+    const row=node('section'),title=node('strong',item.title+' · '+item.worker_id),copy=node('p',item.description+' · '+(item.size/1024/1024).toFixed(2)+' MiB');row.append(title,copy);container.append(row);
+    let duration=0;
+    const button=(label,action)=>{const b=node('button',label);b.type='button';b.addEventListener('click',action);row.append(b);return b;};
+    if(item.status==='publishing'){row.append(node('p','승인·발행 처리 중입니다. 결과 확인 전에는 다시 승인하지 마세요.'));button('발행 확인',()=>void task(async()=>{await api('intake-confirm',{id:item.id});await reviewIntake();status('공개 콘텐츠 반영을 확인했습니다.');}));continue;}
+    button('파일 미리보기',()=>{
+      if(row.querySelector('img,audio'))return;
+      const media=node(item.kind==='image'?'img':'audio');media.src='/__editor/intake-file?id='+item.id;
+      if(item.kind==='image'){media.alt=item.title;media.style.cssText='max-width:320px;max-height:220px;object-fit:contain';}
+      else{media.controls=true;media.preload='metadata';media.addEventListener('loadedmetadata',()=>{duration=media.duration;status('음원 길이 '+Math.round(duration)+'초 · 검토 후 승인하세요.');});}
+      media.addEventListener('error',()=>status('파일을 열 수 없습니다. 실제 형식이나 지원 여부를 확인해 주세요.',true));row.append(media);
+    });
+    button('승인·콘텐츠 발행',()=>void task(async()=>{
+      if(dirty)throw Error('현재 편집을 먼저 저장하거나 버린 뒤 승인해 주세요.');
+      if(item.kind==='music'&&(!Number.isFinite(duration)||duration<=0))throw Error('음원 파일 미리보기로 재생 길이를 먼저 확인해 주세요.');
+      status('파일 준비·저장·콘텐츠 발행 중…');
+      try{const result=await api('intake-approve',{id:item.id,revision,duration});await load();$('logs').querySelector('pre').textContent=result.log;$('logs').open=true;await reviewIntake();status('승인한 작품을 공개했습니다. Works와 집 안 전시에서 선택할 수 있습니다.');}
+      catch(error){await load();await reviewIntake();throw error;}
+    }));
+    button('반려',()=>void task(async()=>{await api('intake-reject',{id:item.id});await reviewIntake();status('접수를 반려했습니다.');}));
+  }
+}
+$('intake-refresh').addEventListener('click',()=>void task(reviewIntake));
 function controls(){document.body.dataset.busy=String(busy);document.querySelectorAll('button,input,select,textarea').forEach(el=>el.disabled=busy);$('deploy').disabled=busy||dirty;$('undo').disabled=busy||!draft||!history.canUndo(draft);$('redo').disabled=busy||!history.canRedo;if(draft)roomControls();}
 function changed(){history.record(draft);dirty=JSON.stringify(draft)!==saved;const item=entry(),option=$('entry').selectedOptions[0];if(item&&option)option.textContent=item.name||item.title?.ko||item.title?.en||item.title||item.id||item.slug;status('저장되지 않은 변경 · 미리보기 갱신으로 적용 상태를 확인하세요.');controls();}
 async function api(path,payload){const response=await fetch('/__editor/'+path,{method:'POST',headers:{'Content-Type':'application/json','X-Editor-Token':token},body:JSON.stringify(payload)});const result=await response.json();if(!response.ok)throw new Error(result.error);return result;}
@@ -60,6 +86,7 @@ function renderFields(){const item=entry();$('fields').replaceChildren();if(!ite
     field('벽면 로고',item.logoMediaId||'',value=>{if(value)item.logoMediaId=value;else delete item.logoMediaId;},{options:[['','없음'],...draft.media.map(m=>[m.id,m.title.ko||m.id])]});
     field('주크박스 음악',item.musicId||'',value=>{if(value)item.musicId=value;else delete item.musicId;},{options:[['','마을 기본곡'],...(draft.tracks||[]).map(t=>[t.id,t.title])]});
   }else if(tab==='projects'){
+    field('외부 작품 링크 · YouTube / SoundCloud / GitHub 파일',item.externalUrl||'',value=>{if(value)item.externalUrl=value;else delete item.externalUrl;});
     field('작품 ID',item.slug,value=>item.slug=value,{required:true}).readOnly=true;localFields('제목',item,'title',true);localFields('소개',item,'summary',true);owners(item);
     field('분야',item.kind,value=>item.kind=value,{options:[['game','게임'],['music','음악'],['artwork','아트워크'],['site','웹사이트'],['experiment','실험']]});
     field('상태',item.status,value=>item.status=value,{options:[['in-progress','진행 중'],['shipped','완료'],['paused','보류']]});
@@ -69,6 +96,7 @@ function renderFields(){const item=entry();$('fields').replaceChildren();if(!ite
     $('fields').append(node('h2','상세 소개'));for(const key of ['role','challenge','approach','outcome'])localFields({role:'역할',challenge:'소개',approach:'작업 과정',outcome:'현재 상태'}[key],item,key);
     for(const key of ['href','repo','steamUrl'])field({href:'공개 링크',repo:'소스 링크',steamUrl:'Steam 링크'}[key],item[key]||'',value=>{if(value)item[key]=value;else delete item[key];});
   }else if(tab==='media'){
+    for(const [locale,name]of [['ko','한국어'],['en','영어']])field('소개 · '+name,item.description?.[locale]||'',value=>{item.description??={ko:'',en:''};item.description[locale]=value;});
     field('이미지 ID',item.id,value=>item.id=value,{required:true}).readOnly=true;localFields('제목',item,'title',true);owners(item);field('태그',item.tags.join(', '),value=>item.tags=value.split(',').map(s=>s.trim()).filter(Boolean));
     upload('아트워크 추가·교체','image/png,image/jpeg,image/webp,image/avif,image/gif',result=>Object.assign(item,{original:result.original,preview:result.preview,badge:result.badge,width:result.width,height:result.height,bytes:result.bytes}));
     if(item.preview){const img=node('img');img.src=item.preview;img.alt='아트워크 미리보기';$('fields').append(img);}
@@ -79,7 +107,7 @@ function renderFields(){const item=entry();$('fields').replaceChildren();if(!ite
     if(selected!=='legacy')owners(item);
     for(const ext of ['ogg','mp3'])upload(ext==='ogg'?'Opus Ogg 음원':'MP3 대체 음원','.'+ext,(result,file)=>{if(!file.name.toLowerCase().endsWith('.'+ext))throw new Error(ext+' 파일을 선택해 주세요.');item.sources[ext]=result.original;if(ext==='ogg')item.sourceSha256=result.sha256;});
     field('마을 기본곡',draft.musicId||'',value=>{if(value)draft.musicId=value;else delete draft.musicId;},{options:[['','기존 Sunlit Circuit'],...(draft.tracks||[]).map(t=>[t.id,t.title])]});
-    const audio=node('audio');audio.controls=true;audio.preload='none';audio.src=item.sources.ogg||item.sources.mp3||'';$('fields').append(audio,node('p','두 형식을 등록한 뒤 저장하세요. 재생은 누를 때 시작합니다.'));
+    const audio=node('audio');audio.controls=true;audio.preload='none';audio.src=item.sources.ogg||item.sources.mp3||'';$('fields').append(audio,node('p','Opus OGG 또는 MP3를 등록하세요. 두 형식이 있으면 기기에 맞춰 선택합니다. 재생은 누를 때 시작합니다.'));
   }
 }
 function placementFields(point,type,id){
@@ -102,7 +130,7 @@ function add(){if(tab==='world'){selectTool(roomOwner?'exhibit':'tree');status('
   if(tab==='workers')draft.workers.push({id,name:'새 업체',description:{ko:'',en:''},house:findHouse(id)});
   else if(tab==='projects')draft.projects.push({slug:id,year:String(new Date().getFullYear()),stack:[],tags:[],kind:'game',status:'in-progress',workerIds:[owner],...Object.fromEntries(['title','summary','role','challenge','approach','outcome'].map(k=>[k,{ko:'',en:''}]))});
   else if(tab==='media')draft.media.push({id,workerIds:[owner],tags:[],title:{ko:'',en:''},original:'',preview:'',badge:'',bytes:0,width:0,height:0});
-  else{draft.tracks??=[];draft.tracks.push({id,title:'새 음악',project:'',duration:64,sourceSha256:'',sources:{ogg:'',mp3:''},workerIds:[owner]});}
+  else{draft.tracks??=[];draft.tracks.push({id,title:'새 음악',project:'',duration:64,sourceSha256:'',sources:{},workerIds:[owner]});}
   selected=id;changed();renderPicker();
 }
 async function load(){const result=await(await fetch('/__editor/catalog')).json();draft=result.catalog;draft.world=villageWorld(draft);revision=result.revision;saved=JSON.stringify(draft);history.reset(draft);dirty=false;roomOwner=null;roomIndex=0;roomControls();$('display-ref').replaceChildren(...exhibitChoices().map(([id,title])=>new Option(title,id)));renderPicker();await refresh();status('저장본을 불러왔습니다. 장면 도구 또는 오른쪽 항목을 편집하세요.');}

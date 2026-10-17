@@ -1,4 +1,5 @@
 import { musicSummary } from './scripts/village-tracks.mjs';
+import {externalPreview} from './external-work.mjs';
 import { projects, labs, workers } from './config';
 import { villageMedia } from './village-media';
 import catalog from '../content/catalog.json';
@@ -11,7 +12,7 @@ export function workCatalog(lang: Locale) {
       kind: p.kind==='site'||p.kind==='experiment' ? 'other' : p.kind,
       workerIds: p.workerIds||[], tags: [...new Set([...p.stack,...(p.tags||[])])],
       status: p.status, year: p.year, href: localizePath('/work/'+p.slug+'/',lang),
-      image: p.thumbnail?.src||p.cover?.src||p.gallery?.[0]?.src.src||'',
+      image: p.thumbnail?.src||p.cover?.src||p.gallery?.[0]?.src.src||externalPreview(p.externalUrl),
       imageWidth: p.thumbnail?.width||p.cover?.width||p.gallery?.[0]?.src.width||600,
       imageHeight: p.thumbnail?.height||p.cover?.height||p.gallery?.[0]?.src.height||400,
       imageAlt: p.thumbnail?.alt[lang]||p.gallery?.[0]?.alt[lang]||p.title[lang],
@@ -24,13 +25,13 @@ export function workCatalog(lang: Locale) {
     })),
     ...villageMedia.map(m => ({
       id: 'media:'+m.id, title: m.title[lang],
-      summary: lang==='ko' ? '작업실의 아트워크와 시각 작업물입니다.' : 'Artwork and visual work from the workshop.',
+      summary: m.description?.[lang]||(lang==='ko' ? '작업실의 아트워크와 시각 작업물입니다.' : 'Artwork and visual work from the workshop.'),
       kind: 'artwork', workerIds: m.workerIds, tags: m.tags, status: 'shipped', year: '',
       href: m.original, image: m.preview, imageWidth: m.width, imageHeight: m.height, imageAlt: m.title[lang], imageCaption: '', file: true,
     })),
     ...([{...catalog.music,id:'legacy'},...catalog.tracks] as Array<typeof catalog.music & {id:string;workerIds:string[]}>).map(track=>({
       id:'music:'+track.id,title:track.title,summary:musicSummary(track),kind:'music',workerIds:track.workerIds||[],
-      tags:['Music'],status:'shipped',year:'',href:track.sources.ogg,image:'',imageWidth:600,imageHeight:400,
+      tags:['Music'],status:'shipped',year:'',href:track.sources.ogg||track.sources.mp3,image:'',imageWidth:600,imageHeight:400,
       imageAlt:track.title,imageCaption:'',file:true,
     })),
   ];

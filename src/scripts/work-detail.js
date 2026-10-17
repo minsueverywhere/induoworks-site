@@ -1,6 +1,7 @@
 import { loadContent } from './content-loader.mjs';
 import { localizedPath } from './content-catalog.mjs';
 import { elements } from './content-render.mjs';
+import {mountExternal} from './external-player.mjs';
 const root=document.getElementById('work-detail'),lang=root.dataset.lang,labels=JSON.parse(root.dataset.labels);
 const slug=root.dataset.generic==='true'?new URLSearchParams(location.search).get('id'):root.dataset.slug;
 const content=await loadContent();
@@ -11,6 +12,7 @@ if(!project) {
   root.hidden=true;message.hidden=false;
   message.textContent=lang==='ko'?'작품을 찾을 수 없습니다. Works에서 다시 찾아주세요.':'Work not found. Please return to Works.';
 } else {
+  if(project.externalUrl)mountExternal(document.getElementById('detail-external'),project.externalUrl,project.title[lang],{lang});
   const fields={...Object.fromEntries(['title','summary','role','challenge','approach','outcome'].map(k=>[k,project[k][lang]])),year:project.year,stack:project.stack.join(', '),status:{shipped:labels.shipped,'in-progress':labels.inProgress,paused:labels.paused}[project.status]};
   for(const [key,value] of Object.entries(fields))root.querySelector('[data-field="'+key+'"]').textContent=value;
   const el=elements(root),owners=content?.workers||JSON.parse(root.dataset.workers);
