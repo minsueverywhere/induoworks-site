@@ -1,3 +1,4 @@
+import {createSceneView} from './village-view.mjs';
 import { terrainAt, terrainBounds, groundPosition, worldLetters } from './village-world.mjs';
 import { musicArtist } from './village-tracks.mjs';
 import { MIN_ZOOM, MAX_ZOOM, toScreen, clampCamera, panCamera, clampZoom, defaultZoom, snapZoom, isDrag, zoomCamera, pinchPoints } from './village-camera.mjs';
@@ -44,7 +45,8 @@ const canvas = $('canvas'), ctx = canvas.getContext('2d');
 const popup = $('popup');
 const zoomRange = $('zoom-range');
 const wallLinks = [...$('social').querySelectorAll('a')];
-let zoomPointer = false;
+let zoomPointer = false;let zoomLabelTimer;
+function showZoomLabel(){const hud=zoomRange.closest('.village-hud');hud.dataset.adjusting='true';clearTimeout(zoomLabelTimer);zoomLabelTimer=setTimeout(()=>{hud.dataset.adjusting='false';},900);}
 let popupTrigger = null;
 let popupObject = null, tutorialStep = null;
 let clearExternal;
@@ -113,7 +115,7 @@ function selectMusic(track) {
   chip.dataset.state=state;chip.setAttribute('aria-pressed',String(playing));
   chip.setAttribute('aria-label',(playing?text.pause:text.play)+' · '+text.music);
   $('now-label').textContent=state==='error'?text.error:state==='loading'?text.loading:text.music;
-  $('music').textContent=state==='loading'?'…':playing?'⏸️':'▶️';
+  $('music').textContent=state==='loading'?'…':playing?'⏸︎':'▶︎';
   $('music').setAttribute('aria-label',state==='loading'?text.loading:playing?text.pause:text.play);
   $('music').setAttribute('aria-pressed',String(playing));
   $('music-status').textContent=state==='error'?text.error:state==='loading'?text.loading:playing?text.music:'';
@@ -335,7 +337,7 @@ function changeArea(next) {
   else {camera=savedVillage?.camera||{...villageCenter};scale=savedVillage?.scale||defaultZoom(width,height);}
   area=next;updateFloors();hovered='';closePopup();participantEditor?.areaChanged();
   if(next==='room'&&activeWorker.id==='induo-works')wallLinks.forEach(a=>{const image=a.querySelector('img');if(!image.hasAttribute('src'))image.src=image.dataset.src;});
-  $('back').hidden=area!=='room';$('caption').textContent=area==='room'?activeWorker.name.toUpperCase():text.title.toUpperCase();
+  $('back').hidden=area!=='room';$('home').hidden=area==='room';$('caption').textContent=area==='room'?activeWorker.name.toUpperCase():text.title.toUpperCase();
   canvas.setAttribute('aria-label',area==='room'?activeWorker.name+' · '+text.room:text.title);
   pointers.clear();gesture=null;pinch=null;requestDraw();canvas.focus({preventScroll:true});
   if(matchMedia('(max-width: 639px)').matches)scene.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
@@ -366,7 +368,7 @@ function visit(id, focusMap = false, trigger = null) {
   $('description').textContent=p.description;$('description').hidden=p.shape==='jukebox';
   $('links').replaceChildren();
   for (const item of p.links || []) {
-    const a = document.createElement('a'); a.textContent = p.shape==='jukebox'?'🔗':item.title+' ↗'; a.href = item.href;
+    const a = document.createElement('a'); a.textContent = p.shape==='jukebox'?'↗':item.title+' ↗'; a.href = item.href;
     if(p.shape==='jukebox'){a.setAttribute('aria-label',item.title);a.title=item.title;}
     if(new URL(a.href).origin!==location.origin){a.target='_blank';a.rel='noopener noreferrer';}
     (p.shape==='jukebox'?$('title'):$('links')).append(a);
@@ -403,6 +405,7 @@ $('zoom').addEventListener('click',()=>{closePopup();scale=defaultZoom(width,hei
 zoomRange.addEventListener('pointerdown',()=>{zoomPointer=true;});
 for(const event of ['pointerup','pointercancel'])window.addEventListener(event,()=>{zoomPointer=false;});
 zoomRange.addEventListener('input',()=>{
+  showZoomLabel();
   const value=Number(zoomRange.value)/100;
   // Keep native keyboard increments free to leave 100% after pointer snapping.
   scale=zoomPointer?snapZoom(value):clampZoom(value);closePopup();requestDraw();
@@ -526,8 +529,12 @@ function applyVillageCatalog(catalog){
   objects.sort((a,b)=>a.x+a.y-b.x-b.y);sprites.clear();makeGround();if(area==='room'){roomLevel=Math.min(roomLevel,roomFloors(activeWorker).length-1);makeRoom();updateFloors();}requestDraw();
 }
 
+const view=createSceneView(scene,$('fullscreen'));
+$('fullscreen').addEventListener('click',()=>view.toggle());
+window.addEventListener('keydown',event=>{if(event.key==='Escape')view.close();});
 const studioButton=$('studio');
-studioButton?.addEventListener('click',async()=>{
+$('home').addEventListener('click',async()=>{await openStudio();participantEditor?.home();});
+async function openStudio(){
   studioButton.disabled=true;
   try{
     if(participantEditor){participantEditor.open();return;}
@@ -540,7 +547,8 @@ studioButton?.addEventListener('click',async()=>{
       enter:(owner,level=0)=>{activeWorker=workers.find(w=>w.id===owner);if(activeWorker){changeArea('room');setRoomLevel(level);}},
       closePopup,
     });
-  }catch{studioButton.textContent=document.documentElement.lang.startsWith('ko')?'작업실 연결 실패 · 다시 시도':'Could not connect · Retry';}
+  }catch{studioButton.title=document.documentElement.lang.startsWith('ko')?'작업실 연결 실패 · 다시 시도':'Could not connect · Retry';studioButton.setAttribute('aria-label',studioButton.title);}
   finally{studioButton.disabled=false;}
-});
+}
+studioButton?.addEventListener('click',openStudio);
 if(new URLSearchParams(location.search).get('studio')==='1')studioButton?.click();

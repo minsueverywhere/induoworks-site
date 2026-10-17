@@ -15,6 +15,7 @@ class Element {
   replaceChildren(...items){this.children=items;}
   insertBefore(item,before){this.children.splice(this.children.indexOf(before),0,item);}
   setAttribute(key,value){this.attributes[key]=value;}
+  getAttribute(key){return this.attributes[key];}
   addEventListener(name,fn){this.events[name]=fn;}
   querySelectorAll(){return this.children.flatMap(child=>[child,...(child.querySelectorAll?.()||[])]).filter(child=>['button','input','select','textarea'].includes(child.tag));}
 }
@@ -40,19 +41,19 @@ test('participant UI adds and edits an owned Work, saves a private payload and r
   assert.deepEqual(ui.preview().world,catalog.world);
   ui.button('작성본 저장').events.click();await new Promise(resolve=>setImmediate(resolve));
   assert.equal(ui.writes.length,1);assert.equal(ui.writes[0].payload.payload.projects.find(p=>p.slug===added.slug).title.ko,'내 새 작품');assert.ok(!('world' in ui.writes[0].payload.payload));
-  ui.button('닫기').events.click();assert.equal(ui.scene.children[0].hidden,true);ui.editor.open();assert.equal(ui.scene.children[0].hidden,false);
+  ui.button('×').events.click();assert.equal(ui.scene.children[0].hidden,true);ui.editor.open();assert.equal(ui.scene.children[0].hidden,false);
 });
 test('unauthenticated scene shows only login and keeps that action after reopening',async()=>{
   const ui=await setup(()=>Response.json({error:'Discord 로그인이 필요합니다.'},{status:401}));
   const login=()=>elements(ui.scene).find(el=>el.tag==='a'&&el.href==='/api/studio/login');assert.ok(login());
-  ui.button('닫기').events.click();ui.editor.open();assert.ok(login());assert.equal(ui.button('작성본 저장'),undefined);
+  ui.button('×').events.click();ui.editor.open();assert.ok(login());assert.equal(ui.button('작성본 저장'),undefined);
 });
 
 
-test('participant editor expands in place and restores page scrolling on close without discarding the draft',async()=>{
-  const ui=await setup();assert.equal(ui.scene.attributes['studio-fullscreen'],true);
-  ui.button('닫기').events.click();assert.equal(ui.scene.attributes['studio-fullscreen'],false);
-  ui.editor.open();assert.equal(ui.scene.attributes['studio-fullscreen'],true);
+test('participant settings preserve independent full-screen state and collapse the picker after selection',async()=>{
+  const ui=await setup();assert.equal(ui.scene.attributes['studio-fullscreen'],undefined);
+  ui.button('×').events.click();assert.equal(ui.scene.attributes['studio-fullscreen'],undefined);
+  ui.editor.open();assert.equal(ui.scene.attributes['studio-fullscreen'],undefined);
   ui.button('꾸미기').events.click();
   assert.ok(elements(ui.scene).some(e=>e.tag==='details'&&e.children[0]?.textContent==='전시할 작품'&&!e.open));
   const add=elements(ui.scene).find(e=>e.attributes['aria-label']==='전시물 놓기');add.events.click();
@@ -77,4 +78,18 @@ test('first gesture selects an exhibit; only dragging the selected exhibit moves
   let blocked=false;ui.scene.events.click({target:{closest:()=>true},stopImmediatePropagation(){blocked=true;}});assert.equal(blocked,false);
   const undo=elements(ui.scene).find(el=>el.attributes['aria-label']==='실행 취소');undo.events.click();assert.equal(position(),0);
   assert.deepEqual(ui.preview().world,catalog.world);
+});
+
+
+test('home shortcut opens the owned room and hides settings without saving or changing full screen',async()=>{
+  const ui=await setup();ui.editor.home();assert.equal(ui.scene.children[0].hidden,true);assert.equal(ui.api.state().worker.id,'frondward');assert.equal(ui.writes.length,0);assert.equal(ui.scene.attributes['studio-fullscreen'],undefined);
+});
+
+test('independent scene view toggles full screen and restores pre-existing inert values',async()=>{
+  const scene=new Element('scene'),button=new Element('button'),sibling={inert:true};
+  scene.parentElement={children:[scene,sibling]};scene.parentElement.parentElement=null;
+  const root=new Element('html'),code=(await readFile(new URL('../src/scripts/village-view.mjs',import.meta.url),'utf8')).replace('export function','function');
+  const view=vm.runInNewContext(code+';createSceneView(scene,button)',{scene,button,document:{documentElement:root}});
+  view.toggle();assert.equal(scene.attributes['studio-fullscreen'],true);assert.equal(button.attributes['aria-pressed'],'true');assert.equal(sibling.inert,true);
+  view.close();view.close();assert.equal(scene.attributes['studio-fullscreen'],false);assert.equal(sibling.inert,true);assert.equal(root.attributes['studio-open'],false);
 });

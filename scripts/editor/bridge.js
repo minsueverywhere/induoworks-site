@@ -183,4 +183,4 @@ if(parent!==window){
     .room-decorating label{display:flex;align-items:center;gap:8px;margin:10px 0}.room-decorating select{min-width:0;width:100%}.room-decorating input{width:76px}.room-decorating [hidden]{display:none!important}
   `;document.head.append(style);
 }
-root.dataset.editor='true';sendEditor({type:'ready'});
+root.dataset.editor='true';root.dataset.editorEmbedded=String(parent!==window);sendEditor({type:'ready'});

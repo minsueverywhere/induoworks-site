@@ -11,15 +11,8 @@ export async function createParticipantEditor(api){
   const panel=document.createElement('section');panel.className='participant-studio';panel.dataset.ui='';panel.setAttribute('aria-label','내 작업실');api.scene.append(panel);
   const node=(tag,text)=>{const el=document.createElement(tag);if(text!==undefined)el.textContent=text;return el;};
   const status=node('p');status.setAttribute('role','status');
-  const top=node('div');top.className='participant-top';const title=node('strong','내 작업실'),close=node('button','닫기');close.type='button';top.append(title,close);panel.append(top,status);
+  const top=node('details');top.className='participant-top';top.append(node('summary','계정'));const close=node('button','×');close.type='button';close.className='participant-dismiss';close.setAttribute('aria-label','설정 닫기');panel.append(close,top,status);
   const body=node('div');body.className='participant-body';panel.append(body);
-  let outside=[];
-  const fullscreen=visible=>{
-    api.scene.classList.toggle('studio-fullscreen',visible);document.documentElement.classList.toggle('studio-open',visible);
-    if(visible&&!outside.length){for(let el=api.scene;el.parentElement;el=el.parentElement)for(const sibling of el.parentElement.children)if(sibling!==el){outside.push([sibling,sibling.inert]);sibling.inert=true;}}
-    if(!visible){for(const [el,inert] of outside)el.inert=inert;outside=[];}
-  };
-  fullscreen(true);
   let identity,owner='',approved,payload,baseHash,revision=0,stale=false,editing=false,tool='move',selected='',cursor=null,gesture=null,saved='',busy=false,tab='room',sheet='';
   const history=createHistory();let model,placementCache=null;
   const placement=()=>{if(!placementCache||placementCache.level!==state().level)placementCache={level:state().level,space:roomCatalog(model,owner,state().level)};return placementCache.space;};
@@ -36,7 +29,7 @@ export async function createParticipantEditor(api){
   function travel(action){const next=history[action](payload);if(next){payload=next;preview();render();api.requestDraw();}}
   const dirty=()=>payload&&JSON.stringify(payload)!==saved;
   window.addEventListener('beforeunload',event=>{if(dirty())event.preventDefault();});
-  const closeStudio=()=>{end();panel.hidden=true;editing=false;fullscreen(false);api.canvas.focus({preventScroll:true});api.requestDraw();};
+  const closeStudio=()=>{end();panel.hidden=true;editing=false;api.canvas.focus({preventScroll:true});api.requestDraw();};
   close.addEventListener('click',closeStudio);
   async function task(action){if(busy)return;busy=true;panel.querySelectorAll('button,input,select,textarea').forEach(el=>el.disabled=true);try{await action();}catch(error){message(error.message);}finally{busy=false;panel.querySelectorAll('button,input,select,textarea').forEach(el=>el.disabled=false);}}
   function button(parent,label,action){const el=node('button',label);el.type='button';el.addEventListener('click',action);parent.append(el);return el;}
@@ -160,10 +153,10 @@ export async function createParticipantEditor(api){
       body.append(node('p','변경안 JSON을 로컬 호스트 편집기의 ‘변경안 가져오기’로 열어 검토·저장·콘텐츠 배포한 뒤 발행 결과를 확인하세요.'));api.requestDraw();
     })).className='participant-review';
     if(!owners.length){message('로그인했습니다. 호스트가 Discord 계정과 업체를 연결하면 꾸밀 수 있습니다.');body.append(node('small','Discord ID: '+identity.id));}
-    else{const picker=node('select');picker.setAttribute('aria-label','내 작업실 선택');for(const w of owners)picker.append(new Option(w.name,w.id));top.insertBefore(picker,close);picker.addEventListener('change',()=>void task(async()=>{if(dirty()){picker.value=owner;throw Error('현재 작성본을 저장하거나 내려받은 뒤 작업실을 바꿔주세요.');}await load(picker.value);}));await load(owners[0].id);}
+    else{const picker=node('select');picker.setAttribute('aria-label','내 작업실 선택');for(const w of owners)picker.append(new Option(w.name,w.id));top.append(picker);picker.addEventListener('change',()=>void task(async()=>{if(dirty()){picker.value=owner;throw Error('현재 작성본을 저장하거나 내려받은 뒤 작업실을 바꿔주세요.');}await load(picker.value);}));await load(owners[0].id);}
     button(top,'로그아웃',()=>void task(async()=>{if(dirty())throw Error('작성본을 먼저 저장하거나 내려받아 주세요.');await request('logout',{});location.reload();}));
   }catch(error){message(error.message);if(error.status===401){if(new URLSearchParams(location.search).has('authError'))message('로그인 확인이 만료되었거나 완료되지 않았습니다. 다시 로그인해 주세요.');const login=node('a','Discord로 로그인');login.href='/api/studio/login';body.append(login);}}
-  return {open(){panel.hidden=false;fullscreen(true);render();},areaChanged(){end();if(!inRoom())editing=false;cursor=null;render();api.requestDraw();},draw(level){
+  return {home(){if(owner&&payload){closeStudio();api.enter(owner);}else{panel.hidden=false;render();}},open(){panel.hidden=false;render();},areaChanged(){end();if(!inRoom())editing=false;cursor=null;render();api.requestDraw();},draw(level){
     if(!active()||level!==state().level)return;const c=api.ctx,scale=state().scale;c.save();c.translate(0,-roomElevation(state().worker,state().level));c.lineWidth=1/scale;
     const outline=(x,y,color)=>{const p=toScreen(x,y);c.beginPath();c.moveTo(p.x,p.y-12);c.lineTo(p.x+24,p.y);c.lineTo(p.x,p.y+12);c.lineTo(p.x-24,p.y);c.closePath();c.strokeStyle=color;c.stroke();};
     const bounds=terrainBounds(floor(),3);c.globalAlpha=.15;for(let x=bounds.minX;x<=bounds.maxX;x++)for(let y=bounds.minY;y<=bounds.maxY;y++)outline(x,y,'#203745');c.globalAlpha=1;
