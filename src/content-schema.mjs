@@ -1,3 +1,4 @@
+import { validateWorld } from './scripts/village-world.mjs';
 export const MAX_FILE_BYTES = 25 * 1024 * 1024;
 export const MAX_FILES = 20000;
 export const CONTENT_ORIGIN = 'https://induoworks-content.rlaalstn0910.workers.dev';
@@ -16,6 +17,7 @@ export function safeUrl(value) {
 }
 export function validateCatalog(data) {
   check(data?.version === 1, 'Unsupported content version');
+  if(data.world)validateWorld(data.world);
   check(JSON.stringify(data).length <= 1024*1024, 'Content catalog exceeds 1 MiB');
   for (const [key, id] of [['workers','id'],['projects','slug'],['media','id'],['notices','id']]) {
     check(Array.isArray(data[key]) && data[key].length <= 1000, 'Invalid '+key);
@@ -49,6 +51,7 @@ export function validateCatalog(data) {
   for (const m of data.media) check(ids(m.workerIds) && Array.isArray(m.tags) && ['badge','preview','original'].every(k=>safeUrl(m[k])) && m.width>0 && m.height>0 && m.bytes>0 && m.bytes<=MAX_FILE_BYTES, 'Invalid artwork');
   for (const n of data.notices) check(localized(n.title) && localized(n.body) && (!n.href || safeUrl(n.href)) && (!n.linkLabel || localized(n.linkLabel)), 'Invalid notice');
   for(const track of [data.music,...tracks]) {
+    if(track.artist!==undefined)check(text(track.artist),'Invalid music artist');
     check(text(track?.title) && text(track.project) && Number.isFinite(track.duration) && track.duration>0 && text(track.sourceSha256), 'Invalid music');
     check(ids(track.workerIds||[]) && (track.workerIds||[]).every(id=>owners.has(id)), 'Invalid music owner');
     for(const ext of ['ogg','mp3'])check(safeUrl(track.sources?.[ext]) && new URL(track.sources[ext],CONTENT_ORIGIN).pathname.endsWith('.'+ext),'Use Ogg and MP3 music');

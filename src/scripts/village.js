@@ -1,7 +1,9 @@
+import { terrainAt } from './village-world.mjs';
+import { musicArtist } from './village-tracks.mjs';
 import { SIZE, MIN_ZOOM, MAX_ZOOM, toScreen, clampCamera, panCamera, clampZoom, defaultZoom, snapZoom, isDrag, zoomCamera, pinchPoints } from './village-camera.mjs';
-import { isPond, isPath, signLetterLayout, landscapeNoise as noise } from './village-layout.mjs';
+import { signLetterLayout, landscapeNoise as noise } from './village-layout.mjs';
 import { createTutorial, tutorialSteps } from './village-tutorial.mjs';
-import { createVillageMusic } from './village-music.mjs';
+import { createVillageMusic, musicTime } from './village-music.mjs';
 import { popupPosition } from './village-popup.mjs';
 import { loadContent } from './content-loader.mjs';
 import { villageContent } from './village-content.mjs';
@@ -10,7 +12,7 @@ const remoteContent=await loadContent();
 if(remoteContent) {
   const lang=document.documentElement.lang.startsWith('ko')?'ko':'en';
   const data=villageContent(remoteContent,lang,JSON.parse(root.dataset.text).title);
-  for(const key of ['places','workers','media','music'])root.dataset[key]=JSON.stringify(data[key]);
+  for(const key of ['places','workers','media','music','world'])root.dataset[key]=JSON.stringify(data[key]);
   const copy=JSON.parse(root.dataset.text);copy.music=data.music.title+' · '+data.music.project;root.dataset.text=JSON.stringify(copy);
   const container=root.querySelector('.village-places'),sample=container.querySelector('button');
   container.replaceChildren(...data.places.filter(p=>p.interactive!==false).map(p=>{
@@ -25,6 +27,8 @@ const villageCenter = toScreen(9,9);
 const $ = id => document.getElementById('village-' + id);
 const workers = JSON.parse(root.dataset.workers);
 let activeWorker = null;
+const sceneWorld=JSON.parse(root.dataset.world);
+const isPath=(x,y)=>terrainAt(sceneWorld,x,y)==='path',isPond=(x,y)=>terrainAt(sceneWorld,x,y)==='water';
 const places = JSON.parse(root.dataset.places), text = JSON.parse(root.dataset.text), media = JSON.parse(root.dataset.media);
 const badges = new Map(), sprites = new Map();
 let area = 'village', savedVillage = null;
@@ -85,10 +89,16 @@ tutorialSkip.addEventListener('click',()=>{tutorial.close();canvas.focus({preven
 let playing = false;
 let music,currentTrack;
 function selectMusic(track) {
-  if(currentTrack&&JSON.stringify([currentTrack.title,currentTrack.project,currentTrack.sources])===JSON.stringify([track.title,track.project,track.sources]))return;
-  music?.stop();currentTrack=track;text.music=track.title+' · '+track.project;
-  $('player').querySelector('p').textContent=text.music;
-  music = createVillageMusic({sources:track.sources,onState:state=>{
+  if(currentTrack&&JSON.stringify([currentTrack.id,currentTrack.title,currentTrack.artist,currentTrack.project,currentTrack.sources])===JSON.stringify([track.id,track.title,track.artist,track.project,track.sources]))return;
+  music?.stop();currentTrack=track;text.music=track.title+' - '+musicArtist(track);
+  $('seek').value='0';$('seek').disabled=true;
+  $('time').textContent='0:00 / '+musicTime(track.duration);
+  music = createVillageMusic({sources:track.sources,onProgress:({current,duration})=>{
+    if(currentTrack!==track)return;
+    $('seek').disabled=!duration;$('seek').max=String(duration||track.duration);$('seek').value=String(current);
+    $('seek').setAttribute('aria-valuetext',musicTime(current)+' / '+musicTime(duration||track.duration));
+    $('time').textContent=musicTime(current)+' / '+musicTime(duration||track.duration);
+  },onState:state=>{
   playing=state==='playing';sprites.clear();
   const chip=$('now-playing');
   // The chip appears with the first play and then stays as the pause/resume control.
@@ -96,7 +106,8 @@ function selectMusic(track) {
   chip.dataset.state=state;chip.setAttribute('aria-pressed',String(playing));
   chip.setAttribute('aria-label',(playing?text.pause:text.play)+' · '+text.music);
   $('now-label').textContent=state==='error'?text.error:state==='loading'?text.loading:text.music;
-  $('music').textContent=state==='loading'?text.loading:playing?text.pause:text.play;
+  $('music').textContent=state==='loading'?'…':playing?'⏸️':'▶️';
+  $('music').setAttribute('aria-label',state==='loading'?text.loading:playing?text.pause:text.play);
   $('music').setAttribute('aria-pressed',String(playing));
   $('music-status').textContent=state==='error'?text.error:state==='loading'?text.loading:playing?text.music:'';
   if(playing)tutorial.complete('music');
@@ -104,16 +115,8 @@ function selectMusic(track) {
 }});
 }
 selectMusic(JSON.parse(root.dataset.music));
-const trees = [];
-for (let tx = 1; tx < SIZE-1; tx++) for (let ty = 1; ty < SIZE-1; ty++) {
-  if(noise(tx,ty,9)>.14)continue;
-  const x=tx+(noise(tx,ty,10)-.5)*1.2,y=ty+(noise(tx,ty,11)-.5)*1.2;
-  if(!(x<5||y<4||x>19||y>19)||isPond(x,y)||(x>8.5&&x<14.5&&y>=7))continue;
-  if(places.some(p=>p.area==='village'&&(p.shape==='sign'?x<4.5&&y>5&&y<19:Math.abs(p.x-x)<2.5&&Math.abs(p.y-y)<2.5)))continue;
-  if(trees.some(t=>Math.hypot(t.x-x,t.y-y)<2.3))continue;
-  trees.push({x,y,size:.8+noise(tx,ty,12)*.35,draw:tree});
-}
-const objects = [...trees.map(t=>({...t,area:'village'})), ...places.map(p => ({...p, draw: {house, sign, board, game, jukebox, artwork}[p.shape]})), {x:9,y:10,draw:character,area:'village'}].sort((a,b)=>a.x+a.y-b.x-b.y);
+const decorationObject=d=>({...d,worldId:d.id,id:undefined,area:'village',draw:d.type==='tree'?tree:grass});
+const objects = [...sceneWorld.decorations.map(decorationObject), ...places.map(p => ({...p, draw: {house, sign, board, game, jukebox, artwork}[p.shape]})), {...sceneWorld.mascot,worldId:'mascot',type:'character',draw:character,area:'village'}].sort((a,b)=>a.x+a.y-b.x-b.y);
 function polygon(c, points, fill) { c.fillStyle = fill; c.beginPath(); points.forEach(([x,y],i) => i ? c.lineTo(x,y) : c.moveTo(x,y)); c.closePath(); c.fill(); }
 function tile(c, x, y, color) { const p = toScreen(x,y); polygon(c, [[p.x,p.y-12],[p.x+24,p.y],[p.x,p.y+12],[p.x-24,p.y]], color); }
 function box(c,x,y,w,d,h,colors) { polygon(c,[[x,y-h],[x+w,y+d-h],[x,y+2*d-h],[x-w,y+d-h]],colors[0]); polygon(c,[[x-w,y+d-h],[x,y+2*d-h],[x,y+2*d],[x-w,y+d]],colors[1]); polygon(c,[[x,y+2*d-h],[x+w,y+d-h],[x+w,y+d],[x,y+2*d]],colors[2]); }
@@ -130,11 +133,6 @@ function makeGround() {
       const corners=[[p.x,p.y-12],[p.x+24,p.y],[p.x,p.y+12],[p.x-24,p.y]],neighbors=[[x,y-1],[x+1,y],[x,y+1],[x-1,y]];
       ground.strokeStyle='#aa8454';ground.lineWidth=1.5;ground.beginPath();
       neighbors.forEach(([nx,ny],i)=>{if(!isPath(nx,ny)){ground.moveTo(...corners[i]);ground.lineTo(...corners[(i+1)%4]);}});ground.stroke();
-    }
-    if (!path && !water && noise(Math.floor(x/3),Math.floor(y/3),4)<.55 && noise(x,y,1)<.28) {
-      const tuft=toScreen(x+(noise(x,y,2)-.5)*.7,y+(noise(x,y,3)-.5)*.7);
-      ground.fillStyle='#80965d';ground.fillRect(tuft.x,tuft.y-2,1.5,3);
-      if(noise(x,y,5)<.35){ground.fillStyle='#efe2b0';ground.fillRect(tuft.x-1,tuft.y-4,2.5,2);}
     }
     if (water) { ground.fillStyle='#b7d2bf';ground.fillRect(p.x-8,p.y,14,1); }
   }
@@ -153,6 +151,7 @@ function house(c, object){
   c.fillStyle='#59482f';c.font='600 6px system-ui, sans-serif';c.textAlign='center';c.fillText(object.title,18,10,30);c.restore();
   box(c,14,-69,5,3,16,['#d0b392','#ac8e76','#866d5d']);
 }
+function grass(c,o){c.save();c.scale(o.size,o.size);c.strokeStyle='#80965d';c.lineWidth=1.5;c.beginPath();c.moveTo(-2,0);c.lineTo(-3,-3);c.moveTo(0,0);c.lineTo(0,-4);c.moveTo(2,0);c.lineTo(3,-2);c.stroke();if(o.flower){c.fillStyle='#efe2b0';c.fillRect(-1,-5,2.5,2);}c.restore();}
 function tree(c,object){c.save();c.scale(object.size,object.size);c.fillStyle='#7c7050';c.fillRect(-3,-13,6,19);polygon(c,[[-20,-12],[0,-51],[20,-12]],'#587b59');polygon(c,[[-16,-25],[0,-63],[16,-25]],'#719366');polygon(c,[[-11,-41],[0,-71],[11,-41]],'#8da773');c.restore();}
 function sign(c,object) {
   c.save();c.font='700 34px system-ui, sans-serif';c.textBaseline='alphabetic';
@@ -281,7 +280,7 @@ function positionPopup() {
   const target=buttons.get(popupObject), r=scene.getBoundingClientRect(), b=target.getBoundingClientRect();
   const anchor={x:b.left-r.left,y:b.top-r.top,width:b.width,height:b.height},top=area==='room'?64:12;
   const space=Math.max(anchor.y-top-14,height-12-anchor.y-anchor.height-14);
-  popup.style.maxHeight=Math.max(100,Math.min(330,height-100,space))+'px';
+  popup.style.maxHeight=Math.max(100,Math.min(330,height-100,popup.dataset.music==='true'?height-top-12:space))+'px';
   const p=popupPosition(anchor,{width:popup.offsetWidth,height:popup.offsetHeight},{width,height,top});
   popup.style.left=p.x+'px';popup.style.top=p.y+'px';popup.dataset.side=p.side;
 }
@@ -336,7 +335,9 @@ function visit(id, focusMap = false, trigger = null) {
   if(p.shape==='jukebox')selectMusic(p.music||JSON.parse(root.dataset.music));
   popupObject=id;
   popupTrigger = trigger || buttons.get(id);
-  $('title').textContent = p.title; $('description').textContent = p.description;
+  popup.dataset.music=String(p.shape==='jukebox');
+  $('title').textContent=p.shape==='jukebox'?text.music:p.title;
+  $('description').textContent=p.description;$('description').hidden=p.shape==='jukebox';
   $('links').replaceChildren();
   for (const item of p.links || []) {
     const a = document.createElement('a'); a.textContent = item.title+' ↗'; a.href = item.href;
@@ -467,7 +468,7 @@ canvas.addEventListener('keydown',e => {
 });
 $('now-playing').addEventListener('click',() => void music.toggle());
 $('music').addEventListener('click',() => void music.toggle());
-$('volume').addEventListener('input',() => music.setVolume(Number($('volume').value)/100));
+$('seek').addEventListener('input',()=>music.seek(Number($('seek').value)));
 document.addEventListener('visibilitychange',() => {if(document.hidden) {gesture=null;pinch=null;pointers.clear();scene.classList.remove('is-dragging');music.stop();}});
 window.addEventListener('pagehide',() => {cancelAnimationFrame(frame);music.stop();});
 makeGround();root.classList.add('ready');resize();new ResizeObserver(resize).observe(canvas);

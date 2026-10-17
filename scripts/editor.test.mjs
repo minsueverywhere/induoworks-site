@@ -10,6 +10,7 @@ import { createEditorMiddleware, localEditorPlugin } from './editor-server.mjs';
 import { validateCatalog, resolveMedia, CONTENT_ORIGIN } from '../src/content-schema.mjs';
 import { villageContent } from '../src/scripts/village-content.mjs';
 import { contentWorks } from '../src/scripts/content-catalog.mjs';
+import { villageWorld } from '../src/scripts/village-world.mjs';
 const root=new URL('../',import.meta.url);
 const original=JSON.parse(await readFile(new URL('content/catalog.json',root),'utf8'));
 async function fixture(t){
@@ -49,6 +50,15 @@ test('image upload creates bounded previews and refuses disguised files and trav
   await assert.rejects(()=>mediaFile(directory,'/uploads/../../.env'));
   await assert.rejects(()=>mediaFile(directory,'/uploads/test.svg'));
 });
+test('saved scene preserves painted tiles, moved signs and removed trees across reloads',async t=>{
+  const directory=await fixture(t),store=createEditorStore(directory),before=await store.read(),draft=structuredClone(before.catalog);
+  draft.world=villageWorld(draft);draft.world.sign={x:1,y:14};draft.world.noticeboard={x:8,y:20};
+  draft.world.decorations=draft.world.decorations.filter(d=>d.id!=='tree-1');draft.world.tiles[12*24+15].type='water';
+  await store.save(draft,before.revision);
+  assert.deepEqual((await createEditorStore(directory).read()).catalog.world,draft.world);
+  const invalid=structuredClone(draft);invalid.world.tiles[3*24+3].type='water';
+  await assert.rejects(()=>store.preview(invalid),/물/);
+});
 test('local HTTP editor requires a loopback Host, same origin and session token; deployment is explicit',async t=>{
   const directory=await fixture(t);let deploys=0;
   const middleware=createEditorMiddleware(directory,{deploy:async()=>{deploys++;return 'content only';}});
@@ -87,6 +97,7 @@ test('editor bridge transforms only the map during dev and does not enter normal
   const transformed=await plugin.transform(source,'F:/repo/src/scripts/village.js');
   assert.match(transformed.code,/fetch\('\/__editor\/preview\?t='/);
   assert.match(transformed.code,/source:'induo-map'/);
+  assert.match(transformed.code,/drawEditorOverlay\(\); positionWallLinks/);
   assert.ok(!transformed.code.includes('const remoteContent=await loadContent();'));
   assert.ok(!source.includes('/__editor/'));
 });

@@ -68,6 +68,7 @@ export function localEditorPlugin() {
       this.addWatchFile?.(fileURLToPath(new URL('./editor/bridge.js',import.meta.url)));
       code=code.replace('const remoteContent=await loadContent();',"const remoteContent=await fetch('/__editor/preview?t='+Date.now(),{cache:'no-store'}).then(r=>r.json());");
       code=code.replace('for (const object of objects) {','for (const object of objects) { if(object.editorHidden)continue;');
+      code=code.replace('positionWallLinks(ox,oy);','drawEditorOverlay(); positionWallLinks(ox,oy);');
       return {code:code+'\n'+await readFile(new URL('./editor/bridge.js',import.meta.url),'utf8'),map:null};
     },
   };

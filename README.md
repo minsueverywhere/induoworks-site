@@ -20,7 +20,7 @@ security headers).
 ## Stack
 
 Local content editor: run `npm run content:edit`, then open `http://127.0.0.1:4323/__editor/`.
-Drag houses, edit studios/works/media, save with backups, and publish only the content bundle.
+Move village objects, paint terrain and place plants, edit studios/works/media, save with backups, and publish only the content bundle.
 The editor is excluded from public builds. See [docs/CONTENT.md](docs/CONTENT.md) for the workflow and limits.
 
 - **Astro** (`@astrojs/cloudflare` adapter, most routes prerendered) — every page

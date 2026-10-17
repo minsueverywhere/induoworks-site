@@ -4,7 +4,8 @@ import { resolve, dirname, relative, extname } from 'node:path';
 import sharp from 'sharp';
 import { validateCatalog, mediaPaths } from '../src/content-schema.mjs';
 import { validateMediaFile } from './content-files.mjs';
-import { placementError } from './editor-placement.mjs';
+import { placementError, objectPlacementError } from './editor-placement.mjs';
+import { villageWorld, validateWorld } from '../src/scripts/village-world.mjs';
 export { placementError } from './editor-placement.mjs';
 
 export const revisionOf=bytes=>createHash('sha256').update(bytes).digest('hex');
@@ -21,14 +22,18 @@ export async function mediaFile(root,path) {
 }
 export async function checkEditorContent(root,data) {
   validateCatalog(data);
+  const world=validateWorld(villageWorld(data));
   const nonempty=value=>typeof value==='string'&&value.trim().length>0;
   if(!data.workers.every(w=>nonempty(w.name)&&nonempty(w.description.ko)&&nonempty(w.description.en))||
     ![...data.projects,...data.media].every(w=>nonempty(w.title.ko)&&nonempty(w.title.en))||
     ![data.music,...(data.tracks||[])].every(t=>nonempty(t.title)&&nonempty(t.project)))throw new Error('이름·제목과 업체 소개, 음악의 작품·아티스트를 입력해 주세요.');
   for(const w of data.workers)if(w.house) {
-    const error=placementError(data.workers,w.id,w.house);if(error)throw new Error(w.name+': '+error);
+    const error=placementError(data.workers,w.id,w.house,world);if(error)throw new Error(w.name+': '+error);
     if(data.projects.filter(p=>p.workerIds?.includes(w.id)).length>9)throw new Error(w.name+': 작업실에는 작품을 최대 9개까지 놓을 수 있습니다.');
     if(data.media.filter(m=>m.workerIds.includes(w.id)).length>4)throw new Error(w.name+': 현재 작업실의 이미지 전시는 최대 4개입니다.');
+  }
+  for(const [id,type,point]of [['mascot','character',world.mascot],['welcome','sign',world.sign],['noticeboard','board',world.noticeboard],...world.decorations.map(d=>[d.id,d.type,d])]){
+    const error=objectPlacementError(data,type,id,point);if(error)throw new Error(id+': '+error);
   }
   for(const path of mediaPaths(data))validateMediaFile(path,await readFile(await mediaFile(root,path)));
   return data;

@@ -1,3 +1,4 @@
+import { musicSummary } from './scripts/village-tracks.mjs';
 import { projects, labs, workers } from './config';
 import { villageMedia } from './village-media';
 import catalog from '../content/catalog.json';
@@ -27,8 +28,8 @@ export function workCatalog(lang: Locale) {
       kind: 'artwork', workerIds: m.workerIds, tags: m.tags, status: 'shipped', year: '',
       href: m.original, image: m.preview, imageWidth: m.width, imageHeight: m.height, imageAlt: m.title[lang], imageCaption: '', file: true,
     })),
-    ...(catalog.tracks as Array<typeof catalog.music & {id:string;workerIds:string[]}>).map(track=>({
-      id:'music:'+track.id,title:track.title,summary:track.project,kind:'music',workerIds:track.workerIds||[],
+    ...([{...catalog.music,id:'legacy'},...catalog.tracks] as Array<typeof catalog.music & {id:string;workerIds:string[]}>).map(track=>({
+      id:'music:'+track.id,title:track.title,summary:musicSummary(track),kind:'music',workerIds:track.workerIds||[],
       tags:['Music'],status:'shipped',year:'',href:track.sources.ogg,image:'',imageWidth:600,imageHeight:400,
       imageAlt:track.title,imageCaption:'',file:true,
     })),

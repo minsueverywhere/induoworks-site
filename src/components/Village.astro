@@ -32,11 +32,11 @@ const text = {
     skip: ko ? '건너뛰기' : 'Skip',
   },
 };
-const {places:allPlaces,workers:villageWorkers}=villageContent(catalog,lang,text.title);
+const {places:allPlaces,workers:villageWorkers,world}=villageContent(catalog,lang,text.title);
 const welcome=allPlaces.find(p=>p.id==='welcome')!;
 const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interactive!==false);
 ---
-<section id="village-section" class="village page-main" aria-labelledby="village-heading" data-places={JSON.stringify(allPlaces)} data-text={JSON.stringify(text)} data-workers={JSON.stringify(villageWorkers)} data-music={JSON.stringify(villageMusic)} data-media={JSON.stringify(villageMedia.map(m => ({...m,title:m.title[lang]})))}>
+<section id="village-section" class="village page-main" aria-labelledby="village-heading" data-world={JSON.stringify(world)} data-places={JSON.stringify(allPlaces)} data-text={JSON.stringify(text)} data-workers={JSON.stringify(villageWorkers)} data-music={JSON.stringify(villageMusic)} data-media={JSON.stringify(villageMedia.map(m => ({...m,title:m.title[lang]})))}>
   <div class="village-heading">
     <h1 id="village-heading" class="page-title">{text.title}</h1>
     <div id="village-help" class="village-help">
@@ -68,9 +68,7 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
       <nav id="village-links" aria-label={ko ? '작업실의 작품' : 'Workshop projects'}></nav>
       <div id="village-gallery"></div>
       <div id="village-player" hidden>
-        <p>{text.music}</p>
-        <button id="village-music" type="button" aria-pressed="false">{text.play}</button>
-        <label>{ko ? '음량' : 'Volume'} <input id="village-volume" type="range" min="0" max="100" value="20" /></label>
+        <div class="music-controls"><button id="village-music" type="button" aria-pressed="false" aria-label={text.play}>▶️</button><input id="village-seek" type="range" min="0" max={villageMusic.duration} step=".1" value="0" aria-label={ko?'재생 위치':'Playback position'} disabled /></div><p id="village-time">0:00 / {Math.floor(villageMusic.duration/60)}:{String(Math.floor(villageMusic.duration%60)).padStart(2,'0')}</p>
       </div>
     </section>
     <button id="village-back" class="village-back" type="button" data-ui hidden>{text.back}</button>
@@ -158,7 +156,15 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
   #village-description { font-size: .8rem; line-height: 1.7; }
   #village-links { display: grid; margin-top: .5rem; }
   #village-links :global(a) { display: flex; align-items: center; min-height: 44px; text-decoration: underline; text-underline-offset: 3px; font-size: .875rem; }
-  #village-player { margin-top: .75rem; padding-top: .75rem; border-top: 1px solid #b7b99d; font-size: .75rem; }
+  #village-player { font-size: .75rem; }
+  .music-controls { display:flex; align-items:center; gap:.6rem; }
+  #village-seek { width:100%; min-width:0; accent-color:#597158; cursor:pointer; }
+  #village-time { text-align:right; font-variant-numeric:tabular-nums; color:#5f7050; margin:0; }
+  .village-popup[data-music="true"] { padding:.65rem .8rem; width:min(300px,calc(100% - 24px)); }
+  .village-popup[data-music="true"] h3 { font-size:.85rem; padding-right:28px; margin:0; overflow-wrap:anywhere; }
+  .village-popup[data-music="true"] #village-close { position:absolute; right:4px; top:4px; margin:0; }
+  .village-popup[data-music="true"] #village-links { margin:0; }
+  .village-popup[data-music="true"] #village-links :global(a) { font-size:.75rem; }
   #village-music { margin: .5rem 0; background: #faf6e8; color: #30422e; border-color: #b7b99d; }
   #village-player label { display: flex; align-items: center; gap: .5rem; white-space: nowrap; }
   input { flex: 1; width: 0; min-width: 0; min-height: 44px; }
