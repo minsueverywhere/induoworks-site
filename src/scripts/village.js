@@ -366,9 +366,10 @@ function visit(id, focusMap = false, trigger = null) {
   $('description').textContent=p.description;$('description').hidden=p.shape==='jukebox';
   $('links').replaceChildren();
   for (const item of p.links || []) {
-    const a = document.createElement('a'); a.textContent = item.title+' ↗'; a.href = item.href;
+    const a = document.createElement('a'); a.textContent = p.shape==='jukebox'?'🔗':item.title+' ↗'; a.href = item.href;
+    if(p.shape==='jukebox'){a.setAttribute('aria-label',item.title);a.title=item.title;}
     if(new URL(a.href).origin!==location.origin){a.target='_blank';a.rel='noopener noreferrer';}
-    $('links').append(a);
+    (p.shape==='jukebox'?$('title'):$('links')).append(a);
   }
   $('player').hidden = p.shape !== 'jukebox';
   $('gallery').replaceChildren();

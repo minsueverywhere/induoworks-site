@@ -69,7 +69,7 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
       <nav id="village-links" aria-label={ko ? '작업실의 작품' : 'Workshop projects'}></nav>
       <div id="village-gallery"></div>
       <div id="village-player" hidden>
-        <div class="music-controls"><button id="village-music" type="button" aria-pressed="false" aria-label={text.play}>▶️</button><input id="village-seek" type="range" min="0" max={villageMusic.duration} step=".1" value="0" aria-label={ko?'재생 위치':'Playback position'} disabled /></div><p id="village-time">0:00 / {Math.floor(villageMusic.duration/60)}:{String(Math.floor(villageMusic.duration%60)).padStart(2,'0')}</p>
+        <div class="music-controls"><button id="village-music" type="button" aria-pressed="false" aria-label={text.play}>▶️</button><input id="village-seek" type="range" min="0" max={villageMusic.duration} step=".1" value="0" aria-label={ko?'재생 위치':'Playback position'} disabled /><span id="village-time">0:00 / {Math.floor(villageMusic.duration/60)}:{String(Math.floor(villageMusic.duration%60)).padStart(2,'0')}</span></div>
       </div>
     </section>
     <button id="village-back" class="village-back" type="button" data-ui hidden>{text.back}</button>
@@ -143,7 +143,7 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
   .village-caption { position: absolute; bottom: 12px; left: 14px; color: #5f7050; font: 10px monospace; letter-spacing: .14em; pointer-events: none; }
   button { min-width: 44px; min-height: 44px; }
   button:focus-visible, a:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }
-  #village-music { border: 1px solid var(--color-border); border-radius: .5rem; padding: .5rem .7rem; background: var(--color-bg-elevated); cursor: pointer; font-size: .8rem; }
+  #village-music { flex:none; min-width:32px; min-height:36px; border:0; padding:0; background:transparent; color:inherit; cursor:pointer; font-size:.65rem; line-height:1; }
   .village-now-playing { position: absolute; z-index: 3; top: 4px; right: 8px; display: flex; align-items: center; gap: 6px; max-width: calc(100% - 140px); padding: 0 6px; background: transparent; color: #5f7050; font: 10px monospace; letter-spacing: .14em; text-transform: uppercase; cursor: pointer; opacity: .6; transition: opacity 150ms ease; }
   .village-now-playing:hover, .village-now-playing:focus-visible { opacity: 1; }
   .village-now-playing span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
@@ -158,15 +158,14 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
   #village-links { display: grid; margin-top: .5rem; }
   #village-links :global(a) { display: flex; align-items: center; min-height: 44px; text-decoration: underline; text-underline-offset: 3px; font-size: .875rem; }
   #village-player { font-size: .75rem; }
-  .music-controls { display:flex; align-items:center; gap:.6rem; }
+  .music-controls { display:flex; align-items:center; gap:.3rem; }
   #village-seek { width:100%; min-width:0; accent-color:#597158; cursor:pointer; }
-  #village-time { text-align:right; font-variant-numeric:tabular-nums; color:#5f7050; margin:0; }
+  #village-time { flex:none; white-space:nowrap; font-size:.65rem; font-variant-numeric:tabular-nums; color:#5f7050; }
   .village-popup[data-music="true"] { padding:.65rem .8rem; width:min(300px,calc(100% - 24px)); }
   .village-popup[data-music="true"] h3 { font-size:.85rem; padding-right:28px; margin:0; overflow-wrap:anywhere; }
   .village-popup[data-music="true"] #village-close { position:absolute; right:4px; top:4px; margin:0; }
-  .village-popup[data-music="true"] #village-links { margin:0; }
-  .village-popup[data-music="true"] #village-links :global(a) { font-size:.75rem; }
-  #village-music { margin: .5rem 0; background: #faf6e8; color: #30422e; border-color: #b7b99d; }
+  .village-popup[data-music="true"] #village-links { display:none; }
+  #village-title :global(a) { display:inline-flex; align-items:center; justify-content:center; min-width:28px; min-height:28px; margin-left:.15rem; vertical-align:middle; font-size:.7rem; text-decoration:none; }
   #village-player label { display: flex; align-items: center; gap: .5rem; white-space: nowrap; }
   input { flex: 1; width: 0; min-width: 0; min-height: 44px; }
   #village-gallery :global(figure) { margin-top: .75rem; }
