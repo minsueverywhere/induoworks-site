@@ -53,3 +53,7 @@ Node SQLite 기반 테스트로 실제 SQL, state 위조·재사용, 세션 만�
 계단·캐릭터 이동, 참여자 직접 업로드/R2, 공동 제작 작품의 편집 정책, 권한 관리 GUI, 원격 자동 발행은 포함하지 않는다. 현재 기본 자동 전시의 작품 9개·이미지 4개 한도는 유지한다. 프로젝트 정적 상세/SEO 갱신은 사이트 재빌드 대상이지만 범용 상세와 Works·씬의 데이터 변경은 콘텐츠 발행만 필요하다.
 
 인증 근거: [Discord 공식 OAuth2 문서](https://docs.discord.com/developers/topics/oauth2).
+
+## 2026-10-17 외부 링크·Discord 첨부 운영 반영
+
+외부 링크 기능을 main과 운영 코드에 반영했다. Discord 첨부 접수의 운영 상태·실제 검증과 남은 범위는 [DISCORD-WORKS.md](DISCORD-WORKS.md)를 따른다. 앞선 외부 링크 검증 기록 중 SoundCloud 실재생·모바일 검증은 여전히 남아 있다.

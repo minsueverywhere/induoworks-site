@@ -1,6 +1,6 @@
 # Discord 작품 파일 접수
 
-2026-10-17 로컬 구현·검증 완료, 운영 등록·배포 전이다. 외부 링크 Work와는 별개로 Discord의 첨부 파일을 받아 호스트 승인 뒤 기존 정적 콘텐츠 저장소에 발행한다. 파일을 웹에 직접 업로드하거나 Discord CDN을 영구 파일 주소로 사용하지 않는다.
+2026-10-17 main 반영·운영 배포·DB 적용·명령 등록을 완료했다. 외부 링크 Work와는 별개로 Discord의 첨부 파일을 받아 호스트 승인 뒤 기존 정적 콘텐츠 저장소에 발행한다. 파일을 웹에 직접 업로드하거나 Discord CDN을 영구 파일 주소로 사용하지 않는다.
 
 ## 사용 흐름
 
@@ -44,6 +44,8 @@
 
 ## 검증 상태
 
-테스트는 실제 SQLite SQL, 서명·재전송·권한, 위장 파일/용량/주소 거부, 계정·전체 한도·동시 접수, 조각 재조립·만료, 호스트 승인/반려, 백업/충돌·불명확한 배포 보존, 단일 MP3의 Works·지연 재생을 포함한다. 격리된 Chrome 화면에서 접수 목록·이미지 미리보기·반려를 확인했다. 격리 서버는 공개 배포를 실행할 수 없고 검증 후 종료했다. 운영 명령 실행·D1 실제 업로드·공개 발행은 아직 검증하지 않았다.
+테스트는 실제 SQLite SQL, 서명·재전송·권한, 위장 파일/용량/주소 거부, 계정·전체 한도·동시 접수, 조각 재조립·만료, 호스트 승인/반려, 백업/충돌·불명확한 배포 보존, 단일 MP3의 Works·지연 재생을 포함한다. 격리된 Chrome 화면에서 접수 목록·이미지 미리보기·반려를 확인했다. 격리 서버는 공개 배포를 실행할 수 없고 검증 후 종료했다. 실제 비공개 채널에서 이미지 첨부 명령 → 운영 D1 저장 → 호스트 이미지 미리보기 → 반려를 확인했다. 반려 뒤 임시 파일 조각은 0개이며 테스트 작품은 공개하지 않았다. 최초 두 시도에서 발견한 Workers의 redirect:error 미지원 문제를 manual 처리와 응답 검사로 고치고 회귀 테스트를 추가했다. 사이트 테스트 83개·봇 21개, Astro 진단 0, 빌드·CSP·52개 경로 검사를 통과했다. 실제 음악 첨부와 승인 후 공개 발행은 검증하지 않았다.
 
 근거: [Discord 명령](https://docs.discord.com/developers/interactions/application-commands), [Interaction 응답](https://docs.discord.com/developers/interactions/receiving-and-responding), [Workers waitUntil](https://developers.cloudflare.com/changelog/post/2025-08-08-add-waituntil-cloudflare-workers/).
+
+운영 코드: 352a5e0, 런타임 수정: 14de391. [최종 코드 자동 검사 통과](https://github.com/minsueverywhere/induoworks-site/actions/runs/39031636070). 기존 봇과 명령도 운영 반영했으며 비밀 키나 권한을 확대하지 않았다.
