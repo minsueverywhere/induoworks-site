@@ -10,7 +10,7 @@ function editorHit(event){
   const id=event.target.closest('[data-object]')?.dataset.object;
   if(id)return objects.find(o=>o.id===id&&o.area==='village');
   const point=editorPoint(event),screen=toScreen(point.x,point.y);
-  return [...objects].reverse().find(o=>{if(!o.worldId)return false;const p=toScreen(o.x,o.y),w=o.type==='tree'?24*o.size:8,h=o.type==='tree'?75*o.size:o.type==='character'?38:12;return screen.x>=p.x-w&&screen.x<=p.x+w&&screen.y>=p.y-h&&screen.y<=p.y+8;});
+  return [...objects].reverse().find(o=>{if(!o.worldId&&!(o.shape==='board'&&o.interactive===false))return false;const p=toScreen(o.x,o.y),w=o.shape==='board'?58:o.type==='tree'?24*o.size:8,h=o.shape==='board'?104:o.type==='tree'?75*o.size:o.type==='character'?38:12;return screen.x>=p.x-w&&screen.x<=p.x+w&&screen.y>=p.y-h&&screen.y<=p.y+8;});
 }
 function editorSelect(object){editorSelected=editorId(object);hovered=object.id||'';sendEditor({type:'select',id:editorSelected,kind:object.shape||object.type});requestDraw();}
 function editorBrush(event){

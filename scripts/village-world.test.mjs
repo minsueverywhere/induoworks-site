@@ -6,6 +6,8 @@ import {objectPlacementError,paintError} from './editor-placement.mjs';
 import {validateCatalog} from '../src/content-schema.mjs';
 import {villageContent} from '../src/scripts/village-content.mjs';
 import {contentWorks} from '../src/scripts/content-catalog.mjs';
+import {runInNewContext} from 'node:vm';
+import {toScreen,toTile} from '../src/scripts/village-camera.mjs';
 const original=JSON.parse(await readFile(new URL('../content/catalog.json',import.meta.url),'utf8'));
 test('legacy scenery has stable editable defaults; moved scenery and painted terrain share the catalog',()=>{
   const data=structuredClone(original);delete data.world;
@@ -41,4 +43,11 @@ test('jukebox links reach the corresponding music Work including the original lo
   const work=contentWorks(data,'ko').find(w=>w.id==='music:legacy');
   assert.equal(url.pathname,'/ko/work/');assert.equal(url.searchParams.get('q'),work.title);
   assert.equal(url.hash,'#work-info-'+work.id);assert.equal(jukebox.description,'');
+});
+test('an empty noticeboard stays draggable even though it has no public interaction button',async()=>{
+  const source=await readFile(new URL('./editor/bridge.js',import.meta.url),'utf8');
+  const board={id:'noticeboard',shape:'board',area:'village',interactive:false,x:9,y:20},center=toScreen(board.x,board.y);
+  const context={objects:[board],toScreen,editorPoint:e=>e.point,event:{target:{closest:()=>null},point:toTile(center.x,center.y-50)}};
+  runInNewContext(source.slice(source.indexOf('function editorHit('),source.indexOf('function editorSelect('))+'\nresult=editorHit(event);',context);
+  assert.equal(context.result,board);
 });
