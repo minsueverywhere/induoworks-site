@@ -18,7 +18,7 @@ export function placementCells(catalog,type,id,proposed){
   for(let y=lot.y;y<lot.y+lot.depth;y++)for(let x=lot.x;x<lot.x+lot.width;x++){
     const terrain=terrainAt(world,x,y);
     const error=terrain===null?'마을 밖에는 놓을 수 없어요.':
-      terrain==='water'||(!['character','exhibit'].includes(type)&&!['grass','floor'].includes(terrain))?'길이나 물 위에는 놓을 수 없어요.':
+      terrain==='water'||terrain==='transparent'||(!['character','exhibit'].includes(type)&&!['grass','floor'].includes(terrain))?'길이나 물 위에는 놓을 수 없어요.':
       others.some(o=>footprintContains(o.point,o.type,{x,y}))?'다른 물체의 점유 영역과 겹쳐요.':'';
     cells.push({x,y,error});
   }

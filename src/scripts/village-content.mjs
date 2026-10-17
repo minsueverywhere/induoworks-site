@@ -31,7 +31,7 @@ function display(e,area,owner,floor=0){
   const title=typeof item.title==='string'?item.title:item.title[lang];
   return {...e,id:'display:'+(owner?owner+':'+floor+':':'')+e.id,worldId:e.id,editType:'exhibit',area,owner,floor,ground:groundPosition(e,'exhibit'),shape:e.kind==='project'?'game':e.kind==='media'?'artwork':'jukebox',width:72,height:90,label:title,title,description:e.kind==='project'?item.summary[lang]:item.description?.[lang]||'',...(e.kind==='music'?{music:item,links:[{title:ko?'음악 Work 보기':'View music work',href:musicWorkPath(item,lang)}]}:e.kind==='project'?{externalUrl:item.externalUrl,links:[{title:ko?'작품 소개':'About this work',href:projectPath(item.slug,lang)}]}:{media:[item.id],badge:item.badge})};
 }
-const allPlaces = [...places,...roomPlaces.map(p=>({...p,floor:0})),...(world.exhibits||[]).map(e=>display(e,'village')),
+const allPlaces = [...places,...roomPlaces.filter(p=>!catalog.workers.find(w=>w.id===p.owner)?.room?.hiddenItems?.includes(p.id)).map(p=>({...p,floor:0})),...(world.exhibits||[]).map(e=>display(e,'village')),
  ...workers.filter(w=>w.house).flatMap(w=>roomFloors(w).flatMap((f,i)=>f.exhibits.map(e=>display(e,'room',w.id,i))))].filter(Boolean);
 
 return {world,places:allPlaces,workers:villageWorkers,media:villageMedia.map(m=>({...m,title:m.title[lang]})),music:villageTrack(catalog)};

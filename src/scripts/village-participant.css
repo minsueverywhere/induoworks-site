@@ -24,5 +24,10 @@
 .participant-studio label{display:grid;grid-template-columns:80px 1fr;gap:8px;align-items:center;margin:8px 0}
 .participant-studio input,.participant-studio select{width:100%;border-bottom:1px solid #52634740;pointer-events:auto}
 .participant-space nav{display:flex;gap:4px}.participant-actions>button,.participant-actions>input{display:block;width:100%;text-align:left;margin:4px 0}
-.is-decorating #village-floors{display:none}
+
 @media(max-width:600px){.participant-sheet[open]{left:12px;right:12px;width:auto;max-height:45%}.participant-studio[data-room=true] .participant-sheet{bottom:110px}}
+
+@media(max-width:600px){.participant-tools{left:auto;right:12px;transform:none;width:calc(100% - 156px);flex-wrap:wrap;justify-content:flex-end;overflow:visible}}
+
+.participant-confirm{margin:auto;max-width:calc(100% - 32px);width:280px;padding:20px;border:1px solid var(--color-border);background:var(--color-bg);color:var(--color-text);font:13px/1.6 system-ui;pointer-events:auto}
+.participant-confirm::backdrop{background:#0007}.participant-confirm p+p{margin-top:8px;color:var(--color-text-muted);font-size:12px}.participant-confirm>div{display:flex;justify-content:flex-end;gap:16px;margin-top:16px}.participant-confirm button{color:inherit}

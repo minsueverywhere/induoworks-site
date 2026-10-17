@@ -1,3 +1,4 @@
+import {bindZoomSlider} from './zoom-slider.mjs';
 import {studioSlice,mergeStudio} from '../server/studio-content.mjs';
 import {villageSky} from './village-sky.mjs';
 import {onPage} from './page-lifecycle.mjs';
@@ -50,7 +51,7 @@ const canvas = $('canvas'), ctx = canvas.getContext('2d');
 const popup = $('popup');
 const zoomRange = $('zoom-range');
 const wallLinks = [...$('social').querySelectorAll('a')];
-let zoomPointer = false;let zoomLabelTimer;
+let zoomLabelTimer;
 function showZoomLabel(){const hud=zoomRange.closest('.village-hud');hud.dataset.adjusting='true';clearTimeout(zoomLabelTimer);zoomLabelTimer=setTimeout(()=>{hud.dataset.adjusting='false';},900);}
 let popupTrigger = null;
 let popupObject = null, tutorialStep = null;
@@ -206,11 +207,11 @@ function makeRoom() {
   const {floor,elevation}=layer,b=terrainBounds(floor),h=floor.wallHeight,left=toScreen(b.minX,b.maxY).x-25,top=toScreen(b.minX,b.minY).y-12-h;
   const canvas=document.createElement('canvas');canvas.width=toScreen(b.maxX,b.minY).x+26-left;canvas.height=toScreen(b.maxX,b.maxY).y+22-top;
   const c=canvas.getContext('2d');c.translate(-left,-top);
-  for(const {x,y}of floor.tiles){const p=toScreen(x,y);
+  for(const {x,y,type}of floor.tiles){if(type==='transparent')continue;const p=toScreen(x,y);
     if(!terrainAt(floor,x,y-1))polygon(c,[[p.x,p.y-12-h],[p.x+24,p.y-h],[p.x+24,p.y],[p.x,p.y-12]],'#e7d8ad');
     if(!terrainAt(floor,x-1,y))polygon(c,[[p.x-24,p.y-h],[p.x,p.y-12-h],[p.x,p.y-12],[p.x-24,p.y]],'#d7c79e');
   }
-  for(const {x,y}of [...floor.tiles].sort((a,b)=>a.x+a.y-b.x-b.y)){const p=toScreen(x,y);polygon(c,[[p.x-24,p.y],[p.x,p.y+12],[p.x+24,p.y],[p.x+24,p.y+8],[p.x,p.y+20],[p.x-24,p.y+8]],'#9b805d');tile(c,x,y,(x+y)%2?'#bf9c6d':'#caa978');}
+  for(const {x,y}of [...floor.tiles].filter(t=>t.type!=='transparent').sort((a,b)=>a.x+a.y-b.x-b.y)){const p=toScreen(x,y);polygon(c,[[p.x-24,p.y],[p.x,p.y+12],[p.x+24,p.y],[p.x+24,p.y+8],[p.x,p.y+20],[p.x-24,p.y+8]],'#9b805d');tile(c,x,y,(x+y)%2?'#bf9c6d':'#caa978');}
   return {...layer,canvas,x:left,y:top-elevation};
   });
 }
@@ -219,7 +220,8 @@ function setRoomLevel(level){
   const b=terrainBounds(currentRoom());camera=roomScreen({x:(b.minX+b.maxX)/2,y:(b.minY+b.maxY)/2},activeWorker,roomLevel);sprites.clear();updateFloors();requestDraw();participantEditor?.areaChanged();
 }
 function updateFloors(){
-  const bar=$('floors');bar.hidden=area!=='room'||roomFloors(activeWorker).length<2;bar.replaceChildren();
+  if(participantEditor?.renderFloors())return;
+  const bar=$('floors');bar.hidden=area!=='room';bar.replaceChildren();
   roomFloors(activeWorker).forEach((_,i)=>{const b=document.createElement('button');b.type='button';b.textContent=(i+1)+(document.documentElement.lang.startsWith('ko')?'층':'F');b.setAttribute('aria-pressed',String(i===roomLevel));b.addEventListener('click',()=>setRoomLevel(i));bar.append(b);});
 }
 
@@ -344,6 +346,7 @@ function changeArea(next) {
   if(matchMedia('(max-width: 639px)').matches)scene.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
 }
 $('back').addEventListener('click',()=>{
+  if(participantEditor?.isEditing){participantEditor.undo();return;}
   if(tutorialStep==='music')tutorial.close();
   changeArea('village');tutorial.complete('exit');
 });
@@ -402,7 +405,7 @@ function visit(id, focusMap = false, trigger = null) {
   if (trigger) popup.focus({preventScroll:true});
 }
 $('close').addEventListener('click',() => closePopup(true));
-root.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!tutorialPanel.hidden){e.preventDefault();tutorial.close();canvas.focus({preventScroll:true});}else if(!guide.hidden){e.preventDefault();showGuide(false);}else if(!popup.hidden){e.preventDefault();closePopup(true);}else if(area==='room'){e.preventDefault();changeArea('village');}});
+root.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!tutorialPanel.hidden){e.preventDefault();tutorial.close();canvas.focus({preventScroll:true});}else if(!guide.hidden){e.preventDefault();showGuide(false);}else if(!popup.hidden){e.preventDefault();closePopup(true);}else if(area==='room'&&!participantEditor?.isOpen){e.preventDefault();changeArea('village');}});
 buttons.forEach((b,id) => {
   b.addEventListener('click',e => visit(id,false,e.detail === 0 ? b : null));
   b.addEventListener('pointerenter',e => {if(e.pointerType !== 'touch') {hovered=id;requestDraw();}});
@@ -411,14 +414,9 @@ buttons.forEach((b,id) => {
   b.addEventListener('blur',() => {if(hovered===id) {hovered='';requestDraw();}});
 });
 $('zoom').addEventListener('click',()=>{closePopup();scale=defaultZoom(width,height,area);requestDraw();});
-zoomRange.addEventListener('pointerdown',()=>{zoomPointer=true;});
-for(const event of ['pointerup','pointercancel'])life.on(window,event,()=>{zoomPointer=false;});
-zoomRange.addEventListener('input',()=>{
-  showZoomLabel();
-  const value=Number(zoomRange.value)/100;
-  // Keep native keyboard increments free to leave 100% after pointer snapping.
-  scale=zoomPointer?snapZoom(value):clampZoom(value);closePopup();requestDraw();
-});
+bindZoomSlider(zoomRange,(value,pointer)=>{
+  showZoomLabel();scale=pointer?snapZoom(value/100):clampZoom(value/100);closePopup();requestDraw();
+},active=>{zoomRange.closest('.village-zoom-track').dataset.active=String(active);showZoomLabel();},life.signal);
 const pointers = new Map();
 let gesture = null, pinch = null, suppressClick = false;
 function localPoint(e) {
@@ -557,15 +555,19 @@ const studioButton=$('studio'),previewMode=import.meta.env.DEV&&new URLSearchPar
 function setStudioOpen(open){studioButton.setAttribute('aria-expanded',String(open));studioButton.setAttribute('aria-label',open?'설정 닫기':studioButton.dataset.session==='guest'?'Discord로 로그인':'작업실 설정');}
 function setIdentity(value){studioButton.dataset.session=value?'member':'guest';setStudioOpen(false);return value;}
 const identityReady=previewMode?Promise.resolve(null):fetch('/api/studio/session',{cache:'no-store',signal:life.signal}).then(async r=>{if(r.status===401)return setIdentity(null);if(!r.ok)throw Error('Session unavailable');return setIdentity(await r.json());}).catch(()=>undefined);
-$('home').addEventListener('click',async()=>{await openStudio(true);participantEditor?.home();});
+$('home').addEventListener('click',async()=>{await openStudio(true);await participantEditor?.home();});
 async function openStudio(home=false){
   studioButton.disabled=true;
   try{
-    if(participantEditor){if(participantEditor.isOpen&&!home){participantEditor.close();return;}participantEditor.open();setStudioOpen(true);return;}
+    if(participantEditor){if(participantEditor.isOpen&&!home){await participantEditor.close();return;}participantEditor.open();setStudioOpen(true);return;}
     const identity=await identityReady;if(!previewMode&&identity===null){location.assign('/api/studio/login');return;}
     const {createParticipantEditor}=await import('./village-participant.js');
     if(!life.alive())return;
     participantEditor=await createParticipantEditor({root,scene,canvas,ctx,requestDraw,identity,
+      floorBar:$('floors'),updateFloors,editorUI:(label,editing)=>{
+        $('caption').textContent=editing?label:(area==='room'?activeWorker.name.toUpperCase():text.title.toUpperCase());
+        const labelText=editing?'실행 취소':text.back;$('back').setAttribute('aria-label',labelText);$('back').title=labelText;
+      },
       signal:life.signal,onClose:()=>setStudioOpen(false),loginRequired:()=>{setIdentity(null);location.assign('/api/studio/login');},catalog:remoteContent,preview:previewMode,
       state:()=>({area,worker:activeWorker,level:roomLevel,scale}),
       point:event=>{const r=scene.getBoundingClientRect(),sx=(event.clientX-r.left-width/2)/scale+camera.x,sy=(event.clientY-r.top-height/2-30)/scale+camera.y;return area==='room'?roomPoint({x:sx,y:sy},activeWorker,roomLevel):{x:sx/48+sy/24,y:sy/24-sx/48};},

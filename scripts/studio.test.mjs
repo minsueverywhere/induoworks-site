@@ -82,13 +82,13 @@ test('room self-publication restricts ownership and shape, detects conflicts and
   const original=globalThis.fetch;globalThis.fetch=async()=>Response.json(catalog);
   const call=(data,owner='frondward',action='room')=>studioRooms(new Request('https://induo.works/api/studio/'+action+'?owner='+owner,{method:data?'POST':'GET',headers:{Cookie:'__Host-induo-session='+token,Origin:'https://induo.works','Content-Type':'application/json'},...(data?{body:JSON.stringify(data)}:{})}),env,action);
   try{
-    const initial=await(await call()).json(),room=structuredClone(initial.payload.room);room.floors[0].wallHeight=120;
+    const initial=await(await call()).json(),room=structuredClone(initial.payload.room);room.floors[0].wallHeight=120;room.hiddenItems=['frondward:grench-boss'];room.floors[0].tiles.find(t=>t.x===0&&t.y===0).type='transparent';
     await assert.rejects(call({revision:0,room},'induo-works'),error=>error.status===403);
     await assert.rejects(call({revision:0,room,projects:[]}),error=>error.status===409);
     assert.equal((await(await call({revision:0,room})).json()).revision,1);
     await assert.rejects(call({revision:0,room}),error=>error.status===409);
     await assert.rejects(call({revision:1,room}),error=>error.status===429);
-    const publicRoom=await call(undefined,'frondward','room-view');assert.equal(publicRoom.headers.get('Cache-Control'),'public, max-age=60');assert.deepEqual(Object.keys(await publicRoom.json()).sort(),['revision','room']);
+    const publicRoom=await call(undefined,'frondward','room-view');assert.equal(publicRoom.headers.get('Cache-Control'),'public, max-age=60');const publicData=await publicRoom.json();assert.deepEqual(Object.keys(publicData).sort(),['revision','room']);assert.deepEqual(publicData.room,room);
     sql.exec('UPDATE studio_rooms SET updated=0');
     const restored=await(await call({revision:1,restore:true})).json();assert.deepEqual(restored.room,initial.payload.room);
     assert.equal(sql.prepare('SELECT COUNT(*) AS n FROM studio_rooms').get().n,1);

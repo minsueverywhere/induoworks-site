@@ -67,7 +67,7 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
     </section>
     <div class="village-location" data-ui>
       <button id="village-home" type="button" aria-label={ko?'내 작업실로':'Go to my workshop'} title={ko?'내 작업실로':'My workshop'}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7M5 9v12h14V9M9 21v-8h6v8" /></svg></button>
-      <button id="village-back" type="button" aria-label={ko?'마을로 돌아가기':'Return to village'} title={ko?'마을로 돌아가기':'Return to village'} hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 5-7 7 7 7M3 12h13a5 5 0 0 1 5 5" /></svg></button>
+      <button id="village-back" type="button" aria-label={ko?'마을로 돌아가기':'Return to village'} title={ko?'마을로 돌아가기':'Return to village'} hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path class="village-return-icon" d="m3 12 9-5 9 5-9 5Z" /><path class="village-undo-icon" d="M8 4 3 9l5 5M3 9h10a7 7 0 0 1 7 7" /></svg></button>
     <div id="village-help" class="village-help">
       <span id="village-caption" class="village-caption" aria-hidden="true">{text.title.toUpperCase()}</span>
       <button id="village-help-toggle" type="button" aria-label={ko?'현재 장소 튜토리얼':'Tutorial for this place'} aria-expanded="false" aria-controls="village-tutorial"><span aria-hidden="true">?</span></button>
@@ -131,13 +131,13 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
   .village-place span { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); width: max-content; max-width: 140px; padding: 3px 6px; border: 1px solid #a3a384; border-radius: 4px; background: #faf4dd; font-size: 11px; line-height: 1.3; box-shadow: 0 2px 3px #33452516; opacity: 0; visibility: hidden; pointer-events: none; }
   .village-place:hover span, .village-place:focus-visible span { opacity: 1; visibility: visible; }
   .village-place[aria-pressed="true"] span { background: #304c3a; color: #fff4d5; }
-  #village-zoom-range { display: block; appearance: none; width: 100%; min-height: 44px; margin: 0; background: transparent; cursor: ew-resize; touch-action: pan-y; --zoom-progress: 55.56%; }
-  #village-zoom-range::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right,#30422e var(--zoom-progress),#faf6e8 var(--zoom-progress)); box-shadow: 0 0 0 1px #30422e60; }
-  #village-zoom-range::-moz-range-track { height: 4px; border-radius: 2px; background: linear-gradient(to right,#30422e var(--zoom-progress),#faf6e8 var(--zoom-progress)); box-shadow: 0 0 0 1px #30422e60; }
-  #village-zoom-range::-webkit-slider-thumb { appearance: none; width: 8px; height: 8px; margin-top: -2px; border: 1px solid #faf6e8; border-radius: 50%; background: #30422e; }
-  #village-zoom-range::-moz-range-thumb { width: 6px; height: 6px; border: 1px solid #faf6e8; border-radius: 50%; background: #30422e; }
-  #village-zoom-range:focus-visible { outline: 2px solid #006e7e; outline-offset: -3px; border-radius: 4px; }
-  .village-zoom-tick { position: absolute; top: calc(50% - 5px); width: 1px; height: 10px; background: #30422e; pointer-events: none; }
+  #village-zoom-range { display: block; appearance: none; width: 100%; min-height: 44px; margin: 0; background: transparent; cursor: ew-resize; touch-action: none; --zoom-progress: 55.56%; }
+  #village-zoom-range::-webkit-slider-runnable-track { height: 2px; border-radius: 0; background: linear-gradient(to right,currentColor var(--zoom-progress),transparent var(--zoom-progress)); box-shadow: 0 0 0 1px currentColor; }
+  #village-zoom-range::-moz-range-track { height: 2px; border-radius: 0; background: linear-gradient(to right,currentColor var(--zoom-progress),transparent var(--zoom-progress)); box-shadow: 0 0 0 1px currentColor; }
+  #village-zoom-range::-webkit-slider-thumb { appearance: none; width: 16px; height: 16px; margin-top: -7px; border: 1px solid currentColor; border-radius: 50%; background: #e9e5d6; }
+  #village-zoom-range::-moz-range-thumb { width: 14px; height: 14px; border: 1px solid currentColor; border-radius: 50%; background: #e9e5d6; }
+  #village-zoom-range:focus-visible { outline: 1px solid currentColor; outline-offset: -3px; border-radius: 4px; }
+  .village-zoom-tick { position: absolute; top: calc(50% - 5px); width: 1px; height: 10px; background: currentColor; pointer-events: none; }
   button { min-width: 44px; min-height: 44px; }
   button:focus-visible, a:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }
   #village-music { flex:none; min-width:32px; min-height:36px; border:0; padding:0; background:transparent; color:inherit; cursor:pointer; font-size:.65rem; line-height:1; }
@@ -187,13 +187,15 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
   #village-help-toggle::before { content:'';position:absolute;inset:0 -4px; }
   svg { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
   .village-caption { position:static; font:9px system-ui; letter-spacing:.08em; color:inherit; }
-  .village-zoom-track { flex:0 0 64px;width:64px;min-width:0;opacity:.7; }
-  .village-zoom-track:focus-within { opacity:1; }
-  #village-zoom-range { min-height:40px; }
-  #village-zoom { position:absolute; bottom:32px; left:0; width:64px; min-height:24px; visibility:hidden; opacity:0; font:10px system-ui; }
+  .village-zoom-track { flex:0 0 var(--zoom-width,96px);width:var(--zoom-width,96px);min-width:0;opacity:.4;touch-action:none;transition:opacity .15s; }
+  .village-zoom-track[data-active="true"],.village-zoom-track:has(:focus-visible) { opacity:1; }
+  #village-zoom-range { min-height:44px; }
+  #village-zoom { position:absolute; bottom:32px; left:0; width:var(--zoom-width,96px); min-height:24px; visibility:hidden; opacity:0; font:10px system-ui; }
   .village-hud[data-adjusting=true] #village-zoom { visibility:visible; opacity:1; }
   :global([data-editor-embedded="true"]) #village-home,:global([data-editor-embedded="true"]) #village-studio { display:none; }
   .village-hud #village-fullscreen { flex:0 0 44px;width:44px;min-width:44px;height:44px;min-height:44px;opacity:1; }
+  .village-undo-icon,.is-decorating .village-return-icon { display:none; }
+  .is-decorating .village-undo-icon { display:block; }
   #village-fullscreen svg{display:block;flex:none;pointer-events:none}
   #village-studio { position:absolute;right:max(var(--scene-control-inset),env(safe-area-inset-right));top:max(var(--scene-control-inset),env(safe-area-inset-top));z-index:12;display:flex;align-items:center;justify-content:center;width:44px;min-width:44px;height:44px;min-height:44px;padding:0;border:0;background:transparent;color:#526347;cursor:pointer; }
   #village-fullscreen .fullscreen-exit,#village-fullscreen[aria-pressed=true] .fullscreen-enter { display:none; }
@@ -204,5 +206,6 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
   #village-studio .login-copy { position:absolute;right:40px;width:max-content;font:11px system-ui;white-space:nowrap; }
   #village-studio[aria-expanded=true] .settings-icon { display:none; }
   #village-studio[aria-expanded=true] .close-icon { display:block; }
+  @media(max-width:359px) { .village-hud { --zoom-width:72px; }.village-location { gap:4px; }.village-location .village-caption { max-width:52px; } }
   @media(max-width:400px) { .village-caption { max-width:100px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } }
 </style>

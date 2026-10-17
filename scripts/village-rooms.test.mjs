@@ -114,3 +114,22 @@ test('the outdoor tutorial can finish without entering or leaving a removed buil
   tutorial.complete('drag');tutorial.complete('zoom');tutorial.complete('house');tutorial.complete('music');
   assert.deepEqual(shown,['drag','zoom','music','done']);tutorial.close();assert.equal(shown.at(-1),null);
 });
+
+
+test('transparent tiles are retained as structural openings and cannot support displays',()=>{
+  const data=structuredClone(original),worker=data.workers.find(w=>w.house);
+  worker.room={floors:structuredClone(roomFloors(worker))};
+  setTerrain(worker.room.floors[0],0,0,'transparent');validateRoom(worker.room);
+  assert.equal(worker.room.floors[0].tiles.find(t=>t.x===0&&t.y===0).type,'transparent');
+  assert.ok(objectPlacementError(roomCatalog(data,worker.id),'exhibit','new',{x:0,y:0,width:1,depth:1}));
+  assert.equal(paintError(roomCatalog(data,worker.id),{x:0,y:0},'floor'),'');
+});
+
+test('transparent cells draw no tile or walls while suppressing a neighboring inner wall',async()=>{
+ const source=await readFile(new URL('../src/scripts/village.js',import.meta.url),'utf8');
+ const walls=[],tiles=[],floor={wallHeight:90,tiles:[{x:0,y:0,type:'transparent'},{x:1,y:0,type:'floor'}],exhibits:[]};
+ const c={translate(){}};
+ const context={activeWorker:{},roomLevel:0,roomStack:()=>[{floor,elevation:0}],terrainBounds:()=>({minX:0,maxX:1,minY:0,maxY:0}),toScreen:(x,y)=>({x:(x-y)*24,y:(x+y)*12}),terrainAt:(f,x,y)=>f.tiles.find(t=>t.x===x&&t.y===y)?.type,document:{createElement:()=>({getContext:()=>c})},polygon:(_c,_p,color)=>walls.push(color),tile:(_c,x,y)=>tiles.push([x,y])};
+ runInNewContext(source.slice(source.indexOf('function makeRoom()'),source.indexOf('function setRoomLevel('))+'makeRoom();',context);
+ assert.deepEqual(tiles,[[1,0]]);assert.equal(walls.filter(color=>color==='#e7d8ad').length,1);assert.equal(walls.includes('#d7c79e'),false);
+});
