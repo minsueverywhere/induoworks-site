@@ -6,6 +6,7 @@ const root=new URL('../dist/client/',import.meta.url);
 const headers=await readFile(new URL('_headers',root),'utf8');
 let scripts=0;
 for(const file of await readdir(root,{recursive:true})){
+  if(/\.(?:html|js|mjs)$/.test(file))assert.ok(!(await readFile(new URL(file.replaceAll('\\','/'),root),'utf8')).includes('/__editor/'),'Local editor must not enter production: '+file);
   if(!file.endsWith('.html'))continue;
   const html=await readFile(new URL(file.replaceAll('\\','/'),root),'utf8');
   for(const [,body] of html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)){

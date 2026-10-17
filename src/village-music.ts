@@ -1,2 +1,3 @@
 import catalog from '../content/catalog.json' with { type: 'json' };
-export const villageMusic = catalog.music;
+import { villageTrack } from './scripts/village-tracks.mjs';
+export const villageMusic = villageTrack(catalog);

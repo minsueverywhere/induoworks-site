@@ -7,6 +7,7 @@ import tailwindcss from '@tailwindcss/vite';
 import sitemap from '@astrojs/sitemap';
 
 import cloudflare from '@astrojs/cloudflare';
+import { localEditorPlugin } from './scripts/editor-server.mjs';
 
 // https://astro.build/config
 export default defineConfig({
@@ -23,7 +24,7 @@ export default defineConfig({
   },
 
   vite: {
-    plugins: [tailwindcss()],
+    plugins: [tailwindcss(), ...(process.env.INDUO_EDITOR==='1'?[localEditorPlugin()]:[])],
   },
 
   integrations: [

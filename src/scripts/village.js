@@ -83,7 +83,12 @@ const tutorial = createTutorial(step=>{
 });
 tutorialSkip.addEventListener('click',()=>{tutorial.close();canvas.focus({preventScroll:true});});
 let playing = false;
-const music = createVillageMusic({sources:JSON.parse(root.dataset.music).sources,onState:state=>{
+let music,currentTrack;
+function selectMusic(track) {
+  if(currentTrack&&JSON.stringify([currentTrack.title,currentTrack.project,currentTrack.sources])===JSON.stringify([track.title,track.project,track.sources]))return;
+  music?.stop();currentTrack=track;text.music=track.title+' · '+track.project;
+  $('player').querySelector('p').textContent=text.music;
+  music = createVillageMusic({sources:track.sources,onState:state=>{
   playing=state==='playing';sprites.clear();
   const chip=$('now-playing');
   // The chip appears with the first play and then stays as the pause/resume control.
@@ -97,6 +102,8 @@ const music = createVillageMusic({sources:JSON.parse(root.dataset.music).sources
   if(playing)tutorial.complete('music');
   requestDraw();
 }});
+}
+selectMusic(JSON.parse(root.dataset.music));
 const trees = [];
 for (let tx = 1; tx < SIZE-1; tx++) for (let ty = 1; ty < SIZE-1; ty++) {
   if(noise(tx,ty,9)>.14)continue;
@@ -326,6 +333,7 @@ function visit(id, focusMap = false, trigger = null) {
   if(tutorialStep==='drag'||tutorialStep==='zoom'||(tutorialStep==='house'&&id!==tutorialHouse.id)||(tutorialStep==='music'&&id!==tutorialJukebox.id))return;
   if(p.shape==='house'){activeWorker=workers.find(w=>w.id===id);changeArea('room');tutorial.complete('house');return;}
   if(!popup.hidden&&popupObject===id){closePopup(Boolean(trigger));return;}
+  if(p.shape==='jukebox')selectMusic(p.music||JSON.parse(root.dataset.music));
   popupObject=id;
   popupTrigger = trigger || buttons.get(id);
   $('title').textContent = p.title; $('description').textContent = p.description;

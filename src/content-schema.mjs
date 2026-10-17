@@ -23,11 +23,15 @@ export function validateCatalog(data) {
     check(ids(values) && new Set(values).size === values.length, 'Invalid or duplicate '+key+' IDs');
   }
   const owners = new Set(data.workers.map(w=>w.id));
+  const tracks=data.tracks||[];
+  check(Array.isArray(tracks) && tracks.length<=1000 && ids(tracks.map(t=>t.id)) && new Set(tracks.map(t=>t.id)).size===tracks.length && tracks.every(t=>t.id!=='legacy'), 'Invalid music IDs');
+  if(data.musicId)check(tracks.some(t=>t.id===data.musicId),'Unknown default music');
   for (const worker of data.workers) {
     check(text(worker.name) && localized(worker.description), 'Invalid worker');
     if (worker.house) check(['x','y'].every(k=>Number.isInteger(worker.house[k]) && worker.house[k]>=0 && worker.house[k]<24), 'House outside village');
     if (worker.href) check(safeUrl(worker.href), 'Unsafe worker URL');
     if (worker.logoMediaId) check(data.media.some(m=>m.id===worker.logoMediaId), 'Unknown logo');
+    if(worker.musicId)check(tracks.some(t=>t.id===worker.musicId),'Unknown workshop music');
   }
   check(data.workers.some(w=>w.id==='induo-works' && w.house), 'The tutorial needs the Induo Works house');
   for (const item of [...data.projects,...data.media]) {
@@ -44,8 +48,11 @@ export function validateCatalog(data) {
   }
   for (const m of data.media) check(ids(m.workerIds) && Array.isArray(m.tags) && ['badge','preview','original'].every(k=>safeUrl(m[k])) && m.width>0 && m.height>0 && m.bytes>0 && m.bytes<=MAX_FILE_BYTES, 'Invalid artwork');
   for (const n of data.notices) check(localized(n.title) && localized(n.body) && (!n.href || safeUrl(n.href)) && (!n.linkLabel || localized(n.linkLabel)), 'Invalid notice');
-  check(text(data.music?.title) && text(data.music.project) && data.music.duration>0 && text(data.music.sourceSha256), 'Invalid music');
-  for (const ext of ['ogg','mp3']) check(safeUrl(data.music.sources?.[ext]) && new URL(data.music.sources[ext],CONTENT_ORIGIN).pathname.endsWith('.'+ext), 'Use Ogg and MP3 music');
+  for(const track of [data.music,...tracks]) {
+    check(text(track?.title) && text(track.project) && Number.isFinite(track.duration) && track.duration>0 && text(track.sourceSha256), 'Invalid music');
+    check(ids(track.workerIds||[]) && (track.workerIds||[]).every(id=>owners.has(id)), 'Invalid music owner');
+    for(const ext of ['ogg','mp3'])check(safeUrl(track.sources?.[ext]) && new URL(track.sources[ext],CONTENT_ORIGIN).pathname.endsWith('.'+ext),'Use Ogg and MP3 music');
+  }
   return data;
 }
 
@@ -54,6 +61,7 @@ export function mediaPaths(data) {
     ...data.projects.flatMap(p=>p.thumbnail ? [p.thumbnail.src] : []),
     ...data.media.flatMap(m=>[m.badge,m.preview,m.original]),
     ...Object.values(data.music.sources),
+    ...(data.tracks||[]).flatMap(t=>Object.values(t.sources)),
   ])];
 }
 
@@ -62,6 +70,6 @@ export function resolveMedia(data, origin) {
   const url = path => new URL(path, origin).href;
   for (const p of result.projects) if (p.thumbnail) p.thumbnail.src=url(p.thumbnail.src);
   for (const m of result.media) for (const key of ['badge','preview','original']) m[key]=url(m[key]);
-  for (const ext of ['ogg','mp3']) result.music.sources[ext]=url(result.music.sources[ext]);
+  for(const track of [result.music,...(result.tracks||[])])for(const ext of ['ogg','mp3'])track.sources[ext]=url(track.sources[ext]);
   return result;
 }

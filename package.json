@@ -16,6 +16,7 @@
     "worker:deploy": "npm run build && wrangler deploy",
     "generate-types": "wrangler types",
     "content:prepare": "node scripts/content-prepare.mjs",
+    "content:edit": "node scripts/editor-start.mjs",
     "content:import": "node scripts/content-prepare.mjs import",
     "content:deploy": "npm run content:prepare && wrangler deploy --config content/wrangler.jsonc",
     "check:links": "node scripts/check-site-links.mjs"

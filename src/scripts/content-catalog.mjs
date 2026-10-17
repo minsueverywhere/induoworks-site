@@ -16,6 +16,7 @@ export function contentWorks(data, lang, staticLinks=false) {
       kind:'artwork',workerIds:m.workerIds,tags:m.tags,status:'shipped',year:'',href:m.original,
       image:m.preview,imageWidth:m.width,imageHeight:m.height,imageAlt:m.title[lang],imageCaption:'',file:true,
     })),
+    ...(data.tracks||[]).map(track=>({id:'music:'+track.id,title:track.title,summary:track.project,kind:'music',workerIds:track.workerIds||[],tags:['Music'],status:'shipped',year:'',href:track.sources.ogg,image:'',imageWidth:600,imageHeight:400,imageAlt:track.title,imageCaption:'',file:true})),
   ].map(entry=>{
     const creators=data.workers.filter(w=>entry.workerIds.includes(w.id)).map(w=>({id:w.id,name:w.name}));
     return {...entry,creators,search:[entry.title,entry.summary,entry.year,...entry.tags,...creators.map(w=>w.name)].join(' ')};
