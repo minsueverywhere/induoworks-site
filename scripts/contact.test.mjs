@@ -90,14 +90,14 @@ test('email-provider failures are never reported as success',async()=>{
 
 test('form waits for verification, preserves failed messages and refreshes single-use tokens',async()=>{
   const source=await readFile(new URL('../src/views/ContactView.astro',import.meta.url),'utf8');
-  const script=source.match(/<script is:inline define:vars=\{\{ strings \}\}>([\s\S]*?)<\/script>/)[1];
+  const script=source.match(/<script is:inline data-astro-rerun>([\s\S]*?)<\/script>/)[1];
   const strings=Object.fromEntries(['sending','sentOk','genericError','send','verificationPending','verificationExpired','verificationError','unavailableError','validationError','rateLimitedError'].map(key=>[key,key]));
   let submit,calls=0,resets=0,tokenResets=0,result={code:'unavailable'},statusCode=200;
-  const form={dataset:{verification:'required'},values:{...valid},reportValidity:()=>true,addEventListener:(_,fn)=>{submit=fn;},reset:()=>{resets++;form.values={};}};
+  const form={dataset:{verification:'required',strings:JSON.stringify(strings)},values:{...valid},reportValidity:()=>true,addEventListener:(_,fn)=>{submit=fn;},reset:()=>{resets++;form.values={};}};
   const status={textContent:'',dataset:{}},button={disabled:true},verification={};
   const elements={'contact-form':form,'form-status':status,'submit-btn':button,'verification-status':verification};
   const window={turnstile:{reset:()=>tokenResets++}};
-  runInNewContext(script,{strings,window,document:{getElementById:id=>elements[id]},FormData:class{entries(){return Object.entries(form.values);}},fetch:async()=>{calls++;return {ok:statusCode<400,status:statusCode,json:async()=>result};}});
+  runInNewContext(script,{strings,window,document:{getElementById:id=>elements[id],addEventListener(){}},FormData:class{entries(){return Object.entries(form.values);}},fetch:async()=>{calls++;return {ok:statusCode<400,status:statusCode,json:async()=>result};}});
   const send=()=>submit({preventDefault(){}});
   await send();assert.equal(calls,0);
   window.contactVerified();assert.equal(button.disabled,false);

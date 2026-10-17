@@ -1,13 +1,13 @@
 import {CONTENT_ORIGIN,validateCatalog} from '../content-schema.mjs';
 import {studioSlice,mergeStudio} from './studio-content.mjs';
 import {authorize,session,studioDB,sameOrigin,hash,json,rateLimit,StudioError,type StudioEnv} from './studio-auth.ts';
-async function catalog(){
+export async function catalog(){
   const response=await fetch(CONTENT_ORIGIN+'/catalog.json',{cache:'no-store',signal:AbortSignal.timeout(10000)});
   if(!response.ok)throw new StudioError('공개 승인본을 읽지 못했습니다.',503);
   const body=await response.text();if(body.length>1024*1024)throw new StudioError('콘텐츠 한도를 초과했습니다.',503);
   return validateCatalog(JSON.parse(body));
 }
-async function body(request:Request){
+export async function body(request:Request){
   const reader=request.body?.getReader();if(!reader)throw new StudioError('작성 내용이 없습니다.');
   const chunks:Uint8Array[]=[];let size=0;
   for(;;){const {value,done}=await reader.read();if(done)break;size+=value.byteLength;if(size>256*1024){await reader.cancel();throw new StudioError('변경안은 256KiB 이하여야 합니다.',413);}chunks.push(value);}

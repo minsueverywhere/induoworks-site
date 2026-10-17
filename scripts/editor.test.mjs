@@ -113,6 +113,7 @@ test('local HTTP editor requires a loopback Host, same origin and session token;
   const post=(path,payload,headers={})=>fetch(origin+'/__editor/'+path,{method:'POST',headers:{Origin:origin,'X-Editor-Token':token,...headers},body:JSON.stringify(payload)});
   const saved=await(await fetch(origin+'/__editor/catalog')).json();
   assert.equal(await new Promise((resolve,reject)=>get(origin+'/__editor/',{headers:{Host:'evil.example'}},res=>{res.resume();resolve(res.statusCode);}).on('error',reject)),403);
+  assert.equal(await new Promise((resolve,reject)=>get(origin+'/__editor/',{headers:{Host:'192.168.219.127:4335'}},res=>{res.resume();resolve(res.statusCode);}).on('error',reject)),403);
   assert.equal((await post('save',{catalog:original,revision:saved.revision},{Origin:'https://evil.example'})).status,403);
   assert.equal((await post('save',{catalog:original,revision:saved.revision},{'X-Editor-Token':'wrong'})).status,403);
   assert.equal((await post('deploy',{revision:'stale'})).status,409);assert.equal(deploys,0);
@@ -139,6 +140,10 @@ test('editor bridge transforms only the map during dev and does not enter normal
   assert.equal(plugin.apply,'serve');assert.equal(await plugin.transform(source,'other.js'),undefined);
   const transformed=await plugin.transform(source,'F:/repo/src/scripts/village.js');
   assert.match(transformed.code,/fetch\('\/__editor\/preview\?t='/);
+  const line=transformed.code.split('\n').find(line=>line.startsWith('const remoteContent='));
+  const run=new (Object.getPrototypeOf(async function(){}).constructor)('location','fetch','loadContent',line+'return remoteContent;');
+  assert.equal(await run({hostname:'192.168.219.127'},()=>{throw Error('LAN must not read the host editor');},async()=>'public'),'public');
+  assert.equal(await run({hostname:'127.0.0.1'},async()=>({json:async()=>'local'}),()=>{throw Error('Loopback must keep local preview');}),'local');
   assert.match(transformed.code,/source:'induo-map'/);
   assert.match(transformed.code,/drawEditorOverlay\(layer.index\); for \(const object of objects\)/);
   const parsed=spawnSync(process.execPath,['--check','--input-type=module'],{input:transformed.code,encoding:'utf8',windowsHide:true});

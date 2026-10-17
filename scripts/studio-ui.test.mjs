@@ -20,46 +20,40 @@ class Element {
   querySelectorAll(){return this.children.flatMap(child=>[child,...(child.querySelectorAll?.()||[])]).filter(child=>['button','input','select','textarea'].includes(child.tag));}
 }
 const elements=root=>[root,...root.children.flatMap(child=>elements(child))];
-async function setup(response){
+async function setup(response,previewMode=false){
   const scene=new Element('scene');scene.setPointerCapture=()=>{};const handlers={},writes=[];let preview,area='village',worker=null,level=0;
-  const api={point:event=>event.point,scene,canvas:{focus(){}},root:{dataset:{workers:JSON.stringify([{id:'frondward',name:'Frondward'}])}},requestDraw(){},closePopup(){},state:()=>({area,worker,level,scale:1}),apply(data){preview=data;},enter(owner,index=0){area='room';worker=preview.workers.find(w=>w.id===owner);level=index;}};
+  const api={preview:previewMode,catalog,point:event=>event.point,scene,canvas:{focus(){}},root:{dataset:{workers:JSON.stringify([{id:'frondward',name:'Frondward'}])}},requestDraw(){},closePopup(){},state:()=>({area,worker,level,scale:1}),apply(data){preview=data;},enter(owner,index=0){area='room';worker=preview.workers.find(w=>w.id===owner);level=index;}};
   const context={roomCatalog,objectPlacementError,paintError,placementObjects,placementCells,setTerrain,terrainAt,groundPosition,terrainBounds,api,createHistory,historyShortcut,studioSlice,mergeStudio,CONTENT_ORIGIN,resolveMedia,structuredClone,crypto,URL,URLSearchParams,location:{search:''},Blob,Response,setTimeout,
-    document:{documentElement:new Element('html'),createElement:tag=>new Element(tag)},window:{addEventListener(type,fn){handlers[type]=fn;}},Option:class extends Element{constructor(text,value){super('option');this.textContent=text;this.value=value;}},
-    fetch:async(url,options)=>{if(response)return response(url);if(url.includes('/session'))return Response.json({id:'test',name:'Test',owners:['frondward'],host:false});if(options?.method==='POST'){writes.push({url,payload:JSON.parse(options.body)});return Response.json({revision:1});}return Response.json({catalog,payload:studioSlice(catalog,'frondward'),revision:0,baseHash:'base',stale:false});}};
+    document:{addEventListener(){},documentElement:new Element('html'),createElement:tag=>new Element(tag),createElementNS:(_,tag)=>new Element(tag)},window:{addEventListener(type,fn){handlers[type]=fn;}},Option:class extends Element{constructor(text,value){super('option');this.textContent=text;this.value=value;}},
+    fetch:async(url,options)=>{if(response&&options?.method!=='POST')return response(url);if(url.includes('/session'))return Response.json({id:'test',name:'Test',owners:['frondward'],host:false});if(options?.method==='POST'){writes.push({url,payload:JSON.parse(options.body)});return Response.json({revision:1});}return Response.json({catalog,payload:studioSlice(catalog,'frondward'),revision:0,baseHash:'base',stale:false});}};
   const editor=await vm.runInNewContext(source+'\ncreateParticipantEditor(api);',context);
   const button=text=>elements(scene).find(el=>el.tag==='button'&&el.textContent===text);
   return{scene,api,editor,writes,handlers,button,preview:()=>preview};
 }
-test('participant UI adds and edits an owned Work, saves a private payload and restores browsing without exposing village edits',async()=>{
-  const ui=await setup();assert.ok(ui.button('Works'),elements(ui.scene).map(el=>el.textContent).filter(Boolean).join(' | '));ui.button('Works').events.click();ui.button('추가').events.click();
-  const added=ui.preview().projects.find(p=>p.slug.startsWith('work-'));assert.deepEqual([...added.workerIds],['frondward']);
-  const label=elements(ui.scene).find(el=>el.tag==='label'&&el.children[0]?.textContent==='제목 · ko'),input=label.children[1];input.value='';input.events.input();input.value='내 새 작품';input.events.input();
-  assert.equal(ui.preview().projects.find(p=>p.slug===added.slug).title.ko,'내 새 작품');
-  const external=elements(ui.scene).find(el=>el.tag==='label'&&el.children[0]?.textContent==='외부 작품 링크 · YouTube / SoundCloud / GitHub 파일').children[1];
-  external.value='https://youtu.be/dQw4w9WgXcQ';external.events.input();
-  assert.equal(ui.preview().projects.find(p=>p.slug===added.slug).externalUrl,external.value);
-  assert.deepEqual(ui.preview().world,catalog.world);
-  ui.button('작성본 저장').events.click();await new Promise(resolve=>setImmediate(resolve));
-  assert.equal(ui.writes.length,1);assert.equal(ui.writes[0].payload.payload.projects.find(p=>p.slug===added.slug).title.ko,'내 새 작품');assert.ok(!('world' in ui.writes[0].payload.payload));
-  ui.button('×').events.click();assert.equal(ui.scene.children[0].hidden,true);ui.editor.open();assert.equal(ui.scene.children[0].hidden,false);
-});
-test('unauthenticated scene shows only login and keeps that action after reopening',async()=>{
-  const ui=await setup(()=>Response.json({error:'Discord 로그인이 필요합니다.'},{status:401}));
-  const login=()=>elements(ui.scene).find(el=>el.tag==='a'&&el.href==='/api/studio/login');assert.ok(login());
-  ui.button('×').events.click();ui.editor.open();assert.ok(login());assert.equal(ui.button('작성본 저장'),undefined);
+test('scene editor only places registered own works, preserves catalog data and publishes only room layout',async()=>{
+  const payload=studioSlice(catalog,'frondward'),privateWork={...payload.projects[0],slug:'private-only',title:{ko:'비공개 새작품',en:'Private'}};payload.projects.push(privateWork);
+  const ui=await setup(url=>url.includes('/session')?Response.json({owners:['frondward'],host:false}):Response.json({catalog,payload,revision:0,baseHash:'base',stale:false}));
+  assert.equal(ui.button('Works'),undefined);assert.equal(ui.button('이미지'),undefined);assert.equal(ui.button('음악'),undefined);assert.equal(ui.button('꾸미기'),undefined);assert.equal(ui.button('비공개 새작품'),undefined);
+  assert.ok(ui.button('GRENCH BOSS'));assert.equal(ui.button('Induo Works 웹사이트'),undefined);
+  ui.button('배치 공개').events.click();await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(ui.writes.length,1);assert.deepEqual(Object.keys(ui.writes[0].payload).sort(),['revision','room']);assert.equal(ui.writes[0].payload.room.floors.length,payload.room.floors.length);
+  assert.deepEqual(ui.preview().world,catalog.world);ui.editor.close();assert.equal(ui.scene.children[0].hidden,true);ui.editor.open();assert.equal(ui.scene.children[0].hidden,false);
 });
 
+test('unauthenticated scene stays closed and never exposes the editing tools',async()=>{
+  const ui=await setup(()=>Response.json({error:'Discord 로그인이 필요합니다.'},{status:401}));
+  assert.equal(ui.scene.children[0].hidden,true);assert.equal(ui.button('배치 공개'),undefined);
+});
 
 test('participant settings preserve independent full-screen state and collapse the picker after selection',async()=>{
   const ui=await setup();assert.equal(ui.scene.attributes['studio-fullscreen'],undefined);
-  ui.button('×').events.click();assert.equal(ui.scene.attributes['studio-fullscreen'],undefined);
+  ui.editor.close();assert.equal(ui.scene.attributes['studio-fullscreen'],undefined);
   ui.editor.open();assert.equal(ui.scene.attributes['studio-fullscreen'],undefined);
-  ui.button('꾸미기').events.click();
-  assert.ok(elements(ui.scene).some(e=>e.tag==='details'&&e.children[0]?.textContent==='전시할 작품'&&!e.open));
-  const add=elements(ui.scene).find(e=>e.attributes['aria-label']==='전시물 놓기');add.events.click();
-  const choices=elements(ui.scene).find(e=>e.tag==='details'&&e.children[0]?.textContent==='전시할 작품');assert.equal(choices.open,true);
-  const select=elements(choices).find(e=>e.tag==='select');select.value='music:legacy';select.events.change();
-  assert.equal(elements(ui.scene).find(e=>e.tag==='details'&&e.children[0]?.textContent==='전시할 작품').open,false);
+  assert.ok(elements(ui.scene).some(e=>e.tag==='details'&&e.children[0]?.textContent==='내 작품'&&!e.open));
+  const add=elements(ui.scene).find(e=>e.attributes['aria-label']==='작품 놓기');add.events.click();
+  const choices=elements(ui.scene).find(e=>e.tag==='details'&&e.children[0]?.textContent==='내 작품');assert.equal(choices.open,true);
+  ui.button(catalog.music.title).events.click();
+  assert.equal(elements(ui.scene).find(e=>e.tag==='details'&&e.children[0]?.textContent==='내 작품').open,false);
   assert.equal(ui.writes.length,0);
 });
 
@@ -67,7 +61,6 @@ test('participant settings preserve independent full-screen state and collapse t
 test('first gesture selects an exhibit; only dragging the selected exhibit moves it and undo restores it',async()=>{
   const payload=studioSlice(catalog,'frondward');payload.room.floors[0].exhibits.push({id:'test-display',kind:'music',ref:'legacy',x:0,y:0,width:1,depth:1});
   const ui=await setup(url=>url.includes('/session')?Response.json({owners:['frondward'],host:false}):Response.json({catalog,payload,revision:0,baseHash:'base',stale:false}));
-  ui.button('꾸미기').events.click();
   const event=(x,y)=>({button:0,pointerId:1,clientX:x*10,clientY:y*10,point:{x,y},target:{closest:()=>({dataset:{object:'display:frondward:0:test-display'}})},preventDefault(){},stopImmediatePropagation(){}});
   // UI targets are excluded from map gestures; the fixture only matches object selectors.
   const e=(x,y)=>{const value=event(x,y);value.target.closest=selector=>selector==='[data-object]'?{dataset:{object:'display:frondward:0:test-display'}}:null;return value;};
@@ -89,7 +82,14 @@ test('independent scene view toggles full screen and restores pre-existing inert
   const scene=new Element('scene'),button=new Element('button'),sibling={inert:true};
   scene.parentElement={children:[scene,sibling]};scene.parentElement.parentElement=null;
   const root=new Element('html'),code=(await readFile(new URL('../src/scripts/village-view.mjs',import.meta.url),'utf8')).replace('export function','function');
-  const view=vm.runInNewContext(code+';createSceneView(scene,button)',{scene,button,document:{documentElement:root}});
+  const view=vm.runInNewContext(code+';createSceneView(scene,button)',{scene,button,document:{addEventListener(){},documentElement:root}});
   view.toggle();assert.equal(scene.attributes['studio-fullscreen'],true);assert.equal(button.attributes['aria-pressed'],'true');assert.equal(sibling.inert,true);
   view.close();view.close();assert.equal(scene.attributes['studio-fullscreen'],false);assert.equal(sibling.inert,true);assert.equal(root.attributes['studio-open'],false);
+});
+
+
+test('LAN scene preview uses only public content and offers no real draft write or submit action',async()=>{
+  const ui=await setup(()=>{throw Error('Preview must not call studio APIs');},true);
+  assert.ok(ui.button('GRENCH BOSS'));assert.equal(ui.button('배치 공개'),undefined);assert.equal(ui.button('검토 요청'),undefined);assert.equal(ui.writes.length,0);
+  ui.handlers.beforeunload({preventDefault(){throw Error('Disposable preview should not block refresh');}});
 });

@@ -74,6 +74,7 @@ test('actual map handlers bracket multiple painted tiles once on release or canc
   const handlers={},messages=[],world={tiles:Array.from({length:576},(_,i)=>({x:i%24,y:Math.floor(i/24),type:'grass'})),decorations:[]};
   const window={postMessage(message){messages.push(message);},addEventListener(type,fn){handlers['window:'+type]=fn;}};
   const context={window,parent:window,document:{documentElement:{dataset:{}}},location:{origin:'http://localhost:4323'},root:{dataset:{}},remoteContent:{},sceneWorld:world,objects:[],area:'village',roomLevel:0,width:0,height:0,scale:1,camera:{x:0,y:0},canvas:{focus(){}},requestDraw(){},makeGround(){},terrainAt,setTerrain,paintError(){return '';},toScreen(){return{x:0,y:0};},scene:{getBoundingClientRect(){return{left:0,top:0};},setPointerCapture(){},addEventListener(type,fn){handlers[type]=fn;}}};
+  context.life={on:(target,...args)=>target.addEventListener(...args)};
   vm.runInNewContext(source,context);
   handlers['window:message']({origin:context.location.origin,source:window,data:{source:'induo-editor',tool:'path'}});
   const event=(x,y)=>({clientX:(x-y)*24,clientY:(x+y)*12+30,pointerId:1,button:0,target:{closest(){return null;}},stopImmediatePropagation(){},preventDefault(){}});

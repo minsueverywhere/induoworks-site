@@ -1,6 +1,6 @@
 import { CONTENT_ORIGIN, validateCatalog, resolveMedia } from '../content-schema.mjs';
 
-// One validated request per page; embedded HTML remains usable on failure or without JS.
+// One validated request per navigation; embedded HTML remains usable on failure or without JS.
 let pending;
 export async function fetchContent(fetcher=fetch) {
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),2500);
@@ -20,3 +20,5 @@ export function loadContent() {
   pending=fetchContent();
   return pending;
 }
+
+if(typeof document!=='undefined')document.addEventListener('astro:before-preparation',()=>{pending=null;});

@@ -1,3 +1,4 @@
+import {siteMusic} from './site-music.mjs';
 import {externalWork} from '../external-work.mjs';
 
 export function mountExternal(container,value,title,{defer=true,lang='ko'}={}){
@@ -5,6 +6,7 @@ export function mountExternal(container,value,title,{defer=true,lang='ko'}={}){
   const clear=()=>{container.querySelectorAll('audio').forEach(audio=>{audio.pause();audio.removeAttribute('src');audio.load();});container.replaceChildren();};
   clear();
   const open=()=>{
+    if(source.kind!=='image')siteMusic.pause();
     clear();
     const media=document.createElement(source.kind==='embed'?'iframe':source.kind==='image'?'img':'audio');
     media.style.cssText='display:block;width:100%;max-width:100%;border:0';

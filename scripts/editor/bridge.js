@@ -44,7 +44,7 @@ function editorBrush(event){
     sendEditor({type:'decorationAdd',object});editorSelect(objects.find(o=>o.worldId===object.id));requestDraw();
   }
 }
-window.addEventListener('message',event=>{
+life.on(window,'message',event=>{
   if(event.origin!==location.origin||event.source!==parent||event.data?.source!=='induo-editor')return;
   if(event.data.type==='leaveRoom'){changeArea('village');return;}
   if(event.data.type==='enterRoom'){activeWorker=workers.find(w=>w.id===event.data.owner);if(activeWorker){changeArea('room');setRoomLevel(event.data.level||0);}return;}
@@ -119,8 +119,8 @@ function restoreEditorScene(catalog){
   editorDrag=null;editorCandidate=null;editorCursor=null;closePopup();
   applyVillageCatalog(catalog);Object.assign(editorCatalog,catalog);editorCatalog.world=sceneWorld;
 }
-window.addEventListener('keydown',event=>{const action=historyShortcut(event);if(action){event.preventDefault();sendEditor({type:'history',action});}});
-window.addEventListener('blur',()=>{if(editorDrag){editorDrag=null;editorCandidate=null;requestDraw();sendEditor({type:'end'});}});
+life.on(window,'keydown',event=>{const action=historyShortcut(event);if(action){event.preventDefault();sendEditor({type:'history',action});}});
+life.on(window,'blur',()=>{if(editorDrag){editorDrag=null;editorCandidate=null;requestDraw();sendEditor({type:'end'});}});
 function updateRoomPanel(owner){
   if(!roomPanel)return;
   if(panelOwner!==owner){roomEditing=false;roomTool='move';editorSelected='';editorCursor=null;editorCandidate=null;}

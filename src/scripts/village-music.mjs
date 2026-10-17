@@ -22,7 +22,7 @@ export function createVillageMusic({sources, onState, onProgress=()=>{}, volume 
         }
         if(audio.error)audio.load();
         await audio.play();
-        if(current!==generation)return;
+        if(current!==generation){if(!requested)audio.pause();return;}
         onState('playing');
       } catch {
         if(current!==generation)return;

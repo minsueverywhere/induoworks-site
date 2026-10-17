@@ -1,9 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createVillageMusic, musicTime } from '../src/scripts/village-music.mjs';
-import { musicArtist } from '../src/scripts/village-tracks.mjs';
-import {readFileSync} from 'node:fs';
-import {runInNewContext} from 'node:vm';
 
 test('music is requested only on play, loops, and prefers Opus', async () => {
   let created = 0, audio;
@@ -30,15 +27,23 @@ test('playback reports elapsed time and seeking clamps without preloading music'
   audio.duration=NaN;player.seek(9);assert.equal(audio.currentTime,0);
   assert.equal(musicTime(64),'1:04');assert.equal(musicTime(12.3),'0:12');assert.equal(musicTime(NaN),'0:00');
 });
-test('switching artist refreshes the player and late progress from the previous song is ignored',()=>{
-  const source=readFileSync(new URL('../src/scripts/village.js',import.meta.url),'utf8'),options=[],nodes=new Map();
-  const first={title:'Loop',artist:'First team',project:'Game',duration:64,sources:{ogg:'/loop.ogg',mp3:'/loop.mp3'}};
-  runInNewContext(source.slice(source.indexOf('let playing = false;'),source.indexOf('const decorationObject='))+"\nselectMusic(second);",{
-    root:{dataset:{music:JSON.stringify(first)}},second:{...first,artist:'Second team'},text:{},musicArtist,musicTime,
-    $:id=>{if(!nodes.has(id))nodes.set(id,{});return nodes.get(id);},createVillageMusic:o=>{options.push(o);return{stop(){}};},
-  });
-  assert.equal(options.length,2);
-  options[0].onProgress({current:20,duration:64});assert.equal(nodes.get('seek').value,'0');
-  nodes.get('seek').setAttribute=()=>{};options[1].onProgress({current:12,duration:64});
-  assert.equal(nodes.get('seek').value,'12');assert.equal(nodes.get('time').textContent,'0:12 / 1:04');
+test('one lazy music session survives UI detach, resumes the same source and ignores old-song progress',async()=>{
+  const {createMusicSession}=await import('../src/scripts/site-music.mjs');const audios=[];
+  const session=createMusicSession(options=>createVillageMusic({...options,createAudio:()=>{const events={};const a={duration:64,currentTime:0,pauses:0,canPlayType:()=>true,addEventListener:(name,fn)=>events[name]=fn,play:async()=>{},pause(){this.pauses++;},events};audios.push(a);return a;}}));
+  const first={title:'Loop',artist:'Team',duration:64,sources:{ogg:'/loop.ogg'}};
+  let update;const unsubscribe=session.subscribe(value=>update=value);assert.equal(audios.length,0);assert.equal(update.visible,false);
+  await session.toggle(first);audios[0].currentTime=17;audios[0].events.timeupdate();unsubscribe();assert.equal(audios[0].pauses,0);
+  let returned;const leave=session.subscribe(value=>returned=value);assert.equal(returned.current,17);assert.equal(returned.state,'playing');
+  await session.toggle({...first,artist:'New credit'});assert.equal(audios.length,1);assert.equal(session.snapshot().track.artist,'New credit');assert.equal(session.snapshot().state,'stopped');
+  await session.toggle();assert.equal(audios[0].currentTime,17);
+  await session.toggle({...first,title:'Other',sources:{ogg:'/other.ogg'}});assert.equal(audios.length,2);audios[0].currentTime=55;audios[0].events.timeupdate();assert.equal(session.snapshot().current,0);
+  session.seek(12);assert.equal(audios[1].currentTime,12);session.close();assert.equal(session.snapshot().visible,false);assert.equal(session.snapshot().track,null);leave();
+});
+
+test('late play completion cannot restart a paused song',async()=>{
+  let finish,paused=0;const states=[];
+  const audio={canPlayType:()=>true,addEventListener(){},play:()=>new Promise(resolve=>{finish=resolve;}),pause(){paused++;}};
+  const player=createVillageMusic({sources:{ogg:'/slow.ogg'},onState:s=>states.push(s),createAudio:()=>audio});
+  const pending=player.toggle();player.stop();finish();await pending;
+  assert.ok(paused>=2);assert.equal(states.includes('playing'),false);
 });

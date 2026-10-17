@@ -2,9 +2,12 @@ import { loadContent } from './content-loader.mjs';
 import { localizedPath } from './content-catalog.mjs';
 import { elements } from './content-render.mjs';
 import {mountExternal} from './external-player.mjs';
-const root=document.getElementById('work-detail'),lang=root.dataset.lang,labels=JSON.parse(root.dataset.labels);
+import {onPage} from './page-lifecycle.mjs';
+onPage('work-detail',async(root,life)=>{
+const lang=root.dataset.lang,labels=JSON.parse(root.dataset.labels);
 const slug=root.dataset.generic==='true'?new URLSearchParams(location.search).get('id'):root.dataset.slug;
 const content=await loadContent();
+if(!life.alive())return;
 const project=(content?.projects||JSON.parse(root.dataset.projects)).find(p=>p.slug===slug);
 root.dataset.contentSource=content?'remote':'embedded';
 const message=document.getElementById('work-detail-message');
@@ -12,7 +15,7 @@ if(!project) {
   root.hidden=true;message.hidden=false;
   message.textContent=lang==='ko'?'작품을 찾을 수 없습니다. Works에서 다시 찾아주세요.':'Work not found. Please return to Works.';
 } else {
-  if(project.externalUrl)mountExternal(document.getElementById('detail-external'),project.externalUrl,project.title[lang],{lang});
+  if(project.externalUrl)life.cleanup(mountExternal(document.getElementById('detail-external'),project.externalUrl,project.title[lang],{lang}));
   const fields={...Object.fromEntries(['title','summary','role','challenge','approach','outcome'].map(k=>[k,project[k][lang]])),year:project.year,stack:project.stack.join(', '),status:{shipped:labels.shipped,'in-progress':labels.inProgress,paused:labels.paused}[project.status]};
   for(const [key,value] of Object.entries(fields))root.querySelector('[data-field="'+key+'"]').textContent=value;
   const el=elements(root),owners=content?.workers||JSON.parse(root.dataset.workers);
@@ -21,3 +24,4 @@ if(!project) {
   document.title=project.title[lang]+' | Induo Works';
   root.hidden=false;message.hidden=true;
 }
+});

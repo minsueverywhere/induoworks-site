@@ -5,7 +5,8 @@ import {readFile} from 'node:fs/promises';
 import {discordLogin,discordCallback,session,authorize,sameOrigin,logout,hash} from '../src/server/studio-auth.ts';
 import {studioSlice,mergeStudio} from '../src/server/studio-content.mjs';
 import {studioDrafts} from '../src/server/studio-drafts.ts';
-const schema=await readFile(new URL('../migrations/0001_studio.sql',import.meta.url),'utf8')+await readFile(new URL('../migrations/0002_studio_hosts.sql',import.meta.url),'utf8');
+import {studioRooms} from '../src/server/studio-rooms.ts';
+const schema=await readFile(new URL('../migrations/0001_studio.sql',import.meta.url),'utf8')+await readFile(new URL('../migrations/0002_studio_hosts.sql',import.meta.url),'utf8')+await readFile(new URL('../migrations/0004_studio_rooms.sql',import.meta.url),'utf8');
 const catalog=JSON.parse(await readFile(new URL('../content/catalog.json',import.meta.url),'utf8'));
 function database(){
   const sql=new DatabaseSync(':memory:');sql.exec(schema);
@@ -71,4 +72,36 @@ test('private drafts detect concurrent saves; submissions are deduplicated and n
     await assert.rejects(call('published',{},submitted.id),error=>error.status===409);
     await assert.rejects(call('draft',{...input,revision:2}),error=>error.status===409);
   }finally{globalThis.fetch=originalFetch;sql.close();}
+});
+
+
+test('room self-publication restricts ownership and shape, detects conflicts and keeps one reversible version',async()=>{
+  const {sql,env}=database(),token='c'.repeat(72),user='room-user';
+  sql.prepare('INSERT INTO studio_sessions VALUES(?,?,?,?)').run(await hash(token),user,'Test',Math.floor(Date.now()/1000)+600);
+  sql.prepare('INSERT INTO studio_members VALUES(?,?)').run(user,'frondward');
+  const original=globalThis.fetch;globalThis.fetch=async()=>Response.json(catalog);
+  const call=(data,owner='frondward',action='room')=>studioRooms(new Request('https://induo.works/api/studio/'+action+'?owner='+owner,{method:data?'POST':'GET',headers:{Cookie:'__Host-induo-session='+token,Origin:'https://induo.works','Content-Type':'application/json'},...(data?{body:JSON.stringify(data)}:{})}),env,action);
+  try{
+    const initial=await(await call()).json(),room=structuredClone(initial.payload.room);room.floors[0].wallHeight=120;
+    await assert.rejects(call({revision:0,room},'induo-works'),error=>error.status===403);
+    await assert.rejects(call({revision:0,room,projects:[]}),error=>error.status===409);
+    assert.equal((await(await call({revision:0,room})).json()).revision,1);
+    await assert.rejects(call({revision:0,room}),error=>error.status===409);
+    await assert.rejects(call({revision:1,room}),error=>error.status===429);
+    const publicRoom=await call(undefined,'frondward','room-view');assert.equal(publicRoom.headers.get('Cache-Control'),'public, max-age=60');assert.deepEqual(Object.keys(await publicRoom.json()).sort(),['revision','room']);
+    sql.exec('UPDATE studio_rooms SET updated=0');
+    const restored=await(await call({revision:1,restore:true})).json();assert.deepEqual(restored.room,initial.payload.room);
+    assert.equal(sql.prepare('SELECT COUNT(*) AS n FROM studio_rooms').get().n,1);
+    sql.prepare('DELETE FROM studio_members').run();await assert.rejects(call(),error=>error.status===403);
+  }finally{globalThis.fetch=original;sql.close();}
+});
+
+
+test('public room cache omits credentials and uses one canonical key across query variations',async()=>{
+  const {sql,env}=database(),stored=new Map(),keys=[];
+  const cache={match:async key=>{keys.push(key.url);return stored.get(key.url)?.clone();},put:async(key,response)=>stored.set(key.url,response)};
+  const call=query=>studioRooms(new Request('https://induo.works/api/studio/room-view?owner=frondward&'+query,{headers:{Cookie:'private'}}),env,'room-view',cache);
+  const response=await call('noise=one');assert.equal(response.headers.get('Cache-Control'),'public, max-age=60');assert.equal(response.headers.has('Set-Cookie'),false);
+  sql.close();
+  assert.deepEqual(await(await call('noise=two')).json(),{room:null,revision:0});assert.equal(keys[0],keys[1]);
 });

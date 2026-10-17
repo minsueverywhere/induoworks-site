@@ -1,48 +1,45 @@
 ---
-import { site, socialLinks } from '../config';
+import { socialLinks } from '../config';
 import { localizePath, type Locale } from '../i18n';
 interface Props { lang: Locale; }
 const { lang } = Astro.props;
-const year = new Date().getFullYear();
 ---
 <footer class="site-footer">
   <div class="footer-inner">
     <div class="footer-top">
-      <p class="footer-tagline">Independent, Together!</p>
+      <div class="footer-identity">
+        <p class="footer-tagline">Independent, Together!</p>
+        <nav class="footer-links" aria-label={lang==='ko'?'사이트 안내':'Site information'}>
+          <a href={localizePath('/showcase/',lang)} class="focus-ring" aria-label="About this site" title="About this site"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 11v6m0-10h.01" /></svg></a>
+          <a href={localizePath('/contact/',lang)} class="focus-ring" aria-label="Contact" title="Contact"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="1" /><path d="m3 6 9 7 9-7" /></svg></a>
+        </nav>
+      </div>
       <nav aria-label="Social media" class="footer-social">
         {socialLinks.map(social=><a href={social.href} target="_blank" rel="noopener noreferrer" aria-label={social.name} title={social.name} class="focus-ring"><img src={'/social/'+social.icon+'.svg'} width="21" height="21" alt="" class="social-icon" /></a>)}
       </nav>
     </div>
-    <div class="footer-bottom">
-    <nav class="footer-links" aria-label={lang==='ko'?'사이트 안내':'Site information'}>
-      <a href={localizePath('/showcase/',lang)} class="focus-ring">About this site</a>
-      <a href={localizePath('/contact/',lang)} class="focus-ring">Contact</a>
-    </nav>
-    <p class="footer-copyright">© {year} {site.name}</p>
-    </div>
   </div>
 </footer>
 <style>
-  .site-footer { flex-shrink: 0; margin-top: 2rem; border-top: 1px solid var(--color-border); }
-  .footer-inner { max-width: 64rem; margin: 0 auto; padding: 1.5rem 1.5rem; }
-  .footer-top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-  .footer-tagline { font-size: .875rem; font-weight: 400; }
-  .footer-social { display: flex; flex-wrap: wrap; gap: .25rem; }
-  .footer-social a { display: inline-flex; width: 28px; height: 44px; align-items: center; justify-content: center; }
-  .footer-bottom { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; column-gap: 1.25rem; margin-top: .5rem; }
-  .footer-links { display: flex; gap: 1.25rem; }
-  .footer-links a { display: inline-flex; align-items: center; min-height: 44px; font-size: .8rem; color: var(--color-text-muted); text-decoration: underline; text-underline-offset: 4px; }
-  .footer-copyright { color: var(--color-text-muted); font-size: .7rem; white-space: nowrap; }
-  .social-icon { width: 14px; height: 14px; opacity: .85; }
-  :global([data-theme="dark"]) .social-icon { filter: invert(1); }
+  .site-footer { flex-shrink:0;margin-top:var(--section-gap);border-top:1px solid var(--color-border); }
+  .footer-inner { max-width:64rem;margin:0 auto;padding:var(--section-gap) 1.5rem; }
+  .footer-top { display:flex;align-items:center;justify-content:space-between;gap:var(--section-gap);flex-wrap:wrap; }
+  .footer-identity { display:flex;align-items:center;gap:.5rem; }
+  .footer-tagline { font-size:.875rem;line-height:1;font-weight:400;white-space:nowrap; }
+  .footer-links,.footer-social { display:flex;align-items:center;gap:.25rem; }
+  .footer-links a,.footer-social a { position:relative;display:inline-flex;width:24px;height:14px;align-items:center;justify-content:center;color:var(--color-text-muted); }
+  .footer-links a::before,.footer-social a::before { content:'';position:absolute;inset:-6px 0; }
+  .footer-links svg { width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round; }
+  .footer-social a { width:28px; }
+  .social-icon { width:14px;height:14px;opacity:.85; }
+  :global([data-theme="dark"]) .social-icon { filter:invert(1); }
   @media(max-width:639px) {
-    .footer-top { flex-wrap: nowrap; gap: .5rem; }
-    .footer-tagline { font-size: .75rem; white-space: nowrap; }
-    .footer-social { flex-wrap: nowrap; gap: 2px; }
-    .footer-social a { width: 18px; }
-    .footer-bottom, .footer-links { column-gap: .75rem; }
-    .footer-links a { font-size: .75rem; }
-    .footer-copyright { font-size: .65rem; }
+    .footer-top { gap:var(--section-gap) .5rem; }
+    .footer-identity { gap:.25rem; }
+    .footer-tagline { font-size:.75rem; }
+    .footer-links { gap:0; }.footer-links a{width:20px;}
+    .footer-social { flex-wrap:nowrap;gap:0; }
+    .footer-social a { width:20px; }
   }
-  @media(max-width:359px) { .footer-social { gap: 0; } .footer-social a { width: 16px; } }
+  @media(max-width:359px) { .footer-social{margin-left:auto} }
 </style>

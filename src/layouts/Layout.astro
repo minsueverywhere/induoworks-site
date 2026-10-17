@@ -1,5 +1,7 @@
 ---
 import '../styles/global.css';
+import {ClientRouter} from 'astro:transitions';
+import MusicPlayer from '../components/MusicPlayer.astro';
 import SEO from '../components/SEO.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
@@ -21,6 +23,7 @@ const dict = t(lang);
 <!doctype html>
 <html lang={lang}>
   <head>
+    <ClientRouter />
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
@@ -34,7 +37,7 @@ const dict = t(lang);
       Blocking, inline, and tiny on purpose: sets the theme before first paint
       so there is no flash of the wrong theme. Runs before any stylesheet.
     -->
-    <script is:inline>
+    <script is:inline data-astro-rerun>
       (function () {
         try {
           const stored = localStorage.getItem('theme');
@@ -53,5 +56,6 @@ const dict = t(lang);
       <slot />
     </main>
     <Footer lang={lang} />
+    <MusicPlayer lang={lang} />
   </body>
 </html>

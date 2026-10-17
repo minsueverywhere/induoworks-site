@@ -20,13 +20,13 @@ export const site = {
 } as const;
 
 export const socialLinks = [
-  { name: 'Discord', icon: 'discord', href: 'https://discord.gg/VnnvH22ZKJ' },
-  { name: 'YouTube', icon: 'youtube', href: 'https://www.youtube.com/@InduoWorks' },
-  { name: 'Patreon', icon: 'patreon', href: 'https://www.patreon.com/c/induoworks' },
-  { name: 'Instagram', icon: 'instagram', href: 'https://www.instagram.com/induoworks/' },
   { name: 'X', icon: 'x', href: 'https://x.com/induoworks' },
+  { name: 'Instagram', icon: 'instagram', href: 'https://www.instagram.com/induoworks/' },
   { name: 'Facebook', icon: 'facebook', href: 'https://www.facebook.com/profile.php?id=61595485407391' },
   { name: 'TikTok', icon: 'tiktok', href: 'https://www.tiktok.com/@induoworks' },
+  { name: 'YouTube', icon: 'youtube', href: 'https://www.youtube.com/@InduoWorks' },
+  { name: 'Patreon', icon: 'patreon', href: 'https://www.patreon.com/c/induoworks' },
+  { name: 'Discord', icon: 'discord', href: 'https://discord.gg/VnnvH22ZKJ' },
   { name: 'GitHub', icon: 'github', href: site.github },
 ] as const;
 

@@ -14,6 +14,7 @@ export default defineConfig({
   site: 'https://induo.works',
   output: 'static',
   devToolbar: { enabled: false },
+  server: { port: 4335, host: '0.0.0.0' },
 
   i18n: {
     locales: ['en', 'ko'],
@@ -24,6 +25,7 @@ export default defineConfig({
   },
 
   vite: {
+    server: { strictPort: true },
     plugins: [tailwindcss(), ...(process.env.INDUO_EDITOR==='1'?[localEditorPlugin()]:[])],
   },
 

@@ -60,6 +60,7 @@ test('dragging a multi-cell house updates the drawing, click target and footprin
   const worker={id:'hub',house:{x:3,y:3,width:2,depth:3}},place={id:'hub',shape:'house',area:'village',roomLevel:0,ground:groundPosition(worker.house,'house'),...worker.house,width:96};
   const object={...place},handlers={},window={postMessage(){},addEventListener(type,fn){handlers['window:'+type]=fn;}};
   const context={window,parent:window,document:{documentElement:{dataset:{}}},location:{origin:'http://localhost:4323'},root:{dataset:{}},remoteContent:{workers:[worker]},sceneWorld:world,objects:[object],places:[place],area:'village',roomLevel:0,hovered:'',width:0,height:0,scale:1,camera:{x:0,y:0},canvas:{focus(){}},requestDraw(){},placementObjects,objectPlacementError,groundPosition,toScreen,scene:{getBoundingClientRect(){return{left:0,top:0};},setPointerCapture(){},addEventListener(type,fn){handlers[type]=fn;}}};
+  context.life={on:(target,...args)=>target.addEventListener(...args)};
   runInNewContext(source,context);
   handlers['window:message']({origin:context.location.origin,source:window,data:{source:'induo-editor',tool:'move'}});
   const event=(x,y)=>({clientX:x,clientY:y,pointerId:1,button:0,target:{closest:()=>({dataset:{object:'hub'}})},stopImmediatePropagation(){},preventDefault(){}});

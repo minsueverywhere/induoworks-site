@@ -31,7 +31,7 @@ const languagePath = currentBasePath === '/404/' ? '/' : currentBasePath;
       <span class="hidden sm:inline">{site.name}</span>
     </a>
 
-    <nav id="primary-nav" class="desktop-nav hidden items-center gap-6 lg:flex" aria-label="Primary">
+    <nav id="primary-nav" class="desktop-nav hidden items-center gap-4 md:flex" aria-label="Primary">
       {items.map((item) => (
         <a
           href={item.href}
@@ -50,7 +50,7 @@ const languagePath = currentBasePath === '/404/' ? '/' : currentBasePath;
     </nav>
 
     <div class="flex items-center gap-2">
-      <select id="site-language" aria-label={lang === 'ko' ? '언어' : 'Language'} class="focus-ring h-9 rounded border border-[var(--color-border)] bg-[var(--color-bg)] px-2 text-xs text-[var(--color-text)]">
+      <select id="site-language" aria-label={lang === 'ko' ? '언어' : 'Language'} class="focus-ring h-9 bg-transparent px-2 text-xs text-[var(--color-text)]">
         {locales.map((locale) => (
           <option value={localizePath(languagePath, locale)} lang={locale} selected={locale === lang}>{localeNames[locale]}</option>
         ))}
@@ -62,7 +62,7 @@ const languagePath = currentBasePath === '/404/' ? '/' : currentBasePath;
         aria-label={dict.misc.toggleMenu}
         aria-expanded="false"
         aria-controls="mobile-menu"
-        class="focus-ring inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-border)] text-[var(--color-text-muted)] lg:hidden"
+        class="focus-ring inline-flex h-9 w-9 items-center justify-center text-[var(--color-text-muted)] md:hidden"
       >
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="h-4.5 w-4.5">
           <path d="M4 7h16M4 12h16M4 17h16"></path>
@@ -71,7 +71,7 @@ const languagePath = currentBasePath === '/404/' ? '/' : currentBasePath;
     </div>
   </div>
 
-  <nav id="mobile-menu" class="hidden border-t border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-6 py-4 lg:hidden" aria-label="Primary mobile">
+  <nav id="mobile-menu" class="hidden border-t border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-6 py-4 md:hidden" aria-label="Primary mobile">
     <ul class="flex flex-col gap-3">
       {items.map((item) => (
         <li>
@@ -84,7 +84,7 @@ const languagePath = currentBasePath === '/404/' ? '/' : currentBasePath;
   </nav>
 </header>
 
-<script is:inline>
+<script is:inline data-astro-rerun>
   (function () {
     const btn = document.getElementById('menu-toggle');
     const menu = document.getElementById('mobile-menu');
@@ -119,7 +119,7 @@ const languagePath = currentBasePath === '/404/' ? '/' : currentBasePath;
     nav.addEventListener('pointerleave', restore);
     nav.addEventListener('focusin', (event) => place(event.target.closest('a')));
     nav.addEventListener('focusout', (event) => { if (!nav.contains(event.relatedTarget)) restore(); });
-    new ResizeObserver(restore).observe(nav);
+    const observer=new ResizeObserver(restore);observer.observe(nav);document.addEventListener('astro:before-swap',()=>observer.disconnect(),{once:true});
     restore();
   })();
 </script>

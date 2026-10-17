@@ -22,6 +22,9 @@ const text = {
   mediaError: ko ? '이미지를 불러오지 못했어요.' : 'Could not load this image.',
   tutorial: {
     drag: ko ? '마을을 드래그해 둘러보세요.' : 'Drag to explore the village.',
+    roomDrag: ko ? '작업실을 드래그해 둘러보세요.' : 'Drag to explore this workshop.',
+    edit: ko ? '설정을 눌러 내 작업실 꾸미기를 열어 보세요.' : 'Open settings to decorate your workshop.',
+    work: ko ? '표시된 전시물을 눌러 작품을 만나보세요.' : 'Select the highlighted exhibit to discover the work.',
     house: ko ? '표시된 집을 눌러 들어가 보세요.' : 'Select the highlighted house to step inside.',
     pinch: ko ? '두 손가락을 벌리거나 오므려 보세요.' : 'Pinch with two fingers to zoom.',
     wheel: ko ? '마우스 휠로 화면을 확대·축소해 보세요.' : 'Scroll your mouse wheel over the scene to zoom.',
@@ -35,18 +38,10 @@ const text = {
 const {places:allPlaces,workers:villageWorkers,world}=villageContent(catalog,lang,text.title);
 const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interactive!==false);
 ---
-<section id="village-section" class="village page-main" aria-labelledby="village-heading" data-world={JSON.stringify(world)} data-places={JSON.stringify(allPlaces)} data-text={JSON.stringify(text)} data-workers={JSON.stringify(villageWorkers)} data-music={JSON.stringify(villageMusic)} data-media={JSON.stringify(villageMedia.map(m => ({...m,title:m.title[lang]})))}>
-  <div class="village-heading">
-    <h1 id="village-heading" class="page-title">{text.title}</h1>
-    <div id="village-help" class="village-help">
-      <button id="village-help-toggle" type="button" aria-label={ko?'마을 튜토리얼 시작':'Start village tutorial'} aria-expanded="false" aria-controls="village-tutorial"><span aria-hidden="true">?</span></button>
-      <div id="village-hint" class="village-guide" role="note" aria-label={ko?'마을 안내':'About the village'} hidden>
-        <p>{ko?'마을을 탐험하고, 집 안의 작업물을 만나보세요.':'Explore the village and discover the work inside its houses.'}</p>
-      </div>
-    </div>
-  </div>
+<section id="village-section" class="village page-main" aria-label={text.title} data-world={JSON.stringify(world)} data-places={JSON.stringify(allPlaces)} data-text={JSON.stringify(text)} data-workers={JSON.stringify(villageWorkers)} data-music={JSON.stringify(villageMusic)} data-media={JSON.stringify(villageMedia.map(m => ({...m,title:m.title[lang]})))}>
   <div id="village-tutorial-spotlight" class="tutorial-spotlight" aria-hidden="true" hidden></div>
   <div class="village-scene" id="village-scene">
+<button id="village-studio" type="button" data-ui aria-expanded="false" aria-label={ko?'작업실 설정':'Workshop settings'} title={ko?'작업실 설정':'Workshop settings'}><svg class="settings-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-.6 3-2 .9-2.7-.9-2 3.5 2.2 2v2.3l-2.2 2 2 3.5 2.7-.9 2 .9.6 3h4l.6-3 2-.9 2.7.9 2-3.5-2.2-2v-2.3l2.2-2-2-3.5-2.7.9-2-.9-.6-3Z"/><circle cx="11" cy="12" r="3" /></svg><svg class="login-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3h7v18h-7M3 12h13m-5-5 5 5-5 5" /></svg><svg class="close-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg><span class="login-copy">Discord로 로그인</span></button>
     <nav id="village-floors" data-ui aria-label={ko?'층 이동':'Floors'} hidden></nav>
     <canvas id="village-canvas" tabindex="0" aria-label={text.title} aria-describedby="village-hint">{text.hint}</canvas>
     <div id="village-tutorial-gesture" class="tutorial-gesture" aria-hidden="true" hidden><span></span><i></i></div>
@@ -62,19 +57,24 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
       {socialLinks.map(s=><a href={s.href} target="_blank" rel="noopener noreferrer" aria-label={s.name} title={s.name} data-ui data-social class="village-social-link"><img data-src={'/social/'+s.icon+'.svg'} width="22" height="22" alt="" /><span>{s.name}</span></a>)}
     </nav>
     <section id="village-popup" class="village-popup" role="dialog" aria-modal="false" aria-labelledby="village-title" tabindex="-1" hidden>
-      <button id="village-close" type="button" aria-label={ko ? '설명 닫기' : 'Close details'}>×</button>
-      <h3 id="village-title"></h3>
+      <div class="village-popup-heading"><h3 id="village-title"></h3><button id="village-close" type="button" aria-label={ko ? '설명 닫기' : 'Close details'}>×</button></div>
       <p id="village-description"></p>
       <nav id="village-links" aria-label={ko ? '작업실의 작품' : 'Workshop projects'}></nav>
       <div id="village-gallery"></div>
       <div id="village-player" hidden>
-        <div class="music-controls"><button id="village-music" type="button" aria-pressed="false" aria-label={text.play}>▶︎</button><input id="village-seek" type="range" min="0" max={villageMusic.duration} step=".1" value="0" aria-label={ko?'재생 위치':'Playback position'} disabled /><span id="village-time">0:00 / {Math.floor(villageMusic.duration/60)}:{String(Math.floor(villageMusic.duration%60)).padStart(2,'0')}</span></div>
+        <div class="music-controls"><button id="village-music" class="music-toggle" type="button" aria-pressed="false" aria-label={text.play}></button><input id="village-seek" type="range" min="0" max={villageMusic.duration} step=".1" value="0" aria-label={ko?'재생 위치':'Playback position'} disabled /><span id="village-time">0:00 / {Math.floor(villageMusic.duration/60)}:{String(Math.floor(villageMusic.duration%60)).padStart(2,'0')}</span></div>
       </div>
     </section>
     <div class="village-location" data-ui>
       <button id="village-home" type="button" aria-label={ko?'내 작업실로':'Go to my workshop'} title={ko?'내 작업실로':'My workshop'}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7M5 9v12h14V9M9 21v-8h6v8" /></svg></button>
       <button id="village-back" type="button" aria-label={ko?'마을로 돌아가기':'Return to village'} title={ko?'마을로 돌아가기':'Return to village'} hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 5-7 7 7 7M3 12h13a5 5 0 0 1 5 5" /></svg></button>
+    <div id="village-help" class="village-help">
       <span id="village-caption" class="village-caption" aria-hidden="true">{text.title.toUpperCase()}</span>
+      <button id="village-help-toggle" type="button" aria-label={ko?'현재 장소 튜토리얼':'Tutorial for this place'} aria-expanded="false" aria-controls="village-tutorial"><span aria-hidden="true">?</span></button>
+      <div id="village-hint" class="village-guide" role="note" aria-label={ko?'마을 안내':'About the village'} hidden>
+        <p>{ko?'이곳을 둘러보는 방법을 알아보세요.':'Learn how to explore this place.'}</p>
+      </div>
+    </div>
     </div>
     <div class="village-hud" data-ui role="group" aria-label={ko?'지도 보기 설정':'Map view settings'}>
       <div class="village-zoom-track">
@@ -82,10 +82,9 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
         <span class="village-zoom-tick" aria-hidden="true" style={'left:'+((1-MIN_ZOOM)/(MAX_ZOOM-MIN_ZOOM)*100)+'%'}></span>
         <button id="village-zoom" type="button" aria-label={ko?'화면에 맞는 기본 배율로 초기화':'Reset to default zoom for this screen'}>100%</button>
       </div>
-      <button id="village-fullscreen" type="button" aria-label={ko?'전체 화면 전환':'Toggle full screen'} title={ko?'전체 화면':'Full screen'} aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="expand" d="M9 3H3v6m12-6h6v6M3 15v6h6m12-6v6h-6" /><path class="collapse" d="M3 9h6V3m6 0v6h6M9 21v-6H3m12 6v-6h6" /></svg></button>
-      <button id="village-studio" type="button" aria-label={ko?'작업실 설정':'Workshop settings'} title={ko?'작업실 설정':'Workshop settings'}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-.6 3-2 .9-2.7-.9-2 3.5 2.2 2v2.3l-2.2 2 2 3.5 2.7-.9 2 .9.6 3h4l.6-3 2-.9 2.7.9 2-3.5-2.2-2v-2.3l2.2-2-2-3.5-2.7.9-2-.9-.6-3Z"/><circle cx="11" cy="12" r="3" /></svg></button>
+      <button id="village-fullscreen" type="button" aria-label={ko?'전체 화면 전환':'Toggle full screen'} title={ko?'전체 화면':'Full screen'} aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fullscreen-enter" d="M9 3H3v6m12-6h6v6M3 15v6h6m12-6v6h-6" /><path class="fullscreen-exit" d="M3 9h6V3m6 0v6h6M9 21v-6H3m12 6v-6h6" /></svg></button>
+
     </div>
-    <button id="village-now-playing" class="village-now-playing" type="button" data-ui aria-pressed="false" hidden><i aria-hidden="true"></i><span id="village-now-label">{text.music}</span></button>
     <p id="village-music-status" class="sr-only" role="status"></p>
   </div>
   <noscript><p>{ko ? 'JavaScript를 켜면 마을 지도를 이용할 수 있습니다.' : 'Enable JavaScript to explore the village map.'}</p><ul>{projects.filter(p => p.kind === 'game').map(p => <li><a href={localizePath('/work/' + p.slug + '/', lang)}>{p.title[lang]}</a></li>)}</ul></noscript>
@@ -93,9 +92,8 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
 <script>import '../scripts/village.js';</script>
 <style>
   .village { display: flex; flex-direction: column; flex: 1; width: 100%; }
-  .village-heading { position: relative; display: flex; align-items: center; gap: .25rem; margin-bottom: 1rem; }
-  h1 { font-size: 1.875rem; line-height: 1.25; font-weight: 600; letter-spacing: -.025em; }
-  .village-help { display: flex; align-items: center; }
+  h1 { font-size: 1.875rem; line-height: 1; font-weight: 600; letter-spacing: -.025em; }
+  .village-help { position:relative; display: flex; align-items: center; gap:4px; }
   .village-tutorial { position: absolute; z-index: 50; right: 12px; bottom: 56px; width: min(280px,calc(100% - 24px)); padding: .75rem 1rem .25rem; border: 1px solid var(--color-border); border-radius: .6rem; background: var(--color-bg); color: var(--color-text); font-size: .8rem; line-height: 1.6; cursor: auto; user-select: text; }
   .tutorial-spotlight { position: fixed; z-index: 40; border-radius: .75rem; box-shadow: 0 0 0 200vmax #ffffffb3; pointer-events: none; }
   :global([data-theme="dark"]) .tutorial-spotlight { box-shadow: 0 0 0 200vmax #000b; }
@@ -112,17 +110,20 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
   .tutorial-progress { margin-bottom: .25rem; font-size: .65rem; color: var(--color-text-muted); }
   #village-tutorial-skip { display: block; margin-left: auto; color: var(--color-text-muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
   .village-place.tutorial-target::after { content: ''; position: absolute; inset: -4px; border: 2px dashed #edcba9; border-radius: .5rem; pointer-events: none; }
-  #village-back.tutorial-target { outline: 2px solid #edcba9; outline-offset: 4px; z-index: 41; }
+  #village-back.tutorial-target,#village-studio.tutorial-target { outline: 2px solid #edcba9; outline-offset: 4px; z-index: 41; }
   .village-social-link { position: absolute; z-index: 1; display: flex; width: 44px; height: 44px; align-items: center; justify-content: center; border: 2px solid #8c7050; border-radius: 3px; background: #f0dfb8; transform-origin: 0 0; touch-action: manipulation; }
   .village-social-link:hover,.village-social-link:focus-visible { border-color: #edcba9; outline: 2px solid #edcba9; outline-offset: 2px; z-index: 3; }
   .village-social-link img { width: 22px; height: 22px; opacity: .8; }
   .village-social-link span { position: absolute; top: 100%; opacity: 0; background: #faf6e8; color: #30422e; font-size: 10px; padding: 2px 5px; pointer-events: none; }
   .village-social-link:hover span,.village-social-link:focus-visible span { opacity: 1; }
   #village-help-toggle { display: inline-flex; align-items: center; justify-content: center; cursor: pointer; background: transparent; color: var(--color-text-muted); }
-  #village-help-toggle span { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border: 1px solid color-mix(in srgb,var(--color-text) 30%,var(--color-bg)); border-radius: 50%; color: color-mix(in srgb,var(--color-text) 60%,var(--color-bg)); font-size: .7rem; line-height: 1; }
+  #village-help-toggle span { display: inline-flex; align-items: center; justify-content: center; width: 12px; height: 12px; border: 1px solid currentColor; opacity:.5; border-radius: 50%; color: inherit; font-size: .5rem; font-weight:300; line-height: 1; }
   #village-help-toggle:hover span, #village-help-toggle:focus-visible span { border-color: var(--color-text-muted); color: var(--color-text); }
-  .village-guide { position: absolute; top: 100%; left: 0; z-index: 5; width: max-content; max-width: 100%; padding: .65rem .85rem; border: 1px solid var(--color-border); border-radius: .5rem; background: var(--color-bg); color: var(--color-text-muted); box-shadow: 0 6px 20px #0002; font-size: .8rem; line-height: 1.6; }
-  .village-scene { position: relative; flex: 1; min-height: 480px; overflow: hidden; border: 1px solid var(--color-border); border-radius: 1rem; background: #e9e5d6; cursor: grab; user-select: none; }
+  .village-guide { position: absolute; bottom: 100%; left: 0; z-index: 5; width: max-content; max-width: min(240px,70vw); padding: .65rem .85rem; border: 1px solid var(--color-border); border-radius: .5rem; background: var(--color-bg); color: var(--color-text-muted); box-shadow: 0 6px 20px #0002; font-size: .8rem; line-height: 1.6; }
+  .village-scene { position: relative; flex: 1; min-height: 336px; overflow: hidden; border: 1px solid var(--color-border); border-radius: .5rem; background: #e9e5d6; cursor: grab; user-select: none; }
+  .village-scene[data-area="village"]{background:var(--sky-background,#e9e5d6)}
+  .village-scene[data-area="village"]::before{content:'';position:absolute;inset:0;pointer-events:none;opacity:var(--sky-stars,0);background:radial-gradient(circle at 12% 15%,#fff2d8 0 1px,transparent 1.5px),radial-gradient(circle at 28% 8%,#fff2d8 0 .8px,transparent 1.3px),radial-gradient(circle at 61% 18%,#fff2d8 0 1px,transparent 1.5px),radial-gradient(circle at 85% 10%,#fff2d8 0 .8px,transparent 1.3px),radial-gradient(circle at 93% 35%,#fff2d8 0 1px,transparent 1.5px),radial-gradient(circle at 7% 44%,#fff2d8 0 .8px,transparent 1.3px)}
+  .village-scene[data-area="village"] .village-location,.village-scene[data-area="village"] .village-hud,.village-scene[data-area="village"] #village-studio{color:var(--sky-ink,#526347)}
   .village-scene.is-dragging { cursor: grabbing; }
   canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline-offset: -4px; touch-action: none; }
   .village-place { display: none; position: absolute; transform: translate(-50%,-100%); border: 0; background: transparent; cursor: pointer; color: #30422e; touch-action: none; }
@@ -130,8 +131,6 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
   .village-place span { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); width: max-content; max-width: 140px; padding: 3px 6px; border: 1px solid #a3a384; border-radius: 4px; background: #faf4dd; font-size: 11px; line-height: 1.3; box-shadow: 0 2px 3px #33452516; opacity: 0; visibility: hidden; pointer-events: none; }
   .village-place:hover span, .village-place:focus-visible span { opacity: 1; visibility: visible; }
   .village-place[aria-pressed="true"] span { background: #304c3a; color: #fff4d5; }
-  .village-hud:hover, .village-hud:focus-within, .village-hud:active { opacity: 1; }
-  .village-hud button:hover { color: #006e7e; text-decoration: underline; }
   #village-zoom-range { display: block; appearance: none; width: 100%; min-height: 44px; margin: 0; background: transparent; cursor: ew-resize; touch-action: pan-y; --zoom-progress: 55.56%; }
   #village-zoom-range::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right,#30422e var(--zoom-progress),#faf6e8 var(--zoom-progress)); box-shadow: 0 0 0 1px #30422e60; }
   #village-zoom-range::-moz-range-track { height: 4px; border-radius: 2px; background: linear-gradient(to right,#30422e var(--zoom-progress),#faf6e8 var(--zoom-progress)); box-shadow: 0 0 0 1px #30422e60; }
@@ -150,19 +149,21 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
   .village-now-playing:not([aria-pressed="true"]) i::before { content: '\25B6\FE0E'; }
   .village-now-playing[data-state="error"] { color: #8a3b2a; }
   .village-popup { position: absolute; z-index: 2; left: 12px; top: 12px; width: min(310px,calc(100% - 24px)); max-height: min(330px,calc(100% - 100px)); overflow-y: auto; padding: 1rem; border: 1px solid #a3a384; border-radius: .75rem; background: #faf6e8; color: #30422e; box-shadow: 0 8px 24px #30422e26; cursor: auto; user-select: text; touch-action: pan-y; }
-  #village-close { float: right; margin: -.5rem -.5rem 0 .5rem; font-size: 1.5rem; cursor: pointer; }
-  h3 { font-size: 1rem; font-weight: 600; line-height: 1.5; margin: 0 0 .5rem; padding-top: .25rem; }
-  #village-description { font-size: .8rem; line-height: 1.7; }
+  .village-popup-heading { display:flex;align-items:flex-start;gap:8px; }
+  #village-close { flex:none;min-width:20px;min-height:24px;padding:0;margin:0;font-size:1.25rem;line-height:24px;cursor:pointer; }
+  h3 { flex:1;min-width:0;font-size: 1rem; font-weight: 600; line-height: 1.5; margin:0;overflow-wrap:anywhere; }
+  #village-description { margin-top:.5rem;font-size: .8rem; line-height: 1.7; }
   #village-links { display: grid; margin-top: .5rem; }
   #village-links :global(a) { display: flex; align-items: center; min-height: 44px; text-decoration: underline; text-underline-offset: 3px; font-size: .875rem; }
   #village-player { font-size: .75rem; }
   .music-controls { display:flex; align-items:center; gap:.3rem; }
   #village-seek { width:100%; min-width:0; accent-color:#597158; cursor:pointer; }
   #village-time { flex:none; white-space:nowrap; font-size:.65rem; font-variant-numeric:tabular-nums; color:#5f7050; }
-  .village-popup[data-music="true"] { padding:.65rem .8rem; width:min(300px,calc(100% - 24px)); }
-  .village-popup[data-music="true"] h3 { font-size:.85rem; padding-right:28px; margin:0; overflow-wrap:anywhere; }
-  .village-popup[data-music="true"] #village-close { position:absolute; right:4px; top:4px; margin:0; }
+  #village-links:empty,#village-gallery:empty,#village-description:empty { display:none; }
+  .village-popup[data-music="true"] { width:min(300px,calc(100% - 24px)); }
+  .village-popup[data-music="true"] h3 { font-size:.85rem; margin:0; overflow-wrap:anywhere; }
   .village-popup[data-music="true"] #village-links { display:none; }
+  #village-title :global(svg) { width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round; }
   #village-title :global(a) { display:inline-flex; align-items:center; justify-content:center; min-width:28px; min-height:28px; margin-left:.15rem; vertical-align:middle; font-size:.7rem; text-decoration:none; }
   #village-player label { display: flex; align-items: center; gap: .5rem; white-space: nowrap; }
   input { flex: 1; width: 0; min-width: 0; min-height: 44px; }
@@ -170,25 +171,38 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
   #village-gallery :global(img) { display: block; width: 100%; max-height: 120px; object-fit: contain; border-radius: .25rem; background: #fffaf1; }
   #village-gallery :global(figcaption) { font-size: .7rem; margin-top: .25rem; }
   #village-gallery :global(a) { display: inline-flex; align-items: center; min-height: 44px; font-size: .75rem; text-decoration: underline; }
-  @media(max-width: 639px) { .village-scene { min-height: 400px; } }
+  @media(max-width: 639px) { .village-scene { min-height: 280px; } }
 </style>
 
 <style>
   :global(html.studio-open) { overflow:hidden; }
   .village-scene.studio-fullscreen { position:fixed; inset:0; z-index:1000; width:100%; height:100dvh; min-height:0; border:0; border-radius:0; }
-  .village-location,.village-hud { position:absolute; bottom:max(10px,env(safe-area-inset-bottom)); display:flex; align-items:center; gap:4px; height:40px; z-index:10; color:#526347; font:10px system-ui; opacity:.8; }
-  .village-location { left:10px; }.village-hud { right:10px; }
-  .village-location button,.village-hud button { display:flex; align-items:center; justify-content:center; min-width:36px; min-height:40px; padding:0; border:0; background:transparent; color:inherit; cursor:pointer; }
+  /* Align the 15px icon inside its 44px target, including the scene border. */
+  .village-scene { --scene-control-inset:calc(var(--section-gap) - (44px - 15px)/2 - 1px); }
+  .village-location,.village-hud { position:absolute; bottom:max(var(--scene-control-inset),env(safe-area-inset-bottom)); display:flex; align-items:center; gap:8px; height:44px; z-index:10; color:#526347; font:10px system-ui; }
+  .village-location { left:max(var(--scene-control-inset),env(safe-area-inset-left)); }.village-hud { right:max(var(--scene-control-inset),env(safe-area-inset-right)); }
+  .village-location button,.village-hud button { display:flex; align-items:center; justify-content:center; width:44px;min-width:44px;height:44px;min-height:44px; padding:0; border:0; background:transparent; color:inherit; cursor:pointer; }
   .village-location button[hidden] { display:none; }
-  svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
+  .village-location #village-help-toggle { position:relative;min-width:15px;width:15px; }
+  #village-help-toggle::before { content:'';position:absolute;inset:0 -4px; }
+  svg { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
   .village-caption { position:static; font:9px system-ui; letter-spacing:.08em; color:inherit; }
-  .village-zoom-track { width:64px; }
+  .village-zoom-track { flex:0 0 64px;width:64px;min-width:0;opacity:.7; }
+  .village-zoom-track:focus-within { opacity:1; }
   #village-zoom-range { min-height:40px; }
   #village-zoom { position:absolute; bottom:32px; left:0; width:64px; min-height:24px; visibility:hidden; opacity:0; font:10px system-ui; }
   .village-hud[data-adjusting=true] #village-zoom { visibility:visible; opacity:1; }
   :global([data-editor-embedded="true"]) #village-home,:global([data-editor-embedded="true"]) #village-studio { display:none; }
-  .village-hud #village-fullscreen,.village-hud #village-studio { min-width:36px; }
-  #village-fullscreen .collapse,#village-fullscreen[aria-pressed=true] .expand { display:none; }
-  #village-fullscreen[aria-pressed=true] .collapse { display:block; }
+  .village-hud #village-fullscreen { flex:0 0 44px;width:44px;min-width:44px;height:44px;min-height:44px;opacity:1; }
+  #village-fullscreen svg{display:block;flex:none;pointer-events:none}
+  #village-studio { position:absolute;right:max(var(--scene-control-inset),env(safe-area-inset-right));top:max(var(--scene-control-inset),env(safe-area-inset-top));z-index:12;display:flex;align-items:center;justify-content:center;width:44px;min-width:44px;height:44px;min-height:44px;padding:0;border:0;background:transparent;color:#526347;cursor:pointer; }
+  #village-fullscreen .fullscreen-exit,#village-fullscreen[aria-pressed=true] .fullscreen-enter { display:none; }
+  #village-fullscreen[aria-pressed=true] .fullscreen-exit { display:block; }
+  #village-studio .login-icon,#village-studio .close-icon,#village-studio .login-copy { display:none; }
+  #village-studio[data-session=guest] .settings-icon { display:none; }
+  #village-studio[data-session=guest] .login-icon,#village-studio[data-session=guest] .login-copy { display:block; }
+  #village-studio .login-copy { position:absolute;right:40px;width:max-content;font:11px system-ui;white-space:nowrap; }
+  #village-studio[aria-expanded=true] .settings-icon { display:none; }
+  #village-studio[aria-expanded=true] .close-icon { display:block; }
   @media(max-width:400px) { .village-caption { max-width:100px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } }
 </style>

@@ -1,9 +1,23 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createTutorial, tutorialSteps } from '../src/scripts/village-tutorial.mjs';
+import { createTutorial, tutorialSteps, contextTutorialSteps } from '../src/scripts/village-tutorial.mjs';
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import { pinchPoints, zoomCamera, panCamera, isDrag } from '../src/scripts/village-camera.mjs';
+
+test('tutorial restarts with the current place and only offers owned-room editing',()=>{
+  assert.deepEqual(contextTutorialSteps('village',false,{music:true}),['drag','zoom','music']);
+  assert.deepEqual(contextTutorialSteps('room',true,{exhibit:true}),['drag','zoom','edit','exit']);
+  assert.deepEqual(contextTutorialSteps('room',false,{exhibit:true}),['drag','zoom','work','exit']);
+  assert.deepEqual(contextTutorialSteps('room',false),['drag','zoom','exit']);
+  let shown;const tutorial=createTutorial(step=>shown=step);
+  tutorial.start(['drag','zoom','work','exit']);
+  for(const step of ['drag','zoom','work'])tutorial.complete(step);
+  assert.equal(shown,'exit');
+  tutorial.close();tutorial.start(['drag','zoom','edit','exit']);
+  tutorial.complete('drag');tutorial.complete('zoom');tutorial.complete('work');
+  assert.equal(shown,'edit');tutorial.complete('edit');assert.equal(shown,'exit');
+});
 
 test('tutorial advances only for the current task and can be skipped or replayed at every step', () => {
   let shown;
@@ -43,7 +57,7 @@ test('real touch handlers recognize pinch zoom without counting it as a drag', (
     setPointerCapture() {}, classList: { add() {}, remove() {} },
   };
   runInNewContext(source.slice(source.indexOf('const pointers = new Map()'), source.indexOf("canvas.addEventListener('keydown'")), {
-    scene, window: { addEventListener() {} }, width: 390, height: 500,
+    life:{on:(target,...args)=>target.addEventListener(...args)},scene, window: { addEventListener() {} }, width: 390, height: 500,
     scale: 1, camera: { x: 0, y: 240 }, hovered: '',
     pinchPoints, zoomCamera, panCamera, isDrag, worldSize: () => 24,
     closePopup() {}, requestDraw() {}, tutorial: { complete: action => completed.push(action) },
@@ -70,7 +84,7 @@ test('tutorial house step only enters the highlighted village hub', () => {
   const visitSource=source.slice(source.indexOf('function visit('),source.indexOf("$('close').addEventListener"));
   const actions=[], hub={id:'induo-works',shape:'house'},studio={id:'frondward',shape:'house'};
   const context={places:[hub,studio],workers:[hub,studio],tutorialHouse:hub,tutorialStep:'house',
-    changeArea:area=>actions.push(area),tutorial:{complete:step=>actions.push(step)}};
+    refreshPublicRoom:async()=>{},changeArea:area=>actions.push(area),tutorial:{complete:step=>actions.push(step)}};
   runInNewContext(visitSource+"\nvisit('frondward');",context);
   assert.deepEqual(actions,[]);
   runInNewContext(visitSource+"\nvisit('induo-works');",context);

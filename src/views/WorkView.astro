@@ -9,22 +9,22 @@ const dict=t(lang),ko=lang==='ko',entries=workCatalog(lang);
 const kinds=[{id:'game',label:dict.work.games},{id:'music',label:dict.work.music},{id:'artwork',label:dict.work.artwork},{id:'other',label:dict.work.other}];
 const statuses=[{id:'in-progress',label:dict.workDetail.inProgress},{id:'paused',label:dict.workDetail.paused},{id:'shipped',label:dict.workDetail.shipped},{id:'experiment',label:ko?'실험':'Experiment'}];
 const tags=[...new Set(entries.flatMap(e=>e.tags))].sort();
-const views=[{id:'gallery',label:ko?'갤러리':'Gallery'},{id:'mosaic',label:ko?'모자이크':'Mosaic'},{id:'posts',label:ko?'게시글':'Posts'}];
+const views=[{id:'gallery',label:ko?'갤러리':'Gallery',path:'M3 3h7v7H3ZM14 3h7v7h-7ZM3 14h7v7H3ZM14 14h7v7h-7Z'},{id:'mosaic',label:ko?'모자이크':'Mosaic',path:'M3 3h7v11H3ZM14 3h7v6h-7ZM3 18h7v3H3ZM14 13h7v8h-7Z'},{id:'posts',label:ko?'게시글':'Posts',path:'M3 4h6v6H3Zm0 10h6v6H3ZM13 5h8m-8 4h6m-6 6h8m-8 4h6'}];
 ---
 <Layout lang={lang} title={dict.work.title} description={dict.work.description}>
   <section class="page-main" id="work-board" data-lang={lang} data-labels={JSON.stringify({kinds:Object.fromEntries(kinds.map(k=>[k.id,k.label])),statuses:Object.fromEntries(statuses.map(s=>[s.id,s.label])),placeholder:ko?'이미지 준비 중':'Image coming soon',info:ko?'작품 정보: ':'Work information: '})} data-entries={JSON.stringify(entries.map(({id,search,kind,status,workerIds,tags})=>({id,search,kind,status,workerIds,tags})))} data-count={ko?'{count}개의 작품':'{count} works'}>
     <div class="work-heading"><h1 class="page-title">{dict.work.title}</h1><a href={localizePath('/',lang)+'?studio=1'}>{ko?'내 작품 관리':'Manage my work'}</a></div>
     <p class="page-intro">{ko?'게임, 음악, 아트워크를 둘러보고 만드는 사람과 분야로 찾아보세요.':'Explore games, music and artwork. Find work by its maker, field or tags.'}</p>
-    <details class="work-filter-panel" open><summary id="work-filter-summary" data-label={ko?'검색·필터':'Search & filters'}>{ko?'검색·필터':'Search & filters'}</summary>
+    <div class="work-filter-panel">
     <form id="work-filters" class="work-filters" role="search" aria-label={ko?'작품 검색':'Search works'}>
-      <label class="search-field">{ko?'검색':'Search'}<input type="search" name="q" placeholder={ko?'제목, 태그, 개발사 검색':'Search titles, tags or makers'} autocomplete="off" /></label>
-      <label>{ko?'개발사·개인':'Studio / maker'}<select name="worker"><option value="">{ko?'전체':'All'}</option>{workers.map(w=><option value={w.id}>{w.name}</option>)}</select></label>
-      <label>{ko?'분야':'Field'}<select name="kind"><option value="">{ko?'전체':'All'}</option>{kinds.map(k=><option value={k.id}>{k.label}</option>)}</select></label>
-      <label>{ko?'상태':'Status'}<select name="status"><option value="">{ko?'전체':'All'}</option>{statuses.map(s=><option value={s.id}>{s.label}</option>)}</select></label>
-      <label>{ko?'태그':'Tag'}<select name="tag"><option value="">{ko?'전체':'All'}</option>{tags.map(tag=><option value={tag}>{tag}</option>)}</select></label>
-      <button type="reset">{ko?'초기화':'Reset'}</button>
-    </form></details>
-    <div class="work-toolbar"><p id="work-count" role="status" aria-live="polite">{ko?entries.length+'개의 작품':entries.length+' works'}</p><div class="work-views" role="group" aria-label={ko?'보기 방식':'View style'}>{views.map(v=><button type="button" data-view={v.id} aria-pressed={v.id==='posts'}>{v.label}</button>)}</div></div>
+      <label class="search-field"><span class="sr-only">{ko?'검색':'Search'}</span><input type="search" name="q" placeholder={ko?'검색':'Search'} autocomplete="off" /></label>
+      <label><span class="sr-only">{ko?'참여자':'Worker'}</span><select name="worker"><option value="">{ko?'- 참여자 -':'- Worker -'}</option><optgroup label={ko?'참여자':'Worker'}>{workers.map(w=><option value={w.id}>{w.name}</option>)}</optgroup></select></label>
+      <label><span class="sr-only">{ko?'분야':'Field'}</span><select name="kind"><option value="">{ko?'- 분야 -':'- Field -'}</option><optgroup label={ko?'분야':'Field'}>{kinds.map(k=><option value={k.id}>{k.label}</option>)}</optgroup></select></label>
+      <label><span class="sr-only">{ko?'상태':'Status'}</span><select name="status"><option value="">{ko?'- 상태 -':'- Status -'}</option><optgroup label={ko?'상태':'Status'}>{statuses.map(s=><option value={s.id}>{s.label}</option>)}</optgroup></select></label>
+      <label><span class="sr-only">{ko?'태그':'Tag'}</span><select name="tag"><option value="">{ko?'- 태그 -':'- Tag -'}</option><optgroup label={ko?'태그':'Tag'}>{tags.map(tag=><option value={tag}>{tag}</option>)}</optgroup></select></label>
+      <button class="work-reset" type="reset" aria-label={ko?'검색·필터 초기화':'Reset search and filters'} title={ko?'검색·필터 초기화':'Reset search and filters'}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10a9 9 0 1 1 2 8M3 4v6h6" /></svg></button>
+    </form></div>
+    <div class="work-toolbar"><p id="work-count" role="status" aria-live="polite">{ko?entries.length+'개의 작품':entries.length+' works'}</p><div class="work-views" role="group" aria-label={ko?'보기 방식':'View style'}>{views.map(v=><button type="button" data-view={v.id} aria-pressed={v.id==='posts'} aria-label={v.label} title={v.label}><svg viewBox="0 0 24 24" aria-hidden="true"><path d={v.path} /></svg></button>)}</div></div>
     <div id="work-grid" data-view="posts">
       {entries.map(entry=><article class="work-card" data-entry={entry.id}>
         <a class="work-preview focus-ring" href={entry.href} aria-label={entry.title} target={entry.file?'_blank':undefined} rel={entry.file?'noopener noreferrer':undefined}>
@@ -51,18 +51,21 @@ const views=[{id:'gallery',label:ko?'갤러리':'Gallery'},{id:'mosaic',label:ko
   .work-heading{display:flex;align-items:baseline;justify-content:space-between;gap:1rem}.work-heading a{font-size:.75rem;color:var(--color-text-muted);text-decoration:underline;text-underline-offset:3px}
   .work-filter-panel { display: none; margin-top: 1.5rem; }
   .ready .work-filter-panel { display: block; }
-  summary { width: fit-content; cursor: pointer; padding: .5rem 0; font-size: .8rem; color: var(--color-text-muted); }
-  .work-filters { display: none; grid-template-columns: minmax(180px,2fr) repeat(4,minmax(0,1fr)) auto; align-items: end; gap: .75rem; margin-top: .75rem; }
+  .work-filters { display: none; grid-template-columns: minmax(180px,2fr) repeat(4,minmax(0,1fr)) auto; align-items: end; gap: .5rem; margin-top: 0; }
   .ready .work-filters { display: grid; }
   label { display: grid; gap: .4rem; font-size: .75rem; color: var(--color-text-muted); min-width: 0; }
-  input,select,.work-filters button { width: 100%; min-width: 0; min-height: 44px; padding: .6rem .65rem; color: var(--color-text); background: var(--color-bg-elevated); border: 1px solid var(--color-border); border-radius: .5rem; font-size: .8rem; }
+  input,select,.work-filters button { width: 100%; min-width: 0; min-height: 44px; padding: .6rem .65rem; color: var(--color-text); background: transparent; border: 0; border-bottom: 1px solid var(--color-border); border-radius: 0; font-size: .8rem; }
   button { cursor: pointer; }
   input:focus-visible,select:focus-visible,button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }
   .work-toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem; padding: 1.25rem 0; font-size: .8rem; color: var(--color-text-muted); }
   .work-views { display: none; gap: .25rem; }
   .ready .work-views { display: flex; }
-  .work-views button { min-height: 44px; padding: .5rem .75rem; border: 1px solid var(--color-border); border-radius: .5rem; }
-  .work-views button[aria-pressed="true"] { color: var(--color-bg); background: var(--color-text); border-color: var(--color-text); }
+  .work-views button { position:relative;display:grid;place-items:center;width:44px;height:44px;padding:0;border:0;background:transparent;color:var(--color-text-muted);opacity:.6; }
+  .work-views button:hover,.work-views button[aria-pressed="true"] { opacity:1;color:var(--color-text); }
+  .work-views button[aria-pressed="true"]::after{content:'';position:absolute;left:12px;right:12px;bottom:3px;height:1px;background:currentColor}
+  .work-reset svg,.work-views svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+  .work-filters .work-reset{width:44px;display:grid;place-items:center;padding:0;border:0;background:transparent;color:var(--color-text-muted)}
+  .work-reset:hover{color:var(--color-text)}
   #work-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 1.25rem; }
   .work-card { position: relative; min-width: 0; overflow: hidden; border: 1px solid var(--color-border); border-radius: .75rem; }
   .work-card[hidden] { display: none !important; }
@@ -109,7 +112,7 @@ const views=[{id:'gallery',label:ko?'갤러리':'Gallery'},{id:'mosaic',label:ko
   [data-view="posts"] .work-placeholder small { display: none; }
   [data-view="posts"] .work-meta { grid-column: 2; grid-row: 1 / span 2; padding: 0; flex-direction: column; align-items: flex-end; }
   #work-empty { padding: 3rem 0; color: var(--color-text-muted); font-size: .875rem; }
-  @media(max-width:900px) { .work-filters { grid-template-columns: repeat(3,minmax(0,1fr)); }.search-field { grid-column: span 2; } #work-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } #work-grid[data-view="mosaic"] { columns: 2; } }
-  @media(max-width:639px) { .work-filters { grid-template-columns: repeat(2,minmax(0,1fr)); } .search-field { grid-column: 1/-1; } #work-grid { grid-template-columns: minmax(0,1fr); } #work-grid[data-view="mosaic"] { columns: 1; } [data-view="posts"] .work-card { grid-template-columns: 72px minmax(0,1fr); } [data-view="posts"] .work-info { grid-template-columns: minmax(0,1fr); } [data-view="posts"] .work-meta { grid-column: 1; grid-row: auto; flex-direction: row; } [data-view="posts"] .work-placeholder span { font-size: 1.4rem; } }
+  @media(max-width:900px) { .work-filters { grid-template-columns: repeat(4,minmax(0,1fr)) 44px; }.search-field { grid-column: 1/-1; } #work-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } #work-grid[data-view="mosaic"] { columns: 2; } }
+  @media(max-width:639px) { .work-filters { grid-template-columns: repeat(2,minmax(0,1fr)); } .search-field { grid-column: 1/-1; grid-row:1; padding-right:52px; } .work-filters .work-reset{grid-column:2;grid-row:1;justify-self:end} #work-grid { grid-template-columns: minmax(0,1fr); } #work-grid[data-view="mosaic"] { columns: 1; } [data-view="posts"] .work-card { grid-template-columns: 72px minmax(0,1fr); } [data-view="posts"] .work-info { grid-template-columns: minmax(0,1fr); } [data-view="posts"] .work-meta { grid-column: 1; grid-row: auto; flex-direction: row; } [data-view="posts"] .work-placeholder span { font-size: 1.4rem; } }
   @media(prefers-reduced-motion:reduce) { .work-info { transition: none; } }
 </style>

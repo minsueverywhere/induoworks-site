@@ -15,7 +15,7 @@ const dict = t(lang);
   id="theme-toggle"
   type="button"
   aria-label={dict.misc.toggleTheme}
-  class="focus-ring inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-border)] text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)]"
+  class="focus-ring inline-flex h-9 w-9 items-center justify-center text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)]"
 >
   <svg
     id="icon-sun"
@@ -47,7 +47,7 @@ const dict = t(lang);
   </svg>
 </button>
 
-<script is:inline>
+<script is:inline data-astro-rerun>
   (function () {
     const root = document.documentElement;
     const btn = document.getElementById('theme-toggle');
