@@ -1,7 +1,22 @@
 # 콘텐츠 편집과 페이지 연결
 
-현재는 빌드 시점의 공유 데이터를 사용한다. 데이터 수정 후 빌드·배포해야 공개 페이지에 반영된다.
-외부 데이터/R2 전환은 [보류 이슈 #2](https://github.com/minsueverywhere/induoworks-site/issues/2)에서만 관리한다.
+현재 주민·작품·공지·미디어·음악의 편집 원본은 `content/catalog.json`이다. 공개 사이트는 콘텐츠 전용 Static Assets 배포에서 작은 JSON을 읽는다. 사이트 전체 빌드와 콘텐츠 발행은 별도다. R2는 사용하지 않는다.
+
+## 콘텐츠 발행과 복구
+
+- 제공 주소: `https://induoworks-content.rlaalstn0910.workers.dev/catalog.json`
+- `npm run content:deploy`: 목록·참조·파일 형식을 검사하고 콘텐츠만 배포한다. Astro 페이지 전체를 빌드하지 않는다. 발행은 인증된 로컬 Wrangler로만 수행하며 브라우저에 쓰기 키를 넣지 않는다.
+- `npm run content:import -- "파일 경로"`: 웹용 파일을 검사하고 해시 이름으로 `content/files/uploads/`에 복사한다. 출력된 `/uploads/…` 경로를 목록에 등록한다. 원본은 수정하지 않는다.
+- 음원은 Opus Ogg와 MP3를 등록한다. WAV, 형식과 확장자가 다른 파일, 25MiB 초과 파일은 거부한다. 썸네일은 100KiB 안팎의 작은 웹용 이미지를 권장한다. 이미지는 PNG·WebP·JPEG·AVIF·GIF를 허용하며 SVG/HTML 업로드는 허용하지 않는다. 전체 배포 파일은 2만 개 이하여야 한다. 목록은 1MiB 이하, 각 종류의 항목은 1,000개 이하로 제한한다. 이 검사는 제공된 발행 도구의 제한이며 Cloudflare 대시보드로 직접 올리는 파일까지 통제하지는 않는다.
+- 기존 미디어는 `public/`에서 가져오고 새 파일은 `content/files/`에서 가져온다. `content:prepare`는 `.content-dist/`를 만든다. 빌드 시 같은 미디어를 사이트 배포에도 복사하여 내장 방식이 동작한다. 기존 해시 파일을 바꾸지 말고 새 파일을 추가한다.
+- JSON의 브라우저 캐시는 60초, 해시 미디어는 1년이다. 공개 JSON에는 개인정보나 비밀을 넣지 않는다. 새 탭·새로고침에서 새 목록을 확인하며 이미 열린 장면을 실시간으로 변경하지 않는다.
+- 조회는 2.5초 이내의 정상 JSON만 채택한다. HTTP 오류·오프라인·잘못된 스키마는 사이트에 내장된 마지막 빌드 시점 데이터로 돌아간다. JavaScript가 꺼져도 정적 Works·Workers·기존 상세 링크를 볼 수 있다.
+- `?content=embedded`를 붙이면 해당 페이지에서 외부 조회를 건너뛴다. `PUBLIC_CONTENT_MODE=embedded`로 사이트를 빌드하면 전체를 기존 내장 방식으로 운영할 수 있다. 내장 데이터는 별도 편집 원본이 아니라 같은 JSON의 빌드 시점 사본이다.
+- 콘텐츠 배포를 이전 Cloudflare 버전으로 되돌릴 수 있다. 재현에 필요한 JSON과 새 파일은 Git으로 보존한다. 콘텐츠 배포와 Git push는 별개이며, 기존 Git 연동의 자동 사이트 빌드는 별도로 작동할 수 있다.
+
+`Induohood`, Works, Workers, 프로젝트 상세는 동일한 목록을 사용한다. 기존 `/work/<slug>/` 정적 주소를 유지하고, 새 프로젝트는 `/work/detail/?id=<slug>` (한국어는 `/ko/work/detail/`)에서 열어 라우트 재빌드 없이 추가할 수 있다. 이 범용 상세 주소는 noindex다. 검색 노출용 정적 상세·사이트맵·메타 설명은 사이트 재빌드 시 갱신된다. 목록에 없는 상세는 찾을 수 없다는 안내를 표시한다.
+
+새로운 건물 모양·오브젝트 동작·필드 종류·UI·언어·지형은 코드 배포 대상이다. 현재 고정 방은 프로젝트 9개, 아트워크는 소수 전시물을 기준으로 하며 추가 시 겹침을 확인해야 한다. 새 집으로 가는 도로는 자동으로 생기지 않는다. 로컬 시각 편집기와 R2·대용량 영상 운영은 계속 별도 보류 범위다. 요구사항은 [이슈 #2](https://github.com/minsueverywhere/induoworks-site/issues/2)에서 관리한다.
 
 ## 사이트 테마
 
@@ -11,25 +26,25 @@ GPU Interference 실험은 사이트에서 제거했으며 `labs`는 현재 비�
 
 | 편집할 사실 | 원본 | 반영 위치 |
 |---|---|---|
-| 개발사·개인의 ID, 이름, 소개, 집 위치 | `src/config.ts`의 `workers` | Workers, Induohood 집, 작품의 제작자 링크 |
-| 프로젝트 제목·소개·분야·상태·태그·소속 | 같은 파일의 `projects` | Works, 작품 상세, Workers의 작품 목록, 마을 작업실 |
+| 개발사·개인의 ID, 이름, 소개, 집 위치 | `content/catalog.json`의 `workers` | Workers, Induohood 집, 작품의 제작자 링크 |
+| 프로젝트 제목·소개·분야·상태·태그·소속 | 같은 JSON의 `projects` | Works, 작품 상세, Workers의 작품 목록, 마을 작업실 |
 | 실험의 제목·소개·태그 | 같은 파일의 `labs` | Works, 실험 상세 |
-| 아트워크 제목·소속·태그·파일 경로 | `src/village-media.ts` | Works, Workers의 작품 목록, 작업실 전시 |
+| 아트워크 제목·소속·태그·파일 경로 | `content/catalog.json`의 `media` | Works, Workers의 작품 목록, 작업실 전시 |
 | 메뉴 및 공통 문구 | `src/i18n.ts` | 한국어·영어 공통 화면 |
-| 실제 공지의 ID, 제목, 본문, 선택적 링크 | `src/config.ts`의 `villageNotices` | 공고판의 메모지와 공지 팝업 |
+| 실제 공지의 ID, 제목, 본문, 선택적 링크 | `content/catalog.json`의 `notices` | 공고판의 메모지와 공지 팝업 |
 
 `workerIds`는 `workers[].id`를 참조한다. 개발사 쪽에 작품 제목이나 별도의 작품 배열을 복사하지 않는다.
-`worksByWorker()`와 `workCatalog()`는 원본에서 매번 파생한다. 같은 작품이 여러 제작자에게 속해도 각 방의 물체 ID는 제작자 ID를 포함해 충돌하지 않는다.
+`worksByWorker()`와 작품 목록은 같은 원본에서 파생한다. 같은 작품이 여러 제작자에게 속해도 각 방의 물체 ID는 제작자 ID를 포함해 충돌하지 않는다.
 
 ## 추가하는 순서
 
-1. `workers`에 고유 ID와 영어·한국어 소개를 추가한다. 마을에 집을 표시하려면 `house: { x, y }`를 지정한다. 기존 집·길·공고판과 겹치지 않는 24×24 범위의 위치를 골라 화면으로 확인한다.
-2. `projects`에 작품을 추가하고 `workerIds`에 해당 제작자 ID를 넣는다. `kind`, `status`, `stack`, 선택적인 `tags`가 Works 필터에 자동 반영된다. Works 대표 이미지는 선택적인 `thumbnail`에 웹용 경로·크기·영한 대체 텍스트·이미지 종류를 등록한다. 이미지가 없으면 준비 중 표시를 사용한다.
-3. 아트워크는 `scripts/prepare-village-media.mjs`로 작은 배지·미리보기·원본을 준비하고 `villageMedia`에 메타데이터를 한 번 등록한다. 제작자 로고는 `logoMediaId`로 그 항목의 ID를 참조한다. 원본은 명시적으로 열 때만 요청한다.
-4. `node --test scripts/work-content.test.mjs scripts/village-camera.test.mjs scripts/village-layout.test.mjs`, `npm run check`, `npm run build` 후 한국어·영어와 모바일 폭을 확인한다.
+1. JSON의 `workers`에 고유 ID와 영어·한국어 소개를 추가한다. 마을에 집을 표시하려면 `house: { x, y }`를 지정한다. 기존 집·길·공고판과 겹치지 않는 24×24 범위의 위치를 골라 화면으로 확인한다.
+2. JSON의 `projects`에 작품을 추가하고 `workerIds`에 해당 제작자 ID를 넣는다. `kind`, `status`, `stack`, 선택적인 `tags`가 Works 필터에 자동 반영된다. Works 대표 이미지는 선택적인 `thumbnail`에 웹용 경로·크기·영한 대체 텍스트·이미지 종류를 등록한다. 이미지가 없으면 준비 중 표시를 사용한다.
+3. 아트워크는 `scripts/prepare-village-media.mjs`로 작은 배지·미리보기·원본을 준비하고 JSON의 `media`에 메타데이터를 한 번 등록한다. 제작자 로고는 `logoMediaId`로 그 항목의 ID를 참조한다. 원본은 명시적으로 열 때만 요청한다.
+4. 콘텐츠만 바꾸면 `npm run content:deploy` 후 한국어·영어·모바일을 확인한다. 코드도 바꾸면 `npm run build`로 전체 테스트·타입·파일 참조를 검사하고 사이트를 배포한다.
 
 방은 현재 고정 배치이며 프로젝트 전시대 9개를 기준으로 한다. 작품 수가 그 범위를 넘으면 방 배치/페이지 이동을 먼저 확장한다. 아트워크 전시대도 추가 시 겹침을 확인한다.
-주크박스는 `src/village-music.ts`의 Sunlit Circuit을 반복 재생한다. `src/scripts/village-music.mjs`가 처음 재생 요청에서만 오디오 요소와 파일 주소를 연결한다. 기본은 Ogg/Opus, 지원하지 않는 브라우저는 MP3를 사용하며, 재생 목록은 아직 없다. 원본이 반복용으로 준비되어 있으므로 페이드나 크로스페이드를 추가하지 않는다. 변환 원본·옵션과 실제 기기 미확인 사항은 [HANDOFF.md](HANDOFF.md)를 본다.
+주크박스는 `content/catalog.json`의 `music`에 등록된 Sunlit Circuit을 반복 재생한다. `src/scripts/village-music.mjs`가 처음 재생 요청에서만 오디오 요소와 파일 주소를 연결한다. 기본은 Ogg/Opus, 지원하지 않는 브라우저는 MP3를 사용하며, 재생 목록은 아직 없다. 원본이 반복용으로 준비되어 있으므로 페이드나 크로스페이드를 추가하지 않는다. 변환 원본·옵션과 실제 기기 미확인 사항은 [HANDOFF.md](HANDOFF.md)를 본다.
 
 ## Works 보기
 

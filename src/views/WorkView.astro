@@ -12,7 +12,7 @@ const tags=[...new Set(entries.flatMap(e=>e.tags))].sort();
 const views=[{id:'gallery',label:ko?'갤러리':'Gallery'},{id:'mosaic',label:ko?'모자이크':'Mosaic'},{id:'posts',label:ko?'게시글':'Posts'}];
 ---
 <Layout lang={lang} title={dict.work.title} description={dict.work.description}>
-  <section class="page-main" id="work-board" data-entries={JSON.stringify(entries.map(({id,search,kind,status,workerIds,tags})=>({id,search,kind,status,workerIds,tags})))} data-count={ko?'{count}개의 작품':'{count} works'}>
+  <section class="page-main" id="work-board" data-lang={lang} data-labels={JSON.stringify({kinds:Object.fromEntries(kinds.map(k=>[k.id,k.label])),statuses:Object.fromEntries(statuses.map(s=>[s.id,s.label])),placeholder:ko?'이미지 준비 중':'Image coming soon',info:ko?'작품 정보: ':'Work information: '})} data-entries={JSON.stringify(entries.map(({id,search,kind,status,workerIds,tags})=>({id,search,kind,status,workerIds,tags})))} data-count={ko?'{count}개의 작품':'{count} works'}>
     <h1 class="page-title">{dict.work.title}</h1>
     <p class="page-intro">{ko?'게임, 음악, 아트워크를 둘러보고 만드는 사람과 분야로 찾아보세요.':'Explore games, music and artwork. Find work by its maker, field or tags.'}</p>
     <details class="work-filter-panel" open><summary id="work-filter-summary" data-label={ko?'검색·필터':'Search & filters'}>{ko?'검색·필터':'Search & filters'}</summary>

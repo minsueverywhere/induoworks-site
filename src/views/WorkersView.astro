@@ -13,7 +13,7 @@ const catalog=workCatalog(lang);
   <section class="page-main">
     <h1 class="page-title">{dict.workers.title}</h1>
     <p class="page-intro">{ko?'함께하는 개발사와 개인, 그리고 그들이 만드는 작품들입니다.':'Meet the studios and individuals, and the work they make.'}</p>
-    <div class="worker-list">
+    <div class="worker-list" id="workers-content" data-lang={lang} data-labels={JSON.stringify({website:dict.workers.website,works:dict.workers.works,visit:ko?'마을의 작업실 방문':'Visit their village workshop',all:ko?'이 개발사의 모든 작품':'All work by this studio'})}>
       {workers.map(worker=>{
         const works=catalog.filter(work=>work.workerIds.includes(worker.id)),logo=villageMedia.find(m=>m.id===worker.logoMediaId);
         return <article id={worker.id} class="worker-card">
@@ -35,6 +35,7 @@ const catalog=workCatalog(lang);
     </div>
   </section>
 </Layout>
+<script>import '../scripts/workers-content.js';</script>
 <style>
   .worker-list { margin-top: 2rem; }
   .worker-card { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.4fr); gap: 3rem; padding: 2rem 0; border-top: 1px solid var(--color-border); scroll-margin-top: 2rem; }

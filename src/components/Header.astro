@@ -94,7 +94,7 @@ const languagePath = currentBasePath === '/404/' ? '/' : currentBasePath;
     });
 
     const language = document.getElementById('site-language');
-    language?.addEventListener('change', () => window.location.assign(language.value));
+    language?.addEventListener('change', () => window.location.assign(language.value + window.location.search + window.location.hash));
 
     const nav = document.getElementById('primary-nav');
     const indicator = nav?.querySelector('.nav-indicator');

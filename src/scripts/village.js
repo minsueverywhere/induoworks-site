@@ -3,7 +3,24 @@ import { isPond, isPath, signLetterLayout, landscapeNoise as noise } from './vil
 import { createTutorial, tutorialSteps } from './village-tutorial.mjs';
 import { createVillageMusic } from './village-music.mjs';
 import { popupPosition } from './village-popup.mjs';
+import { loadContent } from './content-loader.mjs';
+import { villageContent } from './village-content.mjs';
 const root = document.getElementById('village-section');
+const remoteContent=await loadContent();
+if(remoteContent) {
+  const lang=document.documentElement.lang.startsWith('ko')?'ko':'en';
+  const data=villageContent(remoteContent,lang,JSON.parse(root.dataset.text).title);
+  for(const key of ['places','workers','media','music'])root.dataset[key]=JSON.stringify(data[key]);
+  const copy=JSON.parse(root.dataset.text);copy.music=data.music.title+' · '+data.music.project;root.dataset.text=JSON.stringify(copy);
+  const container=root.querySelector('.village-places'),sample=container.querySelector('button');
+  container.replaceChildren(...data.places.filter(p=>p.interactive!==false).map(p=>{
+    const button=sample.cloneNode(true);button.dataset.object=p.id;button.dataset.area=p.area;
+    if(p.owner)button.dataset.owner=p.owner;else delete button.dataset.owner;
+    button.hidden=p.area==='room';button.setAttribute('aria-label',p.label);button.querySelector('span').textContent=p.label;
+    return button;
+  }));
+  root.dataset.contentSource='remote';
+} else root.dataset.contentSource='embedded';
 const villageCenter = toScreen(9,9);
 const $ = id => document.getElementById('village-' + id);
 const workers = JSON.parse(root.dataset.workers);

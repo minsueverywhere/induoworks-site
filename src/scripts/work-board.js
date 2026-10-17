@@ -1,6 +1,20 @@
 import { matchesWork } from './work-filter.mjs';
+import { loadContent } from './content-loader.mjs';
+import { renderWorks } from './content-render.mjs';
 const root=document.getElementById('work-board');
-const entries=JSON.parse(root.dataset.entries),form=document.getElementById('work-filters'),grid=document.getElementById('work-grid');
+let entries=JSON.parse(root.dataset.entries);
+const form=document.getElementById('work-filters'),grid=document.getElementById('work-grid');
+const content=await loadContent();
+if(content) {
+  entries=renderWorks(grid,content,root.dataset.lang,JSON.parse(root.dataset.labels));
+  const select=(name,items)=>{
+    const field=form.elements.namedItem(name),placeholder=field.options[0].cloneNode(true);
+    field.replaceChildren(placeholder,...items.map(([value,label])=>new Option(label,value)));
+  };
+  select('worker',content.workers.map(w=>[w.id,w.name]));
+  select('tag',[...new Set(entries.flatMap(e=>e.tags))].sort().map(tag=>[tag,tag]));
+}
+root.dataset.contentSource=content?'remote':'embedded';
 const cards=[...grid.querySelectorAll('[data-entry]')],viewButtons=[...root.querySelectorAll('button[data-view]')];
 const defaultView=grid.dataset.view;
 let view=defaultView;

@@ -4,17 +4,20 @@ import { projects, workers, worksByWorker, villageNotices } from '../src/config.
 import { villageMedia } from '../src/village-media.ts';
 import { matchesWork } from '../src/scripts/work-filter.mjs';
 import { stat } from 'node:fs/promises';
+import { MAX_FILE_BYTES } from '../src/content-schema.mjs';
 import sharp from 'sharp';
 import { fileURLToPath } from 'node:url';
 
 test('project thumbnails are valid lightweight web assets', async () => {
   for (const project of projects) {
     const image=project.thumbnail;if(!image)continue;
-    assert.match(image.src,/^\/work\/media\/[a-z0-9-]+\.webp$/);
-    const file=new URL('../public'+image.src,import.meta.url),metadata=await sharp(fileURLToPath(file)).metadata();
-    assert.equal(metadata.format,'webp');
+    assert.match(image.src,/^\/(?:work\/media|uploads)\/[a-z0-9-]+\.(?:webp|png|jpe?g|avif|gif)$/);
+    let file=new URL('../content/files'+image.src,import.meta.url);
+    if(!await stat(file).catch(()=>null))file=new URL('../public'+image.src,import.meta.url);
+    const metadata=await sharp(fileURLToPath(file)).metadata();
+    assert.ok(['webp','png','jpeg','avif','heif','gif'].includes(metadata.format));
     assert.equal(metadata.width,image.width);assert.equal(metadata.height,image.height);
-    assert.ok((await stat(file)).size<=102400,'thumbnail exceeds 100 KiB');
+    assert.ok((await stat(file)).size<=MAX_FILE_BYTES,'thumbnail exceeds upload limit');
     assert.ok(image.alt.en&&image.alt.ko&&image.caption.en&&image.caption.ko);
   }
 });
@@ -33,11 +36,7 @@ test('content IDs and ownership references stay valid across pages', () => {
     if (worker.logoMediaId) assert.ok(mediaIds.includes(worker.logoMediaId),'unknown logo');
     if (worker.house) assert.ok(Object.values(worker.house).every(n=>Number.isInteger(n)&&n>=0&&n<24),'house outside village');
   }
-  assert.deepEqual(worksByWorker('frondward').map(p=>p.slug),['grench-boss','yggbound','rooftop-alien']);
-  assert.deepEqual(worksByWorker('induo-works').map(p=>p.slug),['induoworks-site']);
-  const hub=workers.find(w=>w.id==='induo-works').house,studio=workers.find(w=>w.id==='frondward').house;
-  assert.ok(hub.x+hub.y<studio.x+studio.y,'village hub should sit above Frondward');
-  assert.ok(studio.x-studio.y>hub.x-hub.y,'Frondward should sit to the right');
+  assert.deepEqual(worksByWorker('missing-worker'),[]);
   for(const notice of villageNotices)assert.ok(notice.title.en&&notice.title.ko&&notice.body.en&&notice.body.ko,'notice needs bilingual copy');
 });
 

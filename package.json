@@ -7,14 +7,18 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "npm test && npm run check && astro build && node scripts/verify-build.mjs",
+    "build": "npm run content:prepare && npm test && npm run check && astro build && node scripts/verify-build.mjs && node scripts/check-site-links.mjs",
     "test": "node --test scripts/*.test.mjs",
     "preview": "astro preview",
     "astro": "astro",
     "check": "npm run generate-types && astro check",
     "worker:dev": "npm run build && wrangler dev",
     "worker:deploy": "npm run build && wrangler deploy",
-    "generate-types": "wrangler types"
+    "generate-types": "wrangler types",
+    "content:prepare": "node scripts/content-prepare.mjs",
+    "content:import": "node scripts/content-prepare.mjs import",
+    "content:deploy": "npm run content:prepare && wrangler deploy --config content/wrangler.jsonc",
+    "check:links": "node scripts/check-site-links.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.4.0",

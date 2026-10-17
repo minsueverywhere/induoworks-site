@@ -35,7 +35,10 @@ export default defineConfig({
             throw new Error('PUBLIC_TURNSTILE_SITE_KEY is required to build the contact form.');
           }
         },
-        'astro:build:done': () => { execFileSync(process.execPath, ['scripts/generate-csp.mjs'], { stdio: 'inherit' }); },
+        'astro:build:done': () => {
+          execFileSync(process.execPath, ['scripts/content-fallback.mjs'], { stdio: 'inherit' });
+          execFileSync(process.execPath, ['scripts/generate-csp.mjs'], { stdio: 'inherit' });
+        },
       },
     },
     sitemap({
