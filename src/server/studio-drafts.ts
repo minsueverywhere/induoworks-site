@@ -26,7 +26,10 @@ export async function studioDrafts(request:Request,env:StudioEnv,action:string){
     const id=new URL(request.url).searchParams.get('id')||'';
     const proposal=await db.prepare('SELECT id,worker_id,base_hash,payload,status FROM studio_proposals WHERE id=?').bind(id).first<{id:string;worker_id:string;base_hash:string;payload:string;status:string}>();
     if(!proposal)throw new StudioError('변경 요청을 찾을 수 없습니다.',404);
-    if(request.method==='GET'&&action==='proposal')return json({owner:proposal.worker_id,baseHash:proposal.base_hash,payload:JSON.parse(proposal.payload)});
+    if(request.method==='GET'&&action==='proposal'){
+      const response=json({owner:proposal.worker_id,baseHash:proposal.base_hash,payload:JSON.parse(proposal.payload)});
+      response.headers.set('Content-Disposition','attachment; filename="workshop-proposal.json"');return response;
+    }
     if(request.method!=='POST'||!['reject','published'].includes(action))throw new StudioError('지원하지 않는 작업입니다.',405);
     if(action==='published'){
       const current=await catalog();

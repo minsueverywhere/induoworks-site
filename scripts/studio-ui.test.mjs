@@ -20,7 +20,7 @@ const elements=root=>[root,...root.children.flatMap(child=>elements(child))];
 async function setup(response){
   const scene=new Element('scene'),handlers={},writes=[];let preview,area='village',worker=null,level=0;
   const api={scene,canvas:{},root:{dataset:{workers:JSON.stringify([{id:'frondward',name:'Frondward'}])}},requestDraw(){},closePopup(){},state:()=>({area,worker,level,scale:1}),apply(data){preview=data;},enter(owner,index=0){area='room';worker=preview.workers.find(w=>w.id===owner);level=index;}};
-  const context={api,createHistory,historyShortcut,studioSlice,mergeStudio,CONTENT_ORIGIN,resolveMedia,structuredClone,crypto,URL,Blob,Response,setTimeout,
+  const context={api,createHistory,historyShortcut,studioSlice,mergeStudio,CONTENT_ORIGIN,resolveMedia,structuredClone,crypto,URL,URLSearchParams,location:{search:''},Blob,Response,setTimeout,
     document:{createElement:tag=>new Element(tag)},window:{addEventListener(type,fn){handlers[type]=fn;}},Option:class extends Element{constructor(text,value){super('option');this.textContent=text;this.value=value;}},
     fetch:async(url,options)=>{if(response)return response(url);if(url.includes('/session'))return Response.json({id:'test',name:'Test',owners:['frondward'],host:false});if(options?.method==='POST'){writes.push({url,payload:JSON.parse(options.body)});return Response.json({revision:1});}return Response.json({catalog,payload:studioSlice(catalog,'frondward'),revision:0,baseHash:'base',stale:false});}};
   const editor=await vm.runInNewContext(source+'\ncreateParticipantEditor(api);',context);
@@ -30,7 +30,7 @@ async function setup(response){
 test('participant UI adds and edits an owned Work, saves a private payload and restores browsing without exposing village edits',async()=>{
   const ui=await setup();assert.ok(ui.button('Works'),elements(ui.scene).map(el=>el.textContent).filter(Boolean).join(' | '));ui.button('Works').events.click();ui.button('추가').events.click();
   const added=ui.preview().projects.find(p=>p.slug.startsWith('work-'));assert.deepEqual([...added.workerIds],['frondward']);
-  const label=elements(ui.scene).find(el=>el.tag==='label'&&el.children[0]?.textContent==='제목 · ko'),input=label.children[1];input.value='내 새 작품';input.events.change();
+  const label=elements(ui.scene).find(el=>el.tag==='label'&&el.children[0]?.textContent==='제목 · ko'),input=label.children[1];input.value='';input.events.input();input.value='내 새 작품';input.events.input();
   assert.equal(ui.preview().projects.find(p=>p.slug===added.slug).title.ko,'내 새 작품');
   assert.deepEqual(ui.preview().world,catalog.world);
   ui.button('작성본 저장').events.click();await new Promise(resolve=>setImmediate(resolve));

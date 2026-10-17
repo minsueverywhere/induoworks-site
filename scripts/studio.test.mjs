@@ -62,6 +62,7 @@ test('private drafts detect concurrent saves; submissions are deduplicated and n
     await assert.rejects(call('draft',input),error=>error.status===409);
     assert.equal((await(await call('draft',{...input,revision:1})).json()).revision,2);
     const submitted=await(await call('submit',{...input,revision:2,reason:'Change my wall'})).json();assert.equal(submitted.status,'pending');
+    const download=await call('proposal',undefined,submitted.id);assert.match(download.headers.get('Content-Disposition'),/^attachment;/);assert.deepEqual((await download.json()).payload,payload);
     await assert.rejects(call('submit',{...input,revision:2,reason:'Duplicate'}),error=>error.status===409);
     await assert.rejects(call('published',{},submitted.id),error=>error.status===409);
     assert.equal(sql.prepare('SELECT status FROM studio_proposals').get().status,'pending');

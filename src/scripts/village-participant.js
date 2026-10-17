@@ -36,7 +36,7 @@ export async function createParticipantEditor(api){
     const wrap=node('label'),caption=node('span',label),input=node(options?'select':'input');
     if(options){for(const [id,text] of options)input.append(new Option(text,id));input.value=String(value??'');}else input.value=String(value??'');
     input.addEventListener('focus',()=>history.begin());input.addEventListener('blur',()=>history.end(payload));
-    input.addEventListener('change',()=>{const before=structuredClone(payload);try{update(input.value);changed();}catch(error){payload=before;message(error.message);render();}});
+    input.addEventListener(options?'change':'input',()=>{const before=structuredClone(payload);try{update(input.value);changed();}catch(error){if(options){payload=before;render();}else history.record(payload);message(error.message);}});
     wrap.append(caption,input);parent.append(wrap);return input;
   }
   const allChoices=()=>[...payload.projects.map(p=>['project:'+p.slug,p.title.ko||p.slug]),...payload.media.map(m=>['media:'+m.id,m.title.ko||m.id]),['music:legacy',approved.music.title],...payload.tracks.map(t=>['music:'+t.id,t.title])];
@@ -147,7 +147,7 @@ export async function createParticipantEditor(api){
     if(!owners.length){message('로그인했습니다. 호스트가 Discord 계정과 업체를 연결하면 꾸밀 수 있습니다.');body.append(node('small','Discord ID: '+identity.id));}
     else{const picker=node('select');picker.setAttribute('aria-label','내 작업실 선택');for(const w of owners)picker.append(new Option(w.name,w.id));top.insertBefore(picker,close);picker.addEventListener('change',()=>void task(async()=>{if(dirty()){picker.value=owner;throw Error('현재 작성본을 저장하거나 내려받은 뒤 작업실을 바꿔주세요.');}await load(picker.value);}));await load(owners[0].id);}
     button(top,'로그아웃',()=>void task(async()=>{if(dirty())throw Error('작성본을 먼저 저장하거나 내려받아 주세요.');await request('logout',{});location.reload();}));
-  }catch(error){message(error.message);if(error.status===401){const login=node('a','Discord로 로그인');login.href='/api/studio/login';body.append(login);}}
+  }catch(error){message(error.message);if(error.status===401){if(new URLSearchParams(location.search).has('authError'))message('로그인 확인이 만료되었거나 완료되지 않았습니다. 다시 로그인해 주세요.');const login=node('a','Discord로 로그인');login.href='/api/studio/login';body.append(login);}}
   return {open(){panel.hidden=false;render();},areaChanged(){end();if(!inRoom())editing=false;cursor=null;render();api.requestDraw();},draw(level){
     if(!active()||level!==state().level)return;const c=api.ctx,scale=state().scale;c.save();c.translate(0,-roomElevation(state().worker,state().level));c.lineWidth=1/scale;
     const outline=(x,y,color)=>{const p=toScreen(x,y);c.beginPath();c.moveTo(p.x,p.y-12);c.lineTo(p.x+24,p.y);c.lineTo(p.x,p.y+12);c.lineTo(p.x-24,p.y);c.closePath();c.strokeStyle=color;c.stroke();};
