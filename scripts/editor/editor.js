@@ -1,6 +1,6 @@
 import { createHistory, historyShortcut } from '/__editor/history.mjs';
 import { villageWorld } from '/src/scripts/village-world.mjs';
-import { placementError } from '/__editor/placement.mjs';
+import { placementError, objectPlacementError } from '/__editor/placement.mjs';
 const $=id=>document.getElementById(id),token=document.querySelector('meta[name=editor-token]').content;
 let draft,revision,tab='workers',selected='',dirty=false,busy=false,frameReady=false;
 const history=createHistory();let saved='',tool='move';
@@ -35,23 +35,13 @@ function renderPicker(){const values=choices();if(!values.some(i=>(i.id||i.slug)
 function renderFields(){const item=entry();$('fields').replaceChildren();if(!item){$('fields').append(node('p','추가 버튼으로 새 항목을 만들어 주세요.'));return;}
   if(tab==='world'){
     $('fields').append(node('p','물체를 선택해 이동하세요. 타일·새 장식은 위 도구로 배치합니다.'));
-    for(const key of ['x','y']){const input=field(key.toUpperCase(),item.point[key],value=>item.point[key]=value,{type:'number'});input.step='any';input.min='0';input.max='23';input.dataset.coordinate=key;}
+    placementFields(item.point,item.type,item.id);
     if(['tree','grass'].includes(item.type)){const size=field('크기',item.point.size,value=>item.point.size=value,{type:'number'});size.min='.5';size.max='1.6';size.step='any';const remove=node('button','장식 삭제');remove.type='button';remove.addEventListener('click',()=>{draft.world.decorations=draft.world.decorations.filter(d=>d.id!==item.id);selected='';changed();renderPicker();void task(refresh);});$('fields').append(remove);}
   }else if(tab==='workers'){
     field('업체·개인 ID',item.id,value=>item.id=value,{required:true}).readOnly=true;field('이름',item.name,value=>item.name=value,{required:true});localFields('소개',item,'description',true);
     field('웹사이트',item.href||'',value=>{if(value)item.href=value;else delete item.href;});
     if(!item.house)item.house=findHouse(item.id);
-    for(const key of ['x','y','width','depth']){
-      const label={x:'집 X',y:'집 Y',width:'점유 너비 (칸)',depth:'점유 깊이 (칸)'}[key];
-      const input=field(label,item.house[key]??2,value=>{
-        const next={...item.house,[key]:value},error=placementError(draft.workers,item.id,next,draft.world);
-        if(error){input.value=item.house[key]??2;status(error,true);return false;}
-        Object.assign(item.house,next);restoreScene();
-      },{type:'number'});
-      input.min=['x','y'].includes(key)?'0':'1';input.max=['x','y'].includes(key)?'23':'24';
-      if(['x','y'].includes(key))input.dataset.coordinate=key;
-    }
-    $('fields').append(node('p','X/Y는 앞쪽 기준 칸입니다. 점유 영역은 뒤쪽으로 확장되며, 집을 선택하면 표시됩니다. 크기는 배치 공간을 예약하며 건물 그림을 늘리지는 않습니다.'));
+    placementFields(item.house,'house',item.id);
     field('벽면 로고',item.logoMediaId||'',value=>{if(value)item.logoMediaId=value;else delete item.logoMediaId;},{options:[['','없음'],...draft.media.map(m=>[m.id,m.title.ko||m.id])]});
     field('주크박스 음악',item.musicId||'',value=>{if(value)item.musicId=value;else delete item.musicId;},{options:[['','마을 기본곡'],...(draft.tracks||[]).map(t=>[t.id,t.title])]});
   }else if(tab==='projects'){
@@ -76,6 +66,20 @@ function renderFields(){const item=entry();$('fields').replaceChildren();if(!ite
     field('마을 기본곡',draft.musicId||'',value=>{if(value)draft.musicId=value;else delete draft.musicId;},{options:[['','기존 Sunlit Circuit'],...(draft.tracks||[]).map(t=>[t.id,t.title])]});
     const audio=node('audio');audio.controls=true;audio.preload='none';audio.src=item.sources.ogg||item.sources.mp3||'';$('fields').append(audio,node('p','두 형식을 등록한 뒤 저장하세요. 재생은 누를 때 시작합니다.'));
   }
+}
+function placementFields(point,type,id){
+  const solid=['house','sign','board','tree'].includes(type),fallback=type==='house'?2:1;
+  for(const key of ['x','y',...(solid?['width','depth']:[])]){
+    const coordinate=['x','y'].includes(key),label=coordinate?(type==='house'?'집 ':'')+key.toUpperCase():key==='width'?'점유 너비 (칸)':'점유 깊이 (칸)';
+    const input=field(label,point[key]??fallback,value=>{
+      const next={...point,[key]:value},error=objectPlacementError(draft,type,id,next);
+      if(error){input.value=point[key]??fallback;status(error,true);return false;}
+      Object.assign(point,next);restoreScene();
+    },{type:'number'});
+    input.min=coordinate?'0':'1';input.max=coordinate?'23':'24';
+    if(coordinate){input.dataset.coordinate=key;if(type!=='house')input.step='any';}
+  }
+  if(solid)$('fields').append(node('p','X/Y는 앞쪽 기준 칸입니다. 점유 크기는 배치 공간을 예약하며 그림 크기와는 별개입니다.'));
 }
 function findHouse(id){for(let x=2;x<22;x++)for(let y=2;y<22;y++)if(!placementError(draft.workers,id,{x,y},draft.world))return{x,y};throw new Error('빈 집 자리를 찾지 못했습니다.');}
 function add(){if(tab==='world'){selectTool('tree');status('마을의 잔디를 클릭해 나무를 놓으세요.');return;}const values=choices(),prefix={workers:'studio',projects:'work',media:'art',music:'music'}[tab];let n=1;while(values.some(i=>(i.id||i.slug)===prefix+'-'+n))n++;const id=prefix+'-'+n,owner=draft.workers.find(w=>w.id===selected)?.id||draft.workers[0].id;

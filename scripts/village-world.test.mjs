@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {villageWorld,validateWorld,terrainAt,MAX_DECORATIONS,houseFootprint,validHouse} from '../src/scripts/village-world.mjs';
-import {objectPlacementError,paintError} from './editor-placement.mjs';
+import {villageWorld,validateWorld,terrainAt,MAX_DECORATIONS,objectFootprint,validHouse} from '../src/scripts/village-world.mjs';
+import {objectPlacementError,paintError,placementCells} from './editor-placement.mjs';
 import {validateCatalog} from '../src/content-schema.mjs';
 import {villageContent} from '../src/scripts/village-content.mjs';
 import {contentWorks} from '../src/scripts/content-catalog.mjs';
@@ -10,10 +10,52 @@ import {runInNewContext} from 'node:vm';
 import {toScreen,toTile} from '../src/scripts/village-camera.mjs';
 const original=JSON.parse(await readFile(new URL('../content/catalog.json',import.meta.url),'utf8'));
 
+test('signs, noticeboards and trees reserve every cell and previews identify only blocked cells',()=>{
+  for(const type of ['sign','board','tree']){
+    const world={tiles:Array.from({length:576},(_,i)=>({x:i%24,y:Math.floor(i/24),type:'grass'})),sign:{x:22,y:22},noticeboard:{x:22,y:19},mascot:{x:0,y:0},decorations:[]};
+    const data={workers:[{id:'a',house:{x:6,y:6}}],world},point={x:10,y:10,width:3,depth:2};
+    if(type==='tree')world.decorations.push({id:'selected',type,...point,size:1});
+    else world[type==='sign'?'sign':'noticeboard']=point;
+    const id=type==='sign'?'welcome':type==='board'?'noticeboard':'selected';
+    assert.equal(objectPlacementError(data,type,id,point),'');
+    assert.ok(paintError(data,{x:8,y:9},'path'),'whole reserved area blocks terrain painting');
+    for(const other of ['sign','board','tree','house'])assert.ok(objectPlacementError(data,other,'new',{x:8,y:9}));
+    world.tiles[9*24+8].type='water';
+    const cells=placementCells(data,type,id,point);
+    assert.equal(cells.length,6);assert.deepEqual(cells.filter(c=>c.error).map(({x,y})=>({x,y})),[{x:8,y:9}]);
+    assert.ok(objectPlacementError(data,type,id,point));world.tiles[9*24+8].type='grass';
+    const overlap=placementCells(data,type,id,{x:7,y:7});
+    assert.deepEqual(overlap.filter(c=>c.error).map(({x,y})=>({x,y})),[{x:5,y:6},{x:6,y:6}]);
+    assert.ok(objectPlacementError(data,type,id,{x:7,y:7}));
+    const outside=placementCells(data,type,id,{x:1,y:1});assert.ok(outside.some(c=>c.x<0&&c.error));
+  }
+});
+
+test('scenery dimensions are validated and survive content mapping without becoming image sizes',()=>{
+  const data=structuredClone(original);
+  Object.assign(data.world.sign,{width:2,depth:3});Object.assign(data.world.noticeboard,{width:3,depth:2});
+  Object.assign(data.world.decorations.find(d=>d.type==='tree'),{x:18,y:18,width:2,depth:2});
+  validateCatalog(data);const restored=JSON.parse(JSON.stringify(data));
+  assert.deepEqual(villageContent(restored,'ko','Induohood').world,data.world);
+  for(const change of [d=>d.world.sign.width=0,d=>d.world.noticeboard.depth=1.5,d=>d.world.decorations[0].width=null,d=>d.world.sign.width=24]){
+    const bad=structuredClone(data);change(bad);assert.throws(()=>validateCatalog(bad));
+  }
+});
+
+test('map overlay colors the shared collision result red and leaves available tiles sand',async()=>{
+  const world={tiles:Array.from({length:576},(_,i)=>({x:i%24,y:Math.floor(i/24),type:'grass'})),sign:{x:22,y:22},noticeboard:{x:22,y:19},mascot:{x:0,y:0},decorations:[]};
+  world.tiles[5*24+5].type='water';
+  const drawn=[],source=await readFile(new URL('./editor/bridge.js',import.meta.url),'utf8');
+  const ctx={save(){},restore(){},beginPath(){},moveTo(){},lineTo(){},closePath(){},stroke(){}};
+  const context={arranging:true,area:'village',scale:1,ctx,toScreen,editorGrid:false,editorCandidate:{type:'tree',id:'',point:{x:6,y:6,width:2,depth:2}},editorCursor:null,editorTool:'move',editorCatalog:{workers:[],world},placementCells,tile(_ctx,x,y,color){drawn.push({x,y,color});}};
+  runInNewContext(source.slice(source.indexOf('function drawEditorOverlay('),source.indexOf('function restoreEditorScene('))+'\ndrawEditorOverlay();',context);
+  assert.equal(drawn.length,4);assert.deepEqual(drawn.filter(d=>d.color==='#ed625d'),[{x:5,y:5,color:'#ed625d'}]);assert.equal(drawn.filter(d=>d.color==='#edcba9').length,3);
+});
+
 test('house lots protect every tile when moving, resizing, planting or painting',()=>{
   const data={workers:[{id:'a',house:{x:6,y:6,width:3,depth:2}},{id:'b',house:{x:10,y:10}}],world:{tiles:Array.from({length:576},(_,i)=>({x:i%24,y:Math.floor(i/24),type:'grass'})),decorations:[],sign:{x:22,y:22},noticeboard:{x:22,y:19},mascot:{x:0,y:0}}};
-  assert.deepEqual(houseFootprint(data.workers[0].house),{x:4,y:5,width:3,depth:2});
-  assert.deepEqual(houseFootprint(data.workers[1].house),{x:9,y:9,width:2,depth:2});
+  assert.deepEqual(objectFootprint(data.workers[0].house),{x:4,y:5,width:3,depth:2});
+  assert.deepEqual(objectFootprint(data.workers[1].house),{x:9,y:9,width:2,depth:2});
   assert.equal(objectPlacementError(data,'house','a',{x:6,y:6}),'');
   for(const type of ['tree','grass','sign','board','character'])assert.ok(objectPlacementError(data,type,'new',{x:4,y:5}),type);
   assert.ok(objectPlacementError(data,'grass','a',{x:4,y:5}),'decoration IDs cannot bypass a house lot');

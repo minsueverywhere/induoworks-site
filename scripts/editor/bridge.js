@@ -1,8 +1,8 @@
 // @ts-nocheck -- appended to the map module only during editor development.
-import { objectPlacementError, paintError } from '/scripts/editor-placement.mjs';
-import { MAX_DECORATIONS, houseFootprint } from '/src/scripts/village-world.mjs';
+import { objectPlacementError, paintError, placementObjects, placementCells } from '/scripts/editor-placement.mjs';
+import { MAX_DECORATIONS } from '/src/scripts/village-world.mjs';
 import { historyShortcut } from '/scripts/editor/history.mjs';
-let arranging=parent!==window,editorDrag=null,editorClick=false,editorTool='move',editorGrid=false,editorSelected='',editorCursor=null;
+let arranging=parent!==window,editorDrag=null,editorClick=false,editorTool='move',editorGrid=false,editorSelected='',editorCursor=null,editorCandidate=null;
 const sendEditor=data=>parent.postMessage({source:'induo-map',...data},location.origin);
 const editorCatalog={...remoteContent,world:sceneWorld};
 const editorPoint=event=>{const r=scene.getBoundingClientRect(),sx=(event.clientX-r.left-width/2)/scale+camera.x,sy=(event.clientY-r.top-height/2-30)/scale+camera.y;return{x:sx/48+sy/24,y:sy/24-sx/48};};
@@ -35,6 +35,7 @@ window.addEventListener('message',event=>{
   if(event.origin!==location.origin||event.source!==parent||event.data?.source!=='induo-editor')return;
   if(event.data.type==='restore'){editorSelected=event.data.selection||'';restoreEditorScene(event.data.catalog);return;}
   document.documentElement.dataset.theme=event.data.theme==='dark'?'dark':'light';
+  editorCandidate=null;
   arranging=event.data.arranging!==false;editorTool=event.data.tool||'move';editorGrid=event.data.grid===true;requestDraw();
 });
 scene.addEventListener('pointerdown',event=>{
@@ -53,6 +54,7 @@ scene.addEventListener('pointermove',event=>{
   if(editorDrag.brush){if(['grass','path','water','erase'].includes(editorTool))editorBrush(event);return;}
   const d=editorDrag,dx=(event.clientX-d.startX)/scale,dy=(event.clientY-d.startY)/scale,snap=d.kind==='house'?1:4;
   const point={x:Math.round((d.x+dx/48+dy/24)*snap)/snap,y:Math.round((d.y+dy/24-dx/48)*snap)/snap};
+  editorCandidate={type:d.kind,id:d.id,point};
   const error=objectPlacementError(editorCatalog,d.kind,d.id,point);if(error){sendEditor({type:'hint',error});return;}
   Object.assign(d.object,point);
   if(d.kind==='house'){Object.assign(places.find(p=>p.id===d.id),point);Object.assign(editorCatalog.workers.find(w=>w.id===d.id).house,point);}
@@ -62,27 +64,33 @@ scene.addEventListener('pointermove',event=>{
   objects.sort((a,b)=>a.x+a.y-b.x-b.y);requestDraw();sendEditor({type:'move',id:d.id,kind:d.kind,...point});
 },true);
 for(const type of ['pointerup','pointercancel','lostpointercapture'])scene.addEventListener(type,event=>{
-  if(!editorDrag||event.pointerId!==editorDrag.pointerId)return;event.stopImmediatePropagation();editorDrag=null;sendEditor({type:'end'});
+  if(!editorDrag||event.pointerId!==editorDrag.pointerId)return;event.stopImmediatePropagation();editorDrag=null;editorCandidate=null;requestDraw();sendEditor({type:'end'});
 },true);
-scene.addEventListener('pointerleave',()=>{editorCursor=null;requestDraw();});
+scene.addEventListener('pointerleave',()=>{editorCursor=null;if(!editorDrag)editorCandidate=null;requestDraw();});
 scene.addEventListener('click',event=>{if(editorClick){event.stopImmediatePropagation();editorClick=false;}},true);
 function drawEditorOverlay(){
   if(!arranging||area!=='village')return;
   ctx.save();ctx.lineWidth=1/scale;ctx.strokeStyle='#203745';ctx.globalAlpha=.2;
   const outline=(x,y)=>{const p=toScreen(x,y);ctx.beginPath();ctx.moveTo(p.x,p.y-12);ctx.lineTo(p.x+24,p.y);ctx.lineTo(p.x,p.y+12);ctx.lineTo(p.x-24,p.y);ctx.closePath();ctx.stroke();};
   if(editorGrid)for(let x=0;x<24;x++)for(let y=0;y<24;y++)outline(x,y);
-  ctx.globalAlpha=1;ctx.lineWidth=2/scale;ctx.strokeStyle='#edcba9';
-  const selected=objects.find(o=>editorId(o)===editorSelected);
-  if(selected?.shape==='house'){
-    const lot=houseFootprint(editorCatalog.workers.find(w=>w.id===selected.id).house);
-    ctx.fillStyle='#edcba9';
-    for(let y=lot.y;y<lot.y+lot.depth;y++)for(let x=lot.x;x<lot.x+lot.width;x++){ctx.globalAlpha=.2;tile(ctx,x,y,'#edcba9');ctx.globalAlpha=1;outline(x,y);}
-  }else if(selected)outline(selected.x,selected.y);
-  if(editorCursor&&editorTool!=='move')outline(Math.round(editorCursor.x),Math.round(editorCursor.y));
+  ctx.lineWidth=2/scale;
+  let candidate=editorCandidate;
+  if(!candidate&&editorCursor&&['tree','tuft'].includes(editorTool))candidate={type:editorTool==='tree'?'tree':'grass',id:'',point:{x:Math.round(editorCursor.x),y:Math.round(editorCursor.y)}};
+  if(!candidate&&(!editorCursor||editorTool==='move'))candidate=placementObjects(editorCatalog).find(o=>o.id===editorSelected);
+  let cells=candidate?placementCells(editorCatalog,candidate.type,candidate.id,candidate.point):[];
+  if(editorCursor&&['grass','path','water'].includes(editorTool)){
+    const x=Math.round(editorCursor.x),y=Math.round(editorCursor.y);
+    cells=[{x,y,error:paintError(editorCatalog,{x,y},editorTool)}];
+  }
+  for(const cell of cells){
+    const color=cell.error?'#ed625d':'#edcba9';ctx.globalAlpha=cell.error ? .4 : .2;tile(ctx,cell.x,cell.y,color);
+    ctx.globalAlpha=1;ctx.strokeStyle=color;outline(cell.x,cell.y);
+  }
+  if(!cells.length&&editorCursor&&editorTool==='erase'){ctx.globalAlpha=1;ctx.strokeStyle='#edcba9';outline(Math.round(editorCursor.x),Math.round(editorCursor.y));}
   ctx.restore();
 }
 function restoreEditorScene(catalog){
-  editorDrag=null;closePopup();
+  editorDrag=null;editorCandidate=null;editorCursor=null;closePopup();
   const data=villageContent(catalog,document.documentElement.lang.startsWith('ko')?'ko':'en',text.title);
   Object.assign(editorCatalog,catalog);Object.assign(sceneWorld,data.world);editorCatalog.world=sceneWorld;
   places.splice(0,places.length,...data.places);workers.splice(0,workers.length,...data.workers);media.splice(0,media.length,...data.media);
@@ -104,7 +112,7 @@ function restoreEditorScene(catalog){
   objects.sort((a,b)=>a.x+a.y-b.x-b.y);sprites.clear();makeGround();requestDraw();
 }
 window.addEventListener('keydown',event=>{const action=historyShortcut(event);if(action){event.preventDefault();sendEditor({type:'history',action});}});
-window.addEventListener('blur',()=>{if(editorDrag){editorDrag=null;sendEditor({type:'end'});}});
+window.addEventListener('blur',()=>{if(editorDrag){editorDrag=null;editorCandidate=null;requestDraw();sendEditor({type:'end'});}});
 if(parent!==window){
   const style=document.createElement('style');style.textContent=`
     body>header,body>footer,.village-heading,body>.skip-link,astro-dev-toolbar{display:none!important}

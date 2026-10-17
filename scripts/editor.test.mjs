@@ -61,6 +61,17 @@ test('saved scene preserves multi-tile houses, painted tiles, moved signs and re
   const invalid=structuredClone(draft);invalid.world.tiles[2*24+1].type='water';
   await assert.rejects(()=>store.preview(invalid),/물/);
 });
+
+test('saving preserves sign, noticeboard and tree lots and rejects partial overlap',async t=>{
+  const directory=await fixture(t),store=createEditorStore(directory),before=await store.read(),draft=structuredClone(before.catalog);
+  draft.world=villageWorld(draft);draft.world.tiles.forEach(tile=>tile.type='grass');
+  Object.assign(draft.world.sign,{width:2,depth:2});Object.assign(draft.world.noticeboard,{width:3,depth:2});
+  draft.world.decorations=[{id:'tree-custom',type:'tree',x:18,y:18,size:1,width:2,depth:3}];
+  await store.save(draft,before.revision);assert.deepEqual((await createEditorStore(directory).read()).catalog.world,draft.world);
+  const invalid=structuredClone(draft);invalid.world.sign={x:17,y:17,width:2,depth:2};
+  await assert.rejects(()=>store.preview(invalid),/겹/);
+  assert.deepEqual((await store.read()).catalog.world,draft.world);
+});
 test('local HTTP editor requires a loopback Host, same origin and session token; deployment is explicit',async t=>{
   const directory=await fixture(t);let deploys=0;
   const middleware=createEditorMiddleware(directory,{deploy:async()=>{deploys++;return 'content only';}});
