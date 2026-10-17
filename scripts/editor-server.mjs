@@ -34,7 +34,7 @@ export function createEditorMiddleware(root,{deploy=deployEditorContent}={}) {
         if(path==='/__editor/preview')return json(res,200,await store.getPreview());
         let body,type;
         if(path==='/__editor/'||path==='/__editor'){body=(await readFile(new URL('./editor/index.html',import.meta.url),'utf8')).replace('__TOKEN__',token);type='text/html';}
-        else if(['/__editor/editor.js','/__editor/editor.css'].includes(path)){body=await readFile(new URL('./editor/'+path.split('/').pop(),import.meta.url));type=mime[extname(path)];}
+        else if(['/__editor/editor.js','/__editor/editor.css','/__editor/history.mjs','/__editor/theme.js'].includes(path)){body=await readFile(new URL('./editor/'+path.split('/').pop(),import.meta.url));type=mime[extname(path)];}
         else if(path==='/__editor/placement.mjs'){body=await readFile(new URL('./editor-placement.mjs',import.meta.url));type='text/javascript';}
         else if(path.startsWith('/uploads/')){body=await readFile(await mediaFile(root,path));type=mime[extname(path)];}
         else return json(res,404,{error:'편집기 경로를 찾을 수 없습니다.'});

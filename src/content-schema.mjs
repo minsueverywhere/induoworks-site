@@ -1,4 +1,4 @@
-import { validateWorld } from './scripts/village-world.mjs';
+import { validateWorld, validHouse } from './scripts/village-world.mjs';
 export const MAX_FILE_BYTES = 25 * 1024 * 1024;
 export const MAX_FILES = 20000;
 export const CONTENT_ORIGIN = 'https://induoworks-content.rlaalstn0910.workers.dev';
@@ -30,7 +30,7 @@ export function validateCatalog(data) {
   if(data.musicId)check(tracks.some(t=>t.id===data.musicId),'Unknown default music');
   for (const worker of data.workers) {
     check(text(worker.name) && localized(worker.description), 'Invalid worker');
-    if (worker.house) check(['x','y'].every(k=>Number.isInteger(worker.house[k]) && worker.house[k]>=0 && worker.house[k]<24), 'House outside village');
+    if (worker.house) check(validHouse(worker.house), 'House footprint outside village or invalid dimensions');
     if (worker.href) check(safeUrl(worker.href), 'Unsafe worker URL');
     if (worker.logoMediaId) check(data.media.some(m=>m.id===worker.logoMediaId), 'Unknown logo');
     if(worker.musicId)check(tracks.some(t=>t.id===worker.musicId),'Unknown workshop music');

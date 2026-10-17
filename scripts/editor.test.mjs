@@ -23,9 +23,9 @@ async function fixture(t){
 }
 test('editor save validates placement, preserves a backup and rejects stale writes',async t=>{
   const directory=await fixture(t),store=createEditorStore(directory),before=await store.read();
-  const draft=structuredClone(before.catalog);draft.workers[0].house={x:5,y:3};
+  const draft=structuredClone(before.catalog);draft.workers[0].house={x:4,y:2};
   assert.equal(placementError(draft.workers,draft.workers[0].id,draft.workers[0].house),'');
-  await store.preview(draft);assert.equal((await store.getPreview()).workers[0].house.x,5);
+  await store.preview(draft);assert.equal((await store.getPreview()).workers[0].house.x,4);
   assert.equal((await store.read()).catalog.workers[0].house.x,before.catalog.workers[0].house.x,'preview must not save');
   const saved=await store.save(draft,before.revision);
   assert.deepEqual(JSON.parse(await readFile(resolve(directory,saved.backup),'utf8')),before.catalog);
@@ -50,13 +50,15 @@ test('image upload creates bounded previews and refuses disguised files and trav
   await assert.rejects(()=>mediaFile(directory,'/uploads/../../.env'));
   await assert.rejects(()=>mediaFile(directory,'/uploads/test.svg'));
 });
-test('saved scene preserves painted tiles, moved signs and removed trees across reloads',async t=>{
+test('saved scene preserves multi-tile houses, painted tiles, moved signs and removed trees across reloads',async t=>{
   const directory=await fixture(t),store=createEditorStore(directory),before=await store.read(),draft=structuredClone(before.catalog);
   draft.world=villageWorld(draft);draft.world.sign={x:1,y:14};draft.world.noticeboard={x:8,y:20};
+  Object.assign(draft.workers[0].house,{width:3,depth:2});
   draft.world.decorations=draft.world.decorations.filter(d=>d.id!=='tree-1');draft.world.tiles[12*24+15].type='water';
   await store.save(draft,before.revision);
   assert.deepEqual((await createEditorStore(directory).read()).catalog.world,draft.world);
-  const invalid=structuredClone(draft);invalid.world.tiles[3*24+3].type='water';
+  assert.deepEqual((await createEditorStore(directory).read()).catalog.workers[0].house,draft.workers[0].house);
+  const invalid=structuredClone(draft);invalid.world.tiles[2*24+1].type='water';
   await assert.rejects(()=>store.preview(invalid),/물/);
 });
 test('local HTTP editor requires a loopback Host, same origin and session token; deployment is explicit',async t=>{

@@ -1,6 +1,20 @@
 import {isPath,isPond,noticeboard,villageSign,landscapeNoise as noise} from './village-layout.mjs';
 export const WORLD_SIZE=24;
 export const MAX_DECORATIONS=300;
+// X/Y is the front corner tile; larger lots extend backwards along both grid axes.
+export function houseFootprint(house){
+  const {width=2,depth=2}=house;
+  return {x:house.x-width+1,y:house.y-depth+1,width,depth};
+}
+export function validHouse(house){
+  return house&&['x','y'].every(k=>Number.isInteger(house[k]))&&
+    ['width','depth'].every(k=>{const value=house[k]===undefined?2:house[k];return Number.isInteger(value)&&value>=1&&value<=WORLD_SIZE;})&&
+    houseFootprint(house).x>=0&&houseFootprint(house).y>=0&&house.x<WORLD_SIZE&&house.y<WORLD_SIZE;
+}
+export function houseContains(house,point){
+  const lot=houseFootprint(house),x=Math.round(point.x),y=Math.round(point.y);
+  return x>=lot.x&&x<lot.x+lot.width&&y>=lot.y&&y<lot.y+lot.depth;
+}
 export function terrainAt(world,x,y){x=Math.round(x);y=Math.round(y);return x<0||y<0||x>=24||y>=24?null:world.tiles[y*24+x]?.type;}
 export function villageWorld(catalog){
   if(catalog.world)return catalog.world;
