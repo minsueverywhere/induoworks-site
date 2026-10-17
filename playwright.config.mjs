@@ -4,6 +4,8 @@ import {defineConfig,devices} from '@playwright/test';
 const port=Number(process.env.E2E_PORT||4329);
 export default defineConfig({
   testDir:'e2e',
+  // Per-port output so concurrent runs on different ports don't clear each other's artifacts.
+  outputDir:'test-results/'+port,
   fullyParallel:true,
   forbidOnly:!!process.env.CI,
   retries:0,

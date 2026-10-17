@@ -31,3 +31,7 @@ pnpm-debug.log*
 
 # independently published content bundle
 .content-dist/
+
+# playwright
+test-results/
+playwright-report/
