@@ -1,12 +1,13 @@
-import { terrainAt } from './village-world.mjs';
+import { terrainAt, terrainBounds, groundPosition, worldLetters } from './village-world.mjs';
 import { musicArtist } from './village-tracks.mjs';
-import { SIZE, MIN_ZOOM, MAX_ZOOM, toScreen, clampCamera, panCamera, clampZoom, defaultZoom, snapZoom, isDrag, zoomCamera, pinchPoints } from './village-camera.mjs';
-import { signLetterLayout, landscapeNoise as noise } from './village-layout.mjs';
-import { createTutorial, tutorialSteps } from './village-tutorial.mjs';
+import { MIN_ZOOM, MAX_ZOOM, toScreen, clampCamera, panCamera, clampZoom, defaultZoom, snapZoom, isDrag, zoomCamera, pinchPoints } from './village-camera.mjs';
+import { landscapeNoise as noise } from './village-layout.mjs';
+import { createTutorial, tutorialSteps as fullTutorialSteps } from './village-tutorial.mjs';
 import { createVillageMusic, musicTime } from './village-music.mjs';
 import { popupPosition } from './village-popup.mjs';
 import { loadContent } from './content-loader.mjs';
 import { villageContent } from './village-content.mjs';
+import {roomFloors,roomStack,roomElevation,roomScreen,roomPoint} from './village-room.mjs';
 const root = document.getElementById('village-section');
 const remoteContent=await loadContent();
 if(remoteContent) {
@@ -23,17 +24,20 @@ if(remoteContent) {
   }));
   root.dataset.contentSource='remote';
 } else root.dataset.contentSource='embedded';
-const villageCenter = toScreen(9,9);
+const initialBounds=terrainBounds(JSON.parse(root.dataset.world));
+const villageCenter=toScreen((initialBounds.minX+initialBounds.maxX)/2,(initialBounds.minY+initialBounds.maxY)/2);
 const $ = id => document.getElementById('village-' + id);
 const workers = JSON.parse(root.dataset.workers);
 let activeWorker = null;
 const sceneWorld=JSON.parse(root.dataset.world);
-const isPath=(x,y)=>terrainAt(sceneWorld,x,y)==='path',isPond=(x,y)=>terrainAt(sceneWorld,x,y)==='water';
+const isPath=(x,y)=>terrainAt(sceneWorld,x,y)==='path';
 const places = JSON.parse(root.dataset.places), text = JSON.parse(root.dataset.text), media = JSON.parse(root.dataset.media);
 const badges = new Map(), sprites = new Map();
-let area = 'village', savedVillage = null;
-const roomTerrain = document.createElement('canvas');
-function worldSize() { return area === 'room' ? 10 : SIZE; }
+let area = 'village', savedVillage = null, roomLevel=0;
+const currentRoom=()=>roomFloors(activeWorker)[roomLevel];
+let roomLayers=[];
+let participantEditor=null;
+function worldSize() { return area === 'room' ? {...terrainBounds(currentRoom(),3),elevation:roomElevation(activeWorker,roomLevel)} : terrainBounds(sceneWorld,root.dataset.editor==='true'?3:1); }
 let hovered = '';
 const canvas = $('canvas'), ctx = canvas.getContext('2d');
 const popup = $('popup');
@@ -59,8 +63,9 @@ document.addEventListener('keydown',event=>{if(event.key==='Escape') {showGuide(
 const buttons = new Map([...root.querySelectorAll('[data-object]')].map(b => [b.dataset.object, b]));
 let width = 0, height = 0, dpr = 1, scale = 1, camera = {...villageCenter}, frame = 0;
 const tutorialPanel = $('tutorial'), tutorialSkip = $('tutorial-skip');
-const tutorialHouse = places.find(p=>p.id==='induo-works'&&p.shape==='house');
-const tutorialJukebox = places.find(p=>p.owner==='induo-works'&&p.shape==='jukebox');
+const tutorialHouse = places.find(p=>p.id==='induo-works'&&p.shape==='house')||places.find(p=>p.shape==='house');
+const tutorialJukebox = places.find(p=>p.area==='village'&&p.shape==='jukebox')||places.find(p=>p.owner===tutorialHouse?.id&&p.shape==='jukebox');
+const tutorialSteps=tutorialJukebox?.area==='village'?['drag','zoom','music']:tutorialHouse?fullTutorialSteps:['drag','zoom'];
 const tutorial = createTutorial(step=>{
   tutorialStep=step;
   tutorialPanel.hidden=!step;
@@ -79,12 +84,12 @@ const tutorial = createTutorial(step=>{
   tutorialSkip.textContent=step==='done'?text.tutorial.finish:text.tutorial.skip;
   const target=step==='house'?tutorialHouse:step==='music'?tutorialJukebox:null;
   if(target) {
-    camera=toScreen(target.x,target.y);
+    camera=objectScreen(target);
     buttons.get(target.id)?.classList.add('tutorial-target');
   }
   if(step==='exit'){$('back').classList.add('tutorial-target');$('back').focus({preventScroll:true});}
   requestDraw();
-});
+},tutorialSteps);
 tutorialSkip.addEventListener('click',()=>{tutorial.close();canvas.focus({preventScroll:true});});
 let playing = false;
 let music,currentTrack;
@@ -115,32 +120,39 @@ function selectMusic(track) {
 }});
 }
 selectMusic(JSON.parse(root.dataset.music));
-const decorationObject=d=>({...d,worldId:d.id,id:undefined,area:'village',draw:d.type==='tree'?tree:grass});
-const objects = [...sceneWorld.decorations.map(decorationObject), ...places.map(p => ({...p, draw: {house, sign, board, game, jukebox, artwork}[p.shape]})), {...sceneWorld.mascot,worldId:'mascot',type:'character',draw:character,area:'village'}].sort((a,b)=>a.x+a.y-b.x-b.y);
+function objectPoint(o){return o.area==='village'||o.editType==='exhibit'?(o.ground||groundPosition(o,o.shape||o.type)):o;}
+function objectScreen(o){const p=objectPoint(o);return o.area==='room'?roomScreen(p,activeWorker,o.floor||0):toScreen(p.x,p.y);}
+const decorationObject=d=>({...d,ground:groundPosition(d,d.type),worldId:d.legacy?undefined:d.id,id:undefined,interactive:false,area:'village',draw:d.type==='tree'?tree:d.type==='letter'?letter:grass});
+const objects = [...[...sceneWorld.decorations,...(sceneWorld.layoutVersion===2?[]:worldLetters(sceneWorld))].map(decorationObject), ...places.map(p => ({...p, draw: {house, board, game, jukebox, artwork}[p.shape]})), {...sceneWorld.mascot,worldId:'mascot',type:'character',draw:character,area:'village'}].sort((a,b)=>a.x+a.y-b.x-b.y);
 function polygon(c, points, fill) { c.fillStyle = fill; c.beginPath(); points.forEach(([x,y],i) => i ? c.lineTo(x,y) : c.moveTo(x,y)); c.closePath(); c.fill(); }
 function tile(c, x, y, color) { const p = toScreen(x,y); polygon(c, [[p.x,p.y-12],[p.x+24,p.y],[p.x,p.y+12],[p.x-24,p.y]], color); }
 function box(c,x,y,w,d,h,colors) { polygon(c,[[x,y-h],[x+w,y+d-h],[x,y+2*d-h],[x-w,y+d-h]],colors[0]); polygon(c,[[x-w,y+d-h],[x,y+2*d-h],[x,y+2*d],[x-w,y+d]],colors[1]); polygon(c,[[x,y+2*d-h],[x+w,y+d-h],[x+w,y+d],[x,y+2*d]],colors[2]); }
+let terrainOffset={x:0,y:0};
 function makeGround() {
-  terrain.width = SIZE * 48 + 48; terrain.height = SIZE * 24 + 32;
-  ground.translate(SIZE * 24, 16);
-  polygon(ground, [[-24,0],[0,-12],[SIZE*24-24,(SIZE-1)*12],[0,SIZE*24-12],[-SIZE*24,(SIZE-1)*12]], '#899469');
-  for (let sum = 0; sum < SIZE * 2; sum++) for (let x = 0; x < SIZE; x++) {
-    const y = sum - x; if (y < 0 || y >= SIZE) continue;
-    const water = isPond(x,y), path = isPath(x,y);
-    tile(ground,x,y,water ? ((x+y)%2 ? '#82aca3' : '#8db6ad') : path ? '#e3c793' : ['#a6b77c','#a9b980','#acbc83'][Math.floor(noise(x,y)*3)]);
-    const p = toScreen(x,y);
+  const b=terrainBounds(sceneWorld),left=toScreen(b.minX,b.maxY).x-24,top=toScreen(b.minX,b.minY).y-12;
+  terrainOffset={x:left,y:top};
+  terrain.width=toScreen(b.maxX,b.minY).x+24-left+1;terrain.height=toScreen(b.maxX,b.maxY).y+20-top;
+  ground.translate(-left,-top);
+  for(const {x,y,type} of [...sceneWorld.tiles].sort((a,b)=>a.x+a.y-b.x-b.y)){
+    const water=type==='water',path=type==='path',p=toScreen(x,y);
+    polygon(ground,[[p.x-24,p.y],[p.x,p.y+12],[p.x+24,p.y],[p.x+24,p.y+6],[p.x,p.y+18],[p.x-24,p.y+6]],'#899469');
+    tile(ground,x,y,water?((x+y)%2?'#82aca3':'#8db6ad'):path?'#e3c793':['#a6b77c','#a9b980','#acbc83'][Math.floor(noise(x,y)*3)]);
     if(path){
       const corners=[[p.x,p.y-12],[p.x+24,p.y],[p.x,p.y+12],[p.x-24,p.y]],neighbors=[[x,y-1],[x+1,y],[x,y+1],[x-1,y]];
-      ground.strokeStyle='#aa8454';ground.lineWidth=1.5;ground.beginPath();
-      neighbors.forEach(([nx,ny],i)=>{if(!isPath(nx,ny)){ground.moveTo(...corners[i]);ground.lineTo(...corners[(i+1)%4]);}});ground.stroke();
+      ground.strokeStyle='#aa8454';ground.lineWidth=1.5;ground.beginPath();neighbors.forEach(([nx,ny],i)=>{if(!isPath(nx,ny)){ground.moveTo(...corners[i]);ground.lineTo(...corners[(i+1)%4]);}});ground.stroke();
     }
-    if (water) { ground.fillStyle='#b7d2bf';ground.fillRect(p.x-8,p.y,14,1); }
+    if(water){ground.fillStyle='#b7d2bf';ground.fillRect(p.x-8,p.y,14,1);}
   }
 }
 function house(c, object){
-  box(c,0,-18,43,21,50,['#e8d3a1','#ddc18c','#bea877']);
+  c.translate(0,-3);
+  const lift=((object.storeys||1)-1)*26;
+  box(c,0,-18,43,21,50+lift,['#e8d3a1','#ddc18c','#bea877']);
   const roof=object.id==='induo-works'?['#456c92','#6088ac','#234567']:['#ad6245','#ca7b51','#98563d'];
+  c.save();c.translate(0,-lift);
   polygon(c,[[-43,-47],[0,-72],[43,-47],[0,-25]],roof[0]);polygon(c,[[-43,-47],[-43,-56],[0,-85],[0,-72]],roof[1]);polygon(c,[[0,-85],[43,-56],[43,-47],[0,-72]],roof[2]);
+  box(c,14,-69,5,3,16,['#d0b392','#ac8e76','#866d5d']);c.restore();
+  for(let i=1;i<(object.storeys||1);i++){c.save();c.transform(1,21/43,0,1,-35,-43-i*26);c.fillStyle='#74999d';c.fillRect(4,0,13,13);c.restore();}
   // The door follows the right wall's isometric face.
   c.save(); c.transform(1,-21/43,0,1,0,-26);
   c.fillStyle='#705a3b';c.fillRect(12,19,15,31);c.fillStyle='#ead0a1';c.fillRect(15,35,2,2);c.restore();
@@ -148,22 +160,20 @@ function house(c, object){
   c.fillStyle='#8d6543';c.fillRect(0,0,36,15);
   c.fillStyle='#c59c68';c.fillRect(1,1,34,13);
   c.fillStyle='#ae8657';c.fillRect(2,7,32,1);
-  c.fillStyle='#59482f';c.font='600 6px system-ui, sans-serif';c.textAlign='center';c.fillText(object.title,18,10,30);c.restore();
-  box(c,14,-69,5,3,16,['#d0b392','#ac8e76','#866d5d']);
+  c.fillStyle='#59482f';c.font='600 6px system-ui, sans-serif';c.textAlign='center';facingText(c,object,object.title,18,10,30);c.restore();
 }
+
 function grass(c,o){c.save();c.scale(o.size,o.size);c.strokeStyle='#80965d';c.lineWidth=1.5;c.beginPath();c.moveTo(-2,0);c.lineTo(-3,-3);c.moveTo(0,0);c.lineTo(0,-4);c.moveTo(2,0);c.lineTo(3,-2);c.stroke();if(o.flower){c.fillStyle='#efe2b0';c.fillRect(-1,-5,2.5,2);}c.restore();}
-function tree(c,object){c.save();c.scale(object.size,object.size);c.fillStyle='#7c7050';c.fillRect(-3,-13,6,19);polygon(c,[[-20,-12],[0,-51],[20,-12]],'#587b59');polygon(c,[[-16,-25],[0,-63],[16,-25]],'#719366');polygon(c,[[-11,-41],[0,-71],[11,-41]],'#8da773');c.restore();}
-function sign(c,object) {
-  c.save();c.font='700 34px system-ui, sans-serif';c.textBaseline='alphabetic';
-  const letters=[...object.title.toUpperCase()],metrics=letters.map(letter=>c.measureText(letter));
-  const {positions,width}=signLetterLayout(metrics),startX=-width/2,startY=width/4;
-  const lettering=(dx=0,dy=0)=>letters.forEach((letter,i)=>c.fillText(letter,positions[i]+dx,dy));
-  c.transform(1,-.5,0,1,startX,startY);
-  c.fillStyle='#7c7050';metrics.forEach((m,i)=>c.fillRect(positions[i]+(m.actualBoundingBoxRight-m.actualBoundingBoxLeft)/2-1,0,2,9));
-  c.fillStyle='#8c8a77';for(let depth=6;depth>0;depth--)lettering(-depth,-depth);
-  c.fillStyle='#faefe5';lettering();c.restore();
+function tree(c,object){c.save();c.scale(object.size,object.size);c.translate(0,-6);c.fillStyle='#7c7050';c.fillRect(-3,-13,6,19);polygon(c,[[-20,-12],[0,-51],[20,-12]],'#587b59');polygon(c,[[-16,-25],[0,-63],[16,-25]],'#719366');polygon(c,[[-11,-41],[0,-71],[11,-41]],'#8da773');c.restore();}
+function letter(c,object){
+  c.save();c.scale(object.size||1,object.size||1);c.transform(1,-.5,0,1,0,0);c.font='700 26px system-ui, sans-serif';c.textAlign='center';
+  c.fillStyle='#7c7050';c.fillRect(-1,-6,2,6);
+  c.fillStyle='#6c6a59';for(let d=3;d>0;d--)facingText(c,object,object.char,-d,-5-d);
+  c.fillStyle=object.color;facingText(c,object,object.char,0,-5);c.restore();
 }
+function facingText(c,o,value,x,y,max){c.save();c.translate(x,y);c.scale(o.flip?-1:1,1);if(max)c.fillText(value,0,0,max);else c.fillText(value,0,0);c.restore();}
 function board(c,object) {
+  c.scale(object.size||1,object.size||1);c.translate(0,-9);
   polygon(c,[[-48,-44],[48,-92],[43,-94.5],[-53,-46.5]],'#c7aa7b');
   polygon(c,[[-48,-44],[-48,14],[-53,11.5],[-53,-46.5]],'#765437');
   c.save();c.transform(1,-.5,0,1,-48,-44);
@@ -173,7 +183,7 @@ function board(c,object) {
   for (const [x,y,w,h,color] of papers.slice(0,object.notes||0)) {
     c.fillStyle=color;c.fillRect(x,y,w,h);c.fillStyle='#a25844';c.fillRect(x+w/2,y+2,2,2);c.fillStyle='#999476';c.fillRect(x+4,y+8,w-8,1);c.fillRect(x+4,y+12,w-10,1);
   }
-  if(object.notes===1){c.fillStyle='#4c533b';c.font='700 8px system-ui, sans-serif';c.textAlign='center';c.fillText(object.noteTitle,48,31,40);}
+  if(object.notes===1){c.fillStyle='#4c533b';c.font='700 8px system-ui, sans-serif';c.textAlign='center';facingText(c,object,object.noteTitle,48,31,40);}
   c.fillStyle='#725237';c.fillRect(-3,-4,102,7);c.restore();
 }
 function game(c,object) {
@@ -189,25 +199,38 @@ function artwork(c,object) {
   const badge=badges.get(object.badge);if(badge?.complete&&badge.naturalWidth)c.drawImage(badge,-21,-63,42,32);
 }
 function makeRoom() {
-  roomTerrain.width=600;roomTerrain.height=450;
-  const c=roomTerrain.getContext('2d');c.translate(300,120);
-  for(let sum=0;sum<20;sum++)for(let x=0;x<10;x++){const y=sum-x;if(y>=0&&y<10)tile(c,x,y,(x+y)%2?'#bf9c6d':'#caa978');}
-  polygon(c,[[0,-102],[-240,18],[-240,108],[0,-12]],'#d7c79e');
-  polygon(c,[[0,-102],[240,18],[240,108],[0,-12]],'#e7d8ad');
-  polygon(c,[[-240,104],[0,-16],[0,-10],[-240,110]],'#9b805d');polygon(c,[[0,-16],[240,104],[240,110],[0,-10]],'#a78a62');
-  c.fillStyle='#f2e6bd';c.beginPath();c.ellipse(0,145,67,25,0,0,Math.PI*2);c.fill();
+  roomLayers=roomStack(activeWorker,roomLevel).map(layer=>{
+  const {floor,elevation}=layer,b=terrainBounds(floor),h=floor.wallHeight,left=toScreen(b.minX,b.maxY).x-25,top=toScreen(b.minX,b.minY).y-12-h;
+  const canvas=document.createElement('canvas');canvas.width=toScreen(b.maxX,b.minY).x+26-left;canvas.height=toScreen(b.maxX,b.maxY).y+22-top;
+  const c=canvas.getContext('2d');c.translate(-left,-top);
+  for(const {x,y}of floor.tiles){const p=toScreen(x,y);
+    if(!terrainAt(floor,x,y-1))polygon(c,[[p.x,p.y-12-h],[p.x+24,p.y-h],[p.x+24,p.y],[p.x,p.y-12]],'#e7d8ad');
+    if(!terrainAt(floor,x-1,y))polygon(c,[[p.x-24,p.y-h],[p.x,p.y-12-h],[p.x,p.y-12],[p.x-24,p.y]],'#d7c79e');
+  }
+  for(const {x,y}of [...floor.tiles].sort((a,b)=>a.x+a.y-b.x-b.y)){const p=toScreen(x,y);polygon(c,[[p.x-24,p.y],[p.x,p.y+12],[p.x+24,p.y],[p.x+24,p.y+8],[p.x,p.y+20],[p.x-24,p.y+8]],'#9b805d');tile(c,x,y,(x+y)%2?'#bf9c6d':'#caa978');}
+  return {...layer,canvas,x:left,y:top-elevation};
+  });
 }
+function setRoomLevel(level){
+  roomLevel=Math.max(0,Math.min(roomFloors(activeWorker).length-1,level));closePopup();hovered='';makeRoom();
+  const b=terrainBounds(currentRoom());camera=roomScreen({x:(b.minX+b.maxX)/2,y:(b.minY+b.maxY)/2},activeWorker,roomLevel);sprites.clear();updateFloors();requestDraw();participantEditor?.areaChanged();
+}
+function updateFloors(){
+  const bar=$('floors');bar.hidden=area!=='room'||roomFloors(activeWorker).length<2;bar.replaceChildren();
+  roomFloors(activeWorker).forEach((_,i)=>{const b=document.createElement('button');b.type='button';b.textContent=(i+1)+(document.documentElement.lang.startsWith('ko')?'층':'F');b.setAttribute('aria-pressed',String(i===roomLevel));b.addEventListener('click',()=>setRoomLevel(i));bar.append(b);});
+}
+
 function character(c){
   c.fillStyle='#425d3a35';c.beginPath();c.ellipse(0,3,10,4,0,0,Math.PI*2);c.fill();
   c.fillStyle='#e6ca89';c.fillRect(-7,-16,14,15);c.fillStyle='#e9d69b';c.fillRect(-9,-27,18,15);c.fillStyle='#ba8b57';c.fillRect(-11,-25,4,10);c.fillRect(7,-25,4,10);c.fillStyle='#314950';c.fillRect(-5,-23,2,2);c.fillRect(3,-23,2,2);c.fillRect(-2,-19,4,3);c.fillStyle='#476879';c.fillRect(-7,-12,14,4);c.fillStyle='#b58d4c';c.fillRect(-8,-29,16,3);c.fillStyle='#acbeac';c.fillRect(-6,-30,4,4);c.fillRect(2,-30,4,4);
 }
-function spriteBounds(object) { return object.shape==='sign'?[-168,-120,336,216]:[-64,-112,128,144]; }
+function spriteBounds(object) {const extra=object.shape==='house'?((object.storeys||1)-1)*26:0;return [-64,-112-extra,128,144+extra];}
 function sprite(object, hover) {
   const key = object.id+':'+hover;
   if (sprites.has(key)) return sprites.get(key);
   const [left,top,w,h]=spriteBounds(object);
   const art = document.createElement('canvas');art.width=w*2;art.height=h*2;
-  const c = art.getContext('2d');c.scale(2,2);c.translate(-left,-top);object.draw(c,object);
+  const c = art.getContext('2d');c.scale(2,2);c.translate(-left,-top);c.scale(object.flip?-1:1,1);object.draw(c,object);
   if(object.interactive===false){sprites.set(key,art);return art;}
   const mask = document.createElement('canvas');mask.width=art.width;mask.height=art.height;
   const m = mask.getContext('2d');m.drawImage(art,0,0);m.globalCompositeOperation='source-in';m.fillStyle=hover?'#edcba9':'#725d3c';m.fillRect(0,0,art.width,art.height);
@@ -229,27 +252,24 @@ function draw() {
   const ox = width / 2 - camera.x * scale, oy = height / 2 - camera.y * scale + 30;
   ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,width,height);
   ctx.translate(ox,oy); ctx.scale(scale,scale);
-  if(area==='room')ctx.drawImage(roomTerrain,-300,-120);else ctx.drawImage(terrain,-SIZE*24,-16);
+  for(const layer of area==='room'?roomLayers:[{index:0,opacity:1,canvas:terrain,...terrainOffset}]){
+  ctx.globalAlpha=layer.opacity;ctx.drawImage(layer.canvas,layer.x,layer.y);
+  participantEditor?.draw(layer.index);
   for (const object of objects) {
-    if(object.area!==area||(area==='room'&&object.owner!==activeWorker?.id))continue;
-    const p = toScreen(object.x,object.y), x = ox + p.x*scale, y = oy + p.y*scale;
+    if(object.area!==area||(area==='room'&&(object.owner!==activeWorker?.id||(object.floor||0)!==layer.index)))continue;
+    const p = objectScreen(object), x = ox + p.x*scale, y = oy + p.y*scale;
     const bounds=spriteBounds(object),[left,top,w,h]=bounds;
     if (x+(left+w)*scale<0 || x+left*scale>width || y+(top+h)*scale<0 || y+top*scale>height) continue;
     ctx.save(); ctx.translate(p.x,p.y);
     if (object.id) { requestBadge(object);ctx.drawImage(sprite(object,hovered===object.id),...bounds); }
-    else object.draw(ctx,object);
+    else {ctx.scale(object.flip?-1:1,1);object.draw(ctx,object);}
     ctx.restore();
   }
+  }
+  ctx.globalAlpha=1;
   for (const p of places) {
-    const point = toScreen(p.x,p.y), b = buttons.get(p.id);if(!b)continue;
-    if(p.area!==area||(area==='room'&&p.owner!==activeWorker?.id)){b.hidden=true;continue;}
-    if(p.shape==='sign'){
-      const x=ox+(point.x-148)*scale,y=oy+(point.y+40)*scale;
-      b.hidden=x+296*scale<0||x>width||y+Math.max(44,50*scale)<0||y-148*scale>height;
-      b.style.transformOrigin='0 0';b.style.transform='skewY(-26.565deg)';
-      b.style.left=x+'px';b.style.top=y+'px';b.style.width=296*scale+'px';b.style.height=Math.max(44,50*scale)+'px';
-      b.querySelector('span').style.transform='translateX(-50%) skewY(26.565deg)';continue;
-    }
+    const point = objectScreen(p), b = buttons.get(p.id);if(!b)continue;
+    if(p.area!==area||(area==='room'&&(p.owner!==activeWorker?.id||(p.floor||0)!==roomLevel))){b.hidden=true;continue;}
     const x = ox + point.x*scale, y = oy + (point.y+12)*scale;
     const w = Math.max(44,p.width*scale), h = Math.max(44,p.height*scale);
     b.hidden = x < -w/2 || x > width+w/2 || y < 0 || y-h > height;
@@ -263,11 +283,12 @@ function draw() {
   scene.dataset.camera = camera.x.toFixed(1)+','+camera.y.toFixed(1);
   scene.dataset.zoom = scale.toFixed(3);
   scene.dataset.hover = hovered;
+  scene.dataset.floor=String(roomLevel+1);
   positionWallLinks(ox,oy);
   positionPopup(); positionTutorial();
 }
 function positionWallLinks(ox,oy) {
-  $('social').hidden=area!=='room'||activeWorker?.id!=='induo-works';
+  $('social').hidden=area!=='room'||activeWorker?.id!=='induo-works'||roomLevel!==0;
   if($('social').hidden)return;
   wallLinks.forEach((a,i)=>{
     const slope=i<4?-.5:.5,x=i<4?-220+i*56:8+(i-4)*56,y=slope*x-82;
@@ -308,9 +329,9 @@ function resize() {
 }
 function changeArea(next) {
   if(next===area)return;
-  if(next==='room') {savedVillage={camera:{...camera},scale};camera=toScreen(4.5,4.5);scale=defaultZoom(width,height,'room');if(!roomTerrain.width||roomTerrain.width===300)makeRoom();}
+  if(next==='room') {savedVillage={camera:{...camera},scale};roomLevel=0;const b=terrainBounds(currentRoom());camera=roomScreen({x:(b.minX+b.maxX)/2,y:(b.minY+b.maxY)/2},activeWorker,roomLevel);scale=defaultZoom(width,height,'room');makeRoom();}
   else {camera=savedVillage?.camera||{...villageCenter};scale=savedVillage?.scale||defaultZoom(width,height);}
-  area=next;hovered='';closePopup();
+  area=next;updateFloors();hovered='';closePopup();participantEditor?.areaChanged();
   if(next==='room'&&activeWorker.id==='induo-works')wallLinks.forEach(a=>{const image=a.querySelector('img');if(!image.hasAttribute('src'))image.src=image.dataset.src;});
   $('back').hidden=area!=='room';$('caption').textContent=area==='room'?activeWorker.name.toUpperCase():text.title.toUpperCase();
   canvas.setAttribute('aria-label',area==='room'?activeWorker.name+' · '+text.room:text.title);
@@ -358,7 +379,7 @@ function visit(id, focusMap = false, trigger = null) {
   positionPopup();
   if(p.shape==='jukebox')void music.toggle();
   buttons.forEach((b,key) => b.setAttribute('aria-pressed',String(key === id)));
-  if (focusMap) { camera = clampCamera(toScreen(p.x,p.y),worldSize()); requestDraw(); }
+  if (focusMap) { camera = clampCamera(objectScreen(p),worldSize()); requestDraw(); }
   if (matchMedia('(max-width: 639px)').matches) scene.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
   if (trigger) popup.focus({preventScroll:true});
 }
@@ -474,3 +495,44 @@ window.addEventListener('pagehide',() => {cancelAnimationFrame(frame);music.stop
 makeGround();root.classList.add('ready');resize();new ResizeObserver(resize).observe(canvas);
 const requestedWorker=new URLSearchParams(location.search).get('worker');
 if(requestedWorker&&workers.some(w=>w.id===requestedWorker))visit(requestedWorker);
+
+function applyVillageCatalog(catalog){
+  const data=villageContent(catalog,document.documentElement.lang.startsWith('ko')?'ko':'en',text.title);
+  Object.assign(sceneWorld,data.world);
+  places.splice(0,places.length,...data.places);workers.splice(0,workers.length,...data.workers);media.splice(0,media.length,...data.media);
+  root.dataset.music=JSON.stringify(data.music);
+  selectMusic(places.find(p=>p.owner===activeWorker?.id&&p.shape==='jukebox')?.music||data.music);
+  if(activeWorker){activeWorker=workers.find(w=>w.id===activeWorker.id);if(!activeWorker)changeArea('village');}
+  const container=root.querySelector('.village-places'),sample=container.querySelector('button').cloneNode(true);
+  buttons.clear();container.replaceChildren();
+  for(const p of places.filter(p=>p.interactive!==false)){
+    const b=sample.cloneNode(true);b.dataset.object=p.id;b.dataset.area=p.area;
+    if(p.owner)b.dataset.owner=p.owner;else delete b.dataset.owner;
+    b.setAttribute('aria-label',p.label);b.setAttribute('aria-pressed','false');b.querySelector('span').textContent=p.label;
+    b.addEventListener('click',e=>visit(p.id,false,e.detail===0?b:null));
+    for(const event of ['pointerenter','focus'])b.addEventListener(event,()=>{hovered=p.id;requestDraw();});
+    for(const event of ['pointerleave','blur'])b.addEventListener(event,()=>{hovered='';requestDraw();});
+    buttons.set(p.id,b);container.append(b);
+  }
+  objects.splice(0,objects.length,...[...sceneWorld.decorations,...(sceneWorld.layoutVersion===2?[]:worldLetters(sceneWorld))].map(decorationObject),...places.map(p=>({...p,draw:{house,board,game,jukebox,artwork}[p.shape]})),{...sceneWorld.mascot,worldId:'mascot',type:'character',draw:character,area:'village'});
+  objects.sort((a,b)=>a.x+a.y-b.x-b.y);sprites.clear();makeGround();if(area==='room'){roomLevel=Math.min(roomLevel,roomFloors(activeWorker).length-1);makeRoom();updateFloors();}requestDraw();
+}
+
+const studioButton=$('studio');
+studioButton?.addEventListener('click',async()=>{
+  studioButton.disabled=true;
+  try{
+    if(participantEditor){participantEditor.open();return;}
+    const {createParticipantEditor}=await import('./village-participant.js');
+    participantEditor=await createParticipantEditor({root,scene,canvas,ctx,requestDraw,
+      catalog:remoteContent,
+      state:()=>({area,worker:activeWorker,level:roomLevel,scale}),
+      point:event=>{const r=scene.getBoundingClientRect(),sx=(event.clientX-r.left-width/2)/scale+camera.x,sy=(event.clientY-r.top-height/2-30)/scale+camera.y;return area==='room'?roomPoint({x:sx,y:sy},activeWorker,roomLevel):{x:sx/48+sy/24,y:sy/24-sx/48};},
+      apply:applyVillageCatalog,
+      enter:(owner,level=0)=>{activeWorker=workers.find(w=>w.id===owner);if(activeWorker){changeArea('room');setRoomLevel(level);}},
+      closePopup,
+    });
+  }catch{studioButton.textContent=document.documentElement.lang.startsWith('ko')?'작업실 연결 실패 · 다시 시도':'Could not connect · Retry';}
+  finally{studioButton.disabled=false;}
+});
+if(new URLSearchParams(location.search).get('studio')==='1')studioButton?.click();

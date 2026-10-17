@@ -1,23 +1,46 @@
 import {isPath,isPond,noticeboard,villageSign,landscapeNoise as noise} from './village-layout.mjs';
 export const WORLD_SIZE=24;
 export const MAX_DECORATIONS=300;
+export const MAX_WORLD_SIZE=64;
+export const MAX_TILES=4096;
+const tileIndexes=new WeakMap();
+export function terrainBounds(world,padding=0){
+  const xs=world.tiles.map(t=>t.x),ys=world.tiles.map(t=>t.y);
+  return {minX:Math.max(-64,Math.min(...xs)-padding),maxX:Math.min(64,Math.max(...xs)+padding),minY:Math.max(-64,Math.min(...ys)-padding),maxY:Math.min(64,Math.max(...ys)+padding)};
+}
+export function groundPosition(point,type){if(['grass','character'].includes(type))return {x:point.x,y:point.y};const lot=objectFootprint(point,type);return {x:lot.x+(lot.width-1)/2,y:lot.y+(lot.depth-1)/2};}
+export function worldLetters(world){return world.layoutVersion===2?world.decorations.filter(d=>d.type==='letter'):[...'INDUOHOOD'].map((char,i)=>({id:'letter-'+i,type:'letter',size:1,legacy:true,char,color:'#faefe5',x:world.sign.x,y:world.sign.y-i,width:1,depth:1}));}
+export function setTerrain(world,x,y,type){
+  const index=world.tiles.findIndex(t=>t.x===x&&t.y===y);
+  if(type==='empty'){if(index>=0)world.tiles.splice(index,1);}
+  else if(index>=0)world.tiles[index].type=type;
+  else world.tiles.push({x,y,type});
+  tileIndexes.delete(world.tiles);
+}
 // X/Y is the front corner tile; larger lots extend backwards along both grid axes.
 export function objectFootprint(point,type='house'){
-  const width=point.width===undefined?(type==='house'?2:1):point.width;
-  const depth=point.depth===undefined?(type==='house'?2:1):point.depth;
+  let width=point.width===undefined?(type==='house'?2:1):point.width;
+  let depth=point.depth===undefined?(type==='house'?2:1):point.depth;
+  if(point.flip)[width,depth]=[depth,width];
   return {x:Math.round(point.x)-width+1,y:Math.round(point.y)-depth+1,width,depth};
 }
-export function validFootprint(point,type){
-  if(!point||!['x','y'].every(k=>Number.isFinite(point[k])&&point[k]>=0&&point[k]<=WORLD_SIZE-1))return false;
+export function validFootprint(point,type,world){
+  const expanded=world?.layoutVersion===2,limit=expanded?64:WORLD_SIZE-1,maxSize=expanded?64:WORLD_SIZE;
+  if(!point||('flip'in point&&typeof point.flip!=='boolean')||!['x','y'].every(k=>Number.isFinite(point[k])&&point[k]>=(expanded?-64:0)&&point[k]<=limit))return false;
   const lot=objectFootprint(point,type);
-  return ['width','depth'].every(k=>Number.isInteger(lot[k])&&lot[k]>=1&&lot[k]<=WORLD_SIZE)&&lot.x>=0&&lot.y>=0&&lot.x+lot.width<=WORLD_SIZE&&lot.y+lot.depth<=WORLD_SIZE;
+  return ['width','depth'].every(k=>Number.isInteger(lot[k])&&lot[k]>=1&&lot[k]<=maxSize)&&lot.x>=(expanded?-64:0)&&lot.y>=(expanded?-64:0)&&lot.x+lot.width<=limit+1&&lot.y+lot.depth<=limit+1;
 }
-export function validHouse(house){return validFootprint(house,'house')&&['x','y'].every(k=>Number.isInteger(house[k]));}
+export function validHouse(house,world){return validFootprint(house,'house',world)&&['x','y'].every(k=>Number.isInteger(house[k]));}
 export function footprintContains(point,type,target){
   const lot=objectFootprint(point,type),x=Math.round(target.x),y=Math.round(target.y);
   return x>=lot.x&&x<lot.x+lot.width&&y>=lot.y&&y<lot.y+lot.depth;
 }
-export function terrainAt(world,x,y){x=Math.round(x);y=Math.round(y);return x<0||y<0||x>=24||y>=24?null:world.tiles[y*24+x]?.type;}
+export function terrainAt(world,x,y){
+  x=Math.round(x);y=Math.round(y);
+  let cached=tileIndexes.get(world.tiles);
+  if(!cached||cached.length!==world.tiles.length){cached={length:world.tiles.length,map:new Map(world.tiles.map(t=>[t.x+','+t.y,t]))};tileIndexes.set(world.tiles,cached);}
+  return cached.map.get(x+','+y)?.type||null;
+}
 export function villageWorld(catalog){
   if(catalog.world)return catalog.world;
   const world={mascot:{x:9,y:10},sign:{...villageSign},noticeboard:{...noticeboard},tiles:[],decorations:[]};
@@ -37,11 +60,18 @@ export function villageWorld(catalog){
   return world;
 }
 export function validateWorld(world){
-  const point=(p,type)=>validFootprint(p,type)&&p.x<=23&&p.y<=23;
-  if(!point(world?.mascot,'character')||!point(world?.sign,'sign')||!point(world.noticeboard,'board')||!Array.isArray(world.tiles)||world.tiles.length!==576||
-    !world.tiles.every((t,i)=>t.x===i%24&&t.y===Math.floor(i/24)&&['grass','path','water'].includes(t.type))||
+  const expanded=world?.layoutVersion===2;
+  if(world?.layoutVersion!==undefined&&!expanded)throw new Error('Unsupported village layout');
+  const point=(p,type)=>validFootprint(p,type,world);
+  if(!point(world?.mascot,'character')||(!expanded&&!point(world?.sign,'sign'))||!point(world?.noticeboard,'board')||('size'in world.noticeboard&&(!Number.isFinite(world.noticeboard.size)||world.noticeboard.size<.5||world.noticeboard.size>1.6))||!Array.isArray(world.tiles)||
+    (expanded?(world.tiles.length<1||world.tiles.length>MAX_TILES):world.tiles.length!==576)||
+    !world.tiles.every((t,i)=>Number.isInteger(t.x)&&Number.isInteger(t.y)&&Math.abs(t.x)<=64&&Math.abs(t.y)<=64&&(expanded||(t.x===i%24&&t.y===Math.floor(i/24)))&&['grass','path','water'].includes(t.type))||
+    new Set(world.tiles.map(t=>t.x+','+t.y)).size!==world.tiles.length||
     !Array.isArray(world.decorations)||world.decorations.length>MAX_DECORATIONS||
-    !world.decorations.every(d=>/^[a-z0-9-]+$/.test(d.id)&&d.id.length<=80&&['tree','grass'].includes(d.type)&&point(d,d.type)&&Number.isFinite(d.size)&&d.size>=.5&&d.size<=1.6&&(!('flower'in d)||typeof d.flower==='boolean'))||
+    !world.decorations.every(d=>/^[a-z0-9-]+$/.test(d.id)&&d.id.length<=80&&(expanded?['tree','grass','letter']:['tree','grass']).includes(d.type)&&point(d,d.type)&&Number.isFinite(d.size)&&d.size>=.5&&d.size<=1.6&&(!('flower'in d)||typeof d.flower==='boolean')&&(d.type!=='letter'||(/^[A-Z0-9]$/.test(d.char)&&/^#[0-9a-fA-F]{6}$/.test(d.color))))||
     new Set(world.decorations.map(d=>d.id)).size!==world.decorations.length)throw new Error('Invalid village terrain or decorations');
+  if(world.exhibits!==undefined&&(!Array.isArray(world.exhibits)||world.exhibits.length>100||!world.exhibits.every(e=>/^[a-z0-9-]+$/.test(e.id)&&e.id.length<=80&&['project','media','music'].includes(e.kind)&&typeof e.ref==='string'&&e.ref.length<=80&&point(e,'exhibit'))||new Set(world.exhibits.map(e=>e.id)).size!==world.exhibits.length||world.exhibits.some(e=>world.decorations.some(d=>d.id===e.id)||['noticeboard','mascot','welcome'].includes(e.id))))throw new Error('Invalid outdoor exhibits');
+  const bounds=terrainBounds(world);
+  if(bounds.maxX-bounds.minX>=MAX_WORLD_SIZE||bounds.maxY-bounds.minY>=MAX_WORLD_SIZE)throw new Error('Village terrain exceeds 64 by 64');
   return world;
 }

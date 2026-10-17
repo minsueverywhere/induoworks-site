@@ -1,18 +1,20 @@
+import original from './fixtures/village-legacy.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readFile, writeFile, cp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve, join } from 'node:path';
 import { createServer, get } from 'node:http';
+import { spawnSync } from 'node:child_process';
 import sharp from 'sharp';
 import { createEditorStore, importEditorMedia, mediaFile, placementError } from './editor-store.mjs';
 import { createEditorMiddleware, localEditorPlugin } from './editor-server.mjs';
 import { validateCatalog, resolveMedia, CONTENT_ORIGIN } from '../src/content-schema.mjs';
 import { villageContent } from '../src/scripts/village-content.mjs';
 import { contentWorks } from '../src/scripts/content-catalog.mjs';
-import { villageWorld } from '../src/scripts/village-world.mjs';
+import { villageWorld, setTerrain } from '../src/scripts/village-world.mjs';
+import {roomFloors} from '../src/scripts/village-room.mjs';
 const root=new URL('../',import.meta.url);
-const original=JSON.parse(await readFile(new URL('content/catalog.json',root),'utf8'));
 async function fixture(t){
   const directory=await mkdtemp(join(tmpdir(),'induo-editor-test-'));
   t.after(async()=>{assert.ok(directory.startsWith(join(tmpdir(),'induo-editor-test-')));await rm(directory,{recursive:true,force:true,maxRetries:5,retryDelay:100});});
@@ -21,6 +23,34 @@ async function fixture(t){
   await cp(new URL('public/',root),join(directory,'public'),{recursive:true});
   return directory;
 }
+
+test('compact terrain extensions and colored letters survive saving and reloading',async t=>{
+  const directory=await fixture(t),store=createEditorStore(directory),before=await store.read();
+  const draft=JSON.parse(await readFile(new URL('content/catalog.json',root),'utf8'));
+  setTerrain(draft.world,-1,0,'grass');
+  draft.world.decorations.push({id:'letter-extra',type:'letter',x:-1,y:0,width:1,depth:1,size:1,char:'7',color:'#123abc'});
+  const saved=await store.save(draft,before.revision);
+  assert.deepEqual((await createEditorStore(directory).read()).catalog,draft);
+  const invalid=structuredClone(draft);setTerrain(invalid.world,-1,0,'empty');
+  await assert.rejects(()=>store.save(invalid,saved.revision),/밖/);
+  assert.deepEqual((await store.read()).catalog,draft);
+});
+
+test('saving keeps outdoor displays, reflection and three floors while protecting existing room exhibits',async t=>{
+  const directory=await fixture(t),store=createEditorStore(directory),before=await store.read();
+  const draft=JSON.parse(await readFile(new URL('content/catalog.json',root),'utf8')),worker=draft.workers.find(w=>w.house);
+  draft.world.noticeboard.flip=true;
+  worker.room={floors:structuredClone(roomFloors(worker))};
+  worker.room.floors.push({wallHeight:140,tiles:[{x:0,y:0,type:'floor'}],exhibits:[{id:'upstairs',kind:'music',ref:'legacy',x:0,y:0,width:1,depth:1}]});
+  worker.room.floors.push({wallHeight:50,tiles:[{x:0,y:0,type:'floor'}],exhibits:[]});
+  const saved=await store.save(draft,before.revision);
+  assert.deepEqual((await createEditorStore(directory).read()).catalog,draft);
+  const scene=villageContent(draft,'ko','');
+  assert.equal(scene.places.find(p=>p.id===worker.id).storeys,3);
+  const invalid=structuredClone(draft);setTerrain(invalid.workers.find(w=>w.id===worker.id).room.floors[0],1,7,'empty');
+  await assert.rejects(()=>store.save(invalid,saved.revision),/바닥/);
+  assert.deepEqual((await store.read()).catalog,draft);
+});
 test('editor save validates placement, preserves a backup and rejects stale writes',async t=>{
   const directory=await fixture(t),store=createEditorStore(directory),before=await store.read();
   const draft=structuredClone(before.catalog);draft.workers[0].house={x:4,y:2};
@@ -110,7 +140,9 @@ test('editor bridge transforms only the map during dev and does not enter normal
   const transformed=await plugin.transform(source,'F:/repo/src/scripts/village.js');
   assert.match(transformed.code,/fetch\('\/__editor\/preview\?t='/);
   assert.match(transformed.code,/source:'induo-map'/);
-  assert.match(transformed.code,/drawEditorOverlay\(\); positionWallLinks/);
+  assert.match(transformed.code,/drawEditorOverlay\(layer.index\); for \(const object of objects\)/);
+  const parsed=spawnSync(process.execPath,['--check','--input-type=module'],{input:transformed.code,encoding:'utf8',windowsHide:true});
+  assert.equal(parsed.status,0,parsed.stderr);
   assert.ok(!transformed.code.includes('const remoteContent=await loadContent();'));
   assert.ok(!source.includes('/__editor/'));
 });

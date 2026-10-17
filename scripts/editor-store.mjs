@@ -2,9 +2,11 @@ import { readFile, writeFile, mkdir, rename, stat, realpath } from 'node:fs/prom
 import { createHash, randomUUID } from 'node:crypto';
 import { resolve, dirname, relative, extname } from 'node:path';
 import sharp from 'sharp';
+import {villageContent} from '../src/scripts/village-content.mjs';
 import { validateCatalog, mediaPaths } from '../src/content-schema.mjs';
 import { validateMediaFile } from './content-files.mjs';
-import { placementError, objectPlacementError } from './editor-placement.mjs';
+import { placementError, objectPlacementError, roomCatalog } from './editor-placement.mjs';
+import { roomFloors } from '../src/scripts/village-room.mjs';
 import { villageWorld, validateWorld } from '../src/scripts/village-world.mjs';
 export { placementError } from './editor-placement.mjs';
 
@@ -32,9 +34,10 @@ export async function checkEditorContent(root,data) {
     if(data.projects.filter(p=>p.workerIds?.includes(w.id)).length>9)throw new Error(w.name+': 작업실에는 작품을 최대 9개까지 놓을 수 있습니다.');
     if(data.media.filter(m=>m.workerIds.includes(w.id)).length>4)throw new Error(w.name+': 현재 작업실의 이미지 전시는 최대 4개입니다.');
   }
-  for(const [id,type,point]of [['mascot','character',world.mascot],['welcome','sign',world.sign],['noticeboard','board',world.noticeboard],...world.decorations.map(d=>[d.id,d.type,d])]){
+  for(const [id,type,point]of [['mascot','character',world.mascot],...(world.sign?[['welcome','sign',world.sign]]:[]),['noticeboard','board',world.noticeboard],...world.decorations.map(d=>[d.id,d.type,d]),...(world.exhibits||[]).map(e=>[e.id,'exhibit',e])]){
     const error=objectPlacementError(data,type,id,point);if(error)throw new Error(id+': '+error);
   }
+  for(const w of data.workers.filter(w=>w.house))for(const [level,f]of roomFloors(w).entries()){const catalog=roomCatalog(data,w.id,level);for(const e of f.exhibits){const error=objectPlacementError(catalog,'exhibit',e.id,e);if(error)throw new Error(w.name+' '+(level+1)+'층: '+error);}for(const p of villageContent(data,'ko','').places.filter(p=>p.area==='room'&&p.owner===w.id&&(p.floor||0)===level)){if(!f.tiles.some(t=>t.x===Math.round(p.x)&&t.y===Math.round(p.y)))throw new Error(w.name+': 전시물 아래 바닥을 남겨주세요.');}}
   for(const path of mediaPaths(data))validateMediaFile(path,await readFile(await mediaFile(root,path)));
   return data;
 }

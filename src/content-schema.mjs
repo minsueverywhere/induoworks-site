@@ -1,4 +1,5 @@
 import { validateWorld, validHouse } from './scripts/village-world.mjs';
+import {validateRoom} from './scripts/village-room.mjs';
 export const MAX_FILE_BYTES = 25 * 1024 * 1024;
 export const MAX_FILES = 20000;
 export const CONTENT_ORIGIN = 'https://induoworks-content.rlaalstn0910.workers.dev';
@@ -30,12 +31,14 @@ export function validateCatalog(data) {
   if(data.musicId)check(tracks.some(t=>t.id===data.musicId),'Unknown default music');
   for (const worker of data.workers) {
     check(text(worker.name) && localized(worker.description), 'Invalid worker');
-    if (worker.house) check(validHouse(worker.house), 'House footprint outside village or invalid dimensions');
+    if(worker.room)validateRoom(worker.room);
+    if (worker.house) check(validHouse(worker.house,data.world), 'House footprint outside village or invalid dimensions');
     if (worker.href) check(safeUrl(worker.href), 'Unsafe worker URL');
     if (worker.logoMediaId) check(data.media.some(m=>m.id===worker.logoMediaId), 'Unknown logo');
     if(worker.musicId)check(tracks.some(t=>t.id===worker.musicId),'Unknown workshop music');
   }
-  check(data.workers.some(w=>w.id==='induo-works' && w.house), 'The tutorial needs the Induo Works house');
+  check(data.workers.some(w=>w.id==='induo-works'), 'Missing Induo Works profile');
+  for(const e of [...(data.world?.exhibits||[]),...data.workers.flatMap(w=>w.room?.floors.flatMap(f=>f.exhibits)||[])])check((e.kind==='project'?data.projects:e.kind==='media'?data.media:[{...data.music,id:'legacy'},...tracks]).some(item=>(item.id||item.slug)===e.ref),'Unknown outdoor exhibit reference');
   for (const item of [...data.projects,...data.media]) {
     check(localized(item.title) && ids(item.workerIds || []) && (item.workerIds || []).every(id=>owners.has(id)), 'Invalid work owner or title');
     check(Array.isArray(item.tags || []) && (item.tags || []).every(text), 'Invalid tags');

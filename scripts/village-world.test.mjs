@@ -1,3 +1,4 @@
+import original from './fixtures/village-legacy.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
@@ -8,7 +9,6 @@ import {villageContent} from '../src/scripts/village-content.mjs';
 import {contentWorks} from '../src/scripts/content-catalog.mjs';
 import {runInNewContext} from 'node:vm';
 import {toScreen,toTile} from '../src/scripts/village-camera.mjs';
-const original=JSON.parse(await readFile(new URL('../content/catalog.json',import.meta.url),'utf8'));
 
 test('signs, noticeboards and trees reserve every cell and previews identify only blocked cells',()=>{
   for(const type of ['sign','board','tree']){
@@ -47,7 +47,7 @@ test('map overlay colors the shared collision result red and leaves available ti
   world.tiles[5*24+5].type='water';
   const drawn=[],source=await readFile(new URL('./editor/bridge.js',import.meta.url),'utf8');
   const ctx={save(){},restore(){},beginPath(){},moveTo(){},lineTo(){},closePath(){},stroke(){}};
-  const context={arranging:true,area:'village',scale:1,ctx,toScreen,editorGrid:false,editorCandidate:{type:'tree',id:'',point:{x:6,y:6,width:2,depth:2}},editorCursor:null,editorTool:'move',editorCatalog:{workers:[],world},placementCells,tile(_ctx,x,y,color){drawn.push({x,y,color});}};
+  const context={arranging:true,area:'village',scale:1,ctx,toScreen,editorGrid:false,editorCandidate:{type:'tree',id:'',point:{x:6,y:6,width:2,depth:2}},editorCursor:null,editorTool:'move',editorCatalog:{workers:[],world},editorSpace:()=>({workers:[],world}),editorWorld:()=>world,placementCells,tile(_ctx,x,y,color){drawn.push({x,y,color});}};
   runInNewContext(source.slice(source.indexOf('function drawEditorOverlay('),source.indexOf('function restoreEditorScene('))+'\ndrawEditorOverlay();',context);
   assert.equal(drawn.length,4);assert.deepEqual(drawn.filter(d=>d.color==='#ed625d'),[{x:5,y:5,color:'#ed625d'}]);assert.equal(drawn.filter(d=>d.color==='#edcba9').length,3);
 });
@@ -87,7 +87,7 @@ test('legacy scenery has stable editable defaults; moved scenery and painted ter
   data.world.tiles[12*24+15].type='water';data.world.decorations.push({id:'tree-added',type:'tree',x:18,y:4,size:1});
   validateCatalog(data);
   const restored=JSON.parse(JSON.stringify(data)),scene=villageContent(restored,'ko','Induohood');
-  assert.deepEqual(scene.places.find(o=>o.id==='welcome').x,1);
+  assert.equal(scene.places.find(o=>o.id==='welcome'),undefined);
   assert.equal(scene.places.find(o=>o.id==='noticeboard').x,8);
   assert.equal(terrainAt(scene.world,15,12),'water');
   assert.ok(scene.world.decorations.some(d=>d.id==='tree-added'));
@@ -117,7 +117,7 @@ test('jukebox links reach the corresponding music Work including the original lo
 test('an empty noticeboard stays draggable even though it has no public interaction button',async()=>{
   const source=await readFile(new URL('./editor/bridge.js',import.meta.url),'utf8');
   const board={id:'noticeboard',shape:'board',area:'village',interactive:false,x:9,y:20},center=toScreen(board.x,board.y);
-  const context={objects:[board],toScreen,editorPoint:e=>e.point,event:{target:{closest:()=>null},point:toTile(center.x,center.y-50)}};
+  const context={objects:[board],area:'village',editorVisible:()=>true,objectScreen:o=>toScreen(o.x,o.y),toScreen,editorPoint:e=>e.point,event:{target:{closest:()=>null},point:toTile(center.x,center.y-50)}};
   runInNewContext(source.slice(source.indexOf('function editorHit('),source.indexOf('function editorSelect('))+'\nresult=editorHit(event);',context);
   assert.equal(context.result,board);
 });

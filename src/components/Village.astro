@@ -33,12 +33,12 @@ const text = {
   },
 };
 const {places:allPlaces,workers:villageWorkers,world}=villageContent(catalog,lang,text.title);
-const welcome=allPlaces.find(p=>p.id==='welcome')!;
 const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interactive!==false);
 ---
 <section id="village-section" class="village page-main" aria-labelledby="village-heading" data-world={JSON.stringify(world)} data-places={JSON.stringify(allPlaces)} data-text={JSON.stringify(text)} data-workers={JSON.stringify(villageWorkers)} data-music={JSON.stringify(villageMusic)} data-media={JSON.stringify(villageMedia.map(m => ({...m,title:m.title[lang]})))}>
   <div class="village-heading">
     <h1 id="village-heading" class="page-title">{text.title}</h1>
+    <button id="village-studio" type="button">{ko?'내 작업실':'My workshop'}</button>
     <div id="village-help" class="village-help">
       <button id="village-help-toggle" type="button" aria-label={ko?'마을 튜토리얼 시작':'Start village tutorial'} aria-expanded="false" aria-controls="village-tutorial"><span aria-hidden="true">?</span></button>
       <div id="village-hint" class="village-guide" role="note" aria-label={ko?'마을 안내':'About the village'} hidden>
@@ -48,6 +48,7 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
   </div>
   <div id="village-tutorial-spotlight" class="tutorial-spotlight" aria-hidden="true" hidden></div>
   <div class="village-scene" id="village-scene">
+    <nav id="village-floors" data-ui aria-label={ko?'층 이동':'Floors'} hidden></nav>
     <canvas id="village-canvas" tabindex="0" aria-label={text.title} aria-describedby="village-hint">{text.hint}</canvas>
     <div id="village-tutorial-gesture" class="tutorial-gesture" aria-hidden="true" hidden><span></span><i></i></div>
     <aside id="village-tutorial" class="village-tutorial" data-ui aria-label={ko?'마을 튜토리얼':'Village tutorial'} hidden>
@@ -63,8 +64,8 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
     </nav>
     <section id="village-popup" class="village-popup" role="dialog" aria-modal="false" aria-labelledby="village-title" tabindex="-1" hidden>
       <button id="village-close" type="button" aria-label={ko ? '설명 닫기' : 'Close details'}>×</button>
-      <h3 id="village-title">{welcome.title}</h3>
-      <p id="village-description">{welcome.description}</p>
+      <h3 id="village-title"></h3>
+      <p id="village-description"></p>
       <nav id="village-links" aria-label={ko ? '작업실의 작품' : 'Workshop projects'}></nav>
       <div id="village-gallery"></div>
       <div id="village-player" hidden>

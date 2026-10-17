@@ -1,6 +1,5 @@
 export const tutorialSteps = ['drag', 'zoom', 'house', 'music', 'exit'];
-export function createTutorial(render) {
-  const steps = tutorialSteps;
+export function createTutorial(render,steps=tutorialSteps) {
   let step = -1;
   return {
     start() { step = 0; render(steps[step]); },

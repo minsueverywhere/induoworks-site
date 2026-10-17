@@ -13,7 +13,7 @@ const views=[{id:'gallery',label:ko?'갤러리':'Gallery'},{id:'mosaic',label:ko
 ---
 <Layout lang={lang} title={dict.work.title} description={dict.work.description}>
   <section class="page-main" id="work-board" data-lang={lang} data-labels={JSON.stringify({kinds:Object.fromEntries(kinds.map(k=>[k.id,k.label])),statuses:Object.fromEntries(statuses.map(s=>[s.id,s.label])),placeholder:ko?'이미지 준비 중':'Image coming soon',info:ko?'작품 정보: ':'Work information: '})} data-entries={JSON.stringify(entries.map(({id,search,kind,status,workerIds,tags})=>({id,search,kind,status,workerIds,tags})))} data-count={ko?'{count}개의 작품':'{count} works'}>
-    <h1 class="page-title">{dict.work.title}</h1>
+    <div class="work-heading"><h1 class="page-title">{dict.work.title}</h1><a href={localizePath('/',lang)+'?studio=1'}>{ko?'내 작품 관리':'Manage my work'}</a></div>
     <p class="page-intro">{ko?'게임, 음악, 아트워크를 둘러보고 만드는 사람과 분야로 찾아보세요.':'Explore games, music and artwork. Find work by its maker, field or tags.'}</p>
     <details class="work-filter-panel" open><summary id="work-filter-summary" data-label={ko?'검색·필터':'Search & filters'}>{ko?'검색·필터':'Search & filters'}</summary>
     <form id="work-filters" class="work-filters" role="search" aria-label={ko?'작품 검색':'Search works'}>
@@ -48,6 +48,7 @@ const views=[{id:'gallery',label:ko?'갤러리':'Gallery'},{id:'mosaic',label:ko
 </Layout>
 <script>import '../scripts/work-board.js';</script>
 <style>
+  .work-heading{display:flex;align-items:baseline;justify-content:space-between;gap:1rem}.work-heading a{font-size:.75rem;color:var(--color-text-muted);text-decoration:underline;text-underline-offset:3px}
   .work-filter-panel { display: none; margin-top: 1.5rem; }
   .ready .work-filter-panel { display: block; }
   summary { width: fit-content; cursor: pointer; padding: .5rem 0; font-size: .8rem; color: var(--color-text-muted); }

@@ -29,7 +29,7 @@ test('one catalog updates workers, village, ownership and new project links toge
 });
 
 test('catalog rejects unsafe URLs, broken ownership and unsupported schema',()=>{
-  for(const change of [d=>d.version=2,d=>d.workers.push(d.workers[0]),d=>d.projects[0].href='javascript:alert(1)',d=>d.projects[0].workerIds=['missing'],d=>d.music.sources.ogg='/music.wav',d=>d.workers[0].house.x=30,d=>d.projects[0].thumbnail={src:'//evil.example/x.png'},d=>d.workers=d.workers.slice(1)]) {
+  for(const change of [d=>d.version=2,d=>d.workers.push(d.workers[0]),d=>d.projects[0].href='javascript:alert(1)',d=>d.projects[0].workerIds=['missing'],d=>d.music.sources.ogg='/music.wav',d=>d.workers.find(w=>w.house).house.x=65,d=>d.projects[0].thumbnail={src:'//evil.example/x.png'},d=>d.workers=d.workers.slice(1)]) {
     const data=structuredClone(original);change(data);assert.throws(()=>validateCatalog(data));
   }
   const resolved=resolveMedia(validateCatalog(original),CONTENT_ORIGIN);

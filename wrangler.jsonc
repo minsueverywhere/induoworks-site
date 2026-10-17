@@ -8,10 +8,21 @@
 		"directory": "./dist",
 		"binding": "ASSETS"
 	},
+	"d1_databases": [{
+		"binding": "STUDIO_DB",
+		"database_name": "induoworks-studio",
+		"database_id": "1f0ce821-a441-4741-bdf8-12504edaa967",
+		"migrations_dir": "migrations"
+	}],
+	"vars": {"DISCORD_CLIENT_ID": "1469603219695992895"},
 	"ratelimits": [{
 		"name": "CONTACT_RATE_LIMITER",
 		"namespace_id": "2026101601",
 		"simple": { "limit": 5, "period": 60 }
+	}, {
+		"name": "STUDIO_RATE_LIMITER",
+		"namespace_id": "2026101701",
+		"simple": { "limit": 30, "period": 60 }
 	}],
 	"observability": {
 		"enabled": true

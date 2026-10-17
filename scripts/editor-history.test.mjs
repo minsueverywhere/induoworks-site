@@ -2,7 +2,23 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
+import { terrainAt, setTerrain } from '../src/scripts/village-world.mjs';
 import { createHistory, historyShortcut } from './editor/history.mjs';
+
+test('actual floor controls preserve wall height, add/remove floors and undo deletion',async()=>{
+  const source=await readFile(new URL('./editor/editor.js',import.meta.url),'utf8');
+  const draft={workers:[{id:'a',room:{floors:[{wallHeight:90,tiles:[{x:0,y:0,type:'floor'}],exhibits:[]}]}}]},history=createHistory();history.reset(draft);
+  const context={draft,history,roomOwner:'a',roomIndex:0,selected:'',frameReady:false,
+    ensureRoom:()=>draft.workers[0].room,changed:()=>history.record(draft),restoreScene(){},roomControls(){},status(){},controls(){}};
+  vm.runInNewContext(source.slice(source.indexOf('function enterRoom(')),context);
+  context.roomAction('add-floor');assert.equal(context.roomIndex,1);
+  history.begin();context.roomAction('wall-height',140);history.end(draft);
+  assert.equal(draft.workers[0].room.floors[1].wallHeight,140);
+  context.roomAction('wall-height',999);assert.equal(draft.workers[0].room.floors[1].wallHeight,140);
+  context.roomAction('remove-floor');assert.equal(context.roomIndex,0);assert.equal(draft.workers[0].room.floors.length,1);
+  assert.equal(history.undo(draft).workers[0].room.floors[1].wallHeight,140);
+  context.roomAction('remove-floor');assert.equal(draft.workers[0].room.floors.length,1,'the ground floor cannot be deleted');
+});
 
 test('one painting gesture is one undo step, including cancellation and no-op strokes',()=>{
   const h=createHistory(),draft={tiles:['grass','grass','grass'],house:{x:3,y:3}};
@@ -14,6 +30,20 @@ test('one painting gesture is one undo step, including cancellation and no-op st
   assert.deepEqual(redone,draft);
   h.begin();h.end(draft);assert.deepEqual(h.undo(draft).tiles,['grass','grass','grass']);
   assert.equal(h.undo({tiles:['grass','grass','grass'],house:{x:3,y:3}}),null);
+});
+
+test('scene room messages cannot move houses, change another room or edit village scenery',async()=>{
+  const source=await readFile(new URL('./editor/editor.js',import.meta.url),'utf8');
+  let listener;const writes=[];const frame={};
+  const context={window:{addEventListener(_type,fn){listener=fn;}},location:{origin:'http://localhost:4325'},$:()=>({contentWindow:frame}),roomOwner:'a',roomIndex:1,busy:false,
+    sceneTarget:(owner,level)=>{writes.push([owner,level]);return {};},setTerrain(){},changed(){},status(){},draft:{world:{decorations:[]}}};
+  vm.runInNewContext(source.slice(source.indexOf("window.addEventListener('message'"),source.indexOf("window.addEventListener('beforeunload'")),context);
+  const send=data=>listener({origin:context.location.origin,source:frame,data:{source:'induo-map',...data}});
+  send({type:'tile',owner:'b',level:1});send({type:'tile',owner:'a',level:0});send({type:'tile',owner:null});
+  send({type:'move',kind:'house',owner:'a',level:1});send({type:'decorationAdd',object:{id:'forbidden'}});
+  assert.equal(writes.length,0);assert.equal(context.draft.world.decorations.length,0);
+  send({type:'tile',owner:'a',level:1});assert.deepEqual(writes,[['a',1]]);
+  context.roomOwner=null;send({type:'tile',owner:'a',level:1});assert.equal(writes.length,1);
 });
 
 test('history isolates snapshots, discards a redo branch, and limits memory',()=>{
@@ -41,9 +71,9 @@ test('editor theme shares the site setting, follows changes and tolerates blocke
 
 test('actual map handlers bracket multiple painted tiles once on release or cancel',async()=>{
   const source=(await readFile(new URL('./editor/bridge.js',import.meta.url),'utf8')).replace(/^import .*;\r?\n/gm,'');
-  const handlers={},messages=[],world={tiles:Array.from({length:576},()=>({type:'grass'})),decorations:[]};
+  const handlers={},messages=[],world={tiles:Array.from({length:576},(_,i)=>({x:i%24,y:Math.floor(i/24),type:'grass'})),decorations:[]};
   const window={postMessage(message){messages.push(message);},addEventListener(type,fn){handlers['window:'+type]=fn;}};
-  const context={window,parent:window,document:{documentElement:{dataset:{}}},location:{origin:'http://localhost:4323'},root:{dataset:{}},remoteContent:{},sceneWorld:world,objects:[],area:'village',width:0,height:0,scale:1,camera:{x:0,y:0},canvas:{focus(){}},requestDraw(){},makeGround(){},paintError(){return '';},toScreen(){return{x:0,y:0};},scene:{getBoundingClientRect(){return{left:0,top:0};},setPointerCapture(){},addEventListener(type,fn){handlers[type]=fn;}}};
+  const context={window,parent:window,document:{documentElement:{dataset:{}}},location:{origin:'http://localhost:4323'},root:{dataset:{}},remoteContent:{},sceneWorld:world,objects:[],area:'village',roomLevel:0,width:0,height:0,scale:1,camera:{x:0,y:0},canvas:{focus(){}},requestDraw(){},makeGround(){},terrainAt,setTerrain,paintError(){return '';},toScreen(){return{x:0,y:0};},scene:{getBoundingClientRect(){return{left:0,top:0};},setPointerCapture(){},addEventListener(type,fn){handlers[type]=fn;}}};
   vm.runInNewContext(source,context);
   handlers['window:message']({origin:context.location.origin,source:window,data:{source:'induo-editor',tool:'path'}});
   const event=(x,y)=>({clientX:(x-y)*24,clientY:(x+y)*12+30,pointerId:1,button:0,target:{closest(){return null;}},stopImmediatePropagation(){},preventDefault(){}});

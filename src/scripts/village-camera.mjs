@@ -4,8 +4,11 @@ export const MAX_ZOOM = 1.6;
 export function toScreen(x, y) { return { x: (x - y) * 24, y: (x + y) * 12 }; }
 export function toTile(x, y) { return { x: x / 48 + y / 24, y: y / 24 - x / 48 }; }
 export function clampCamera(point, size = SIZE) {
-  const tile = toTile(point.x, point.y);
-  return toScreen(Math.max(0, Math.min(size - 1, tile.x)), Math.max(0, Math.min(size - 1, tile.y)));
+  const elevation=typeof size==='number'?0:size.elevation||0;
+  const tile = toTile(point.x, point.y+elevation);
+  const b=typeof size==='number'?{minX:0,maxX:size-1,minY:0,maxY:size-1}:size;
+  const result=toScreen(Math.max(b.minX,Math.min(b.maxX,tile.x)),Math.max(b.minY,Math.min(b.maxY,tile.y)));
+  return {x:result.x,y:result.y-elevation};
 }
 export function panCamera(start, dx, dy, zoom, size = SIZE) {
   return clampCamera({ x: start.x - dx / zoom, y: start.y - dy / zoom }, size);
