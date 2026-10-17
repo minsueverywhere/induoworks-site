@@ -64,6 +64,6 @@ export async function discordCallback(request:Request,env:StudioEnv,fetcher:type
   return new Response(null,{status:303,headers});
 }
 export async function logout(request:Request,env:StudioEnv){
-  sameOrigin(request);await studioDB(env).prepare('DELETE FROM studio_sessions WHERE hash=?').bind(await hash(readCookie(request,'__Host-induo-session'))).run();
+  sameOrigin(request);await rateLimit(request,env);await studioDB(env).prepare('DELETE FROM studio_sessions WHERE hash=?').bind(await hash(readCookie(request,'__Host-induo-session'))).run();
   const response=json({ok:true});response.headers.set('Set-Cookie',cookie('__Host-induo-session','',0));return response;
 }

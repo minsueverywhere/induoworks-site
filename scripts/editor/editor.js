@@ -2,7 +2,7 @@ import { createHistory, historyShortcut } from '/__editor/history.mjs';
 import {roomFloors} from '/src/scripts/village-room.mjs';
 import { villageWorld, setTerrain } from '/src/scripts/village-world.mjs';
 import { placementError, objectPlacementError, roomCatalog } from '/__editor/placement.mjs';
-import {studioSlice,mergeStudio} from '/src/server/studio-content.mjs';
+import {studioSlice,mergeStudio,studioChanges} from '/src/server/studio-content.mjs';
 const $=id=>document.getElementById(id),token=document.querySelector('meta[name=editor-token]').content;
 let draft,revision,tab='workers',selected='',dirty=false,busy=false,frameReady=false;
 const history=createHistory();let saved='',tool='move',roomOwner=null,roomIndex=0;
@@ -120,7 +120,9 @@ $('proposal-import').addEventListener('change',event=>{const file=event.target.f
   const proposal=JSON.parse(await file.text()),bytes=new TextEncoder().encode(JSON.stringify(studioSlice(draft,proposal.owner))),digest=await crypto.subtle.digest('SHA-256',bytes);
   const baseHash=Array.from(new Uint8Array(digest),v=>v.toString(16).padStart(2,'0')).join('');
   if(baseHash!==proposal.baseHash)throw new Error('기준 승인본이 다릅니다. 현재 수정 사항을 보존한 뒤 변경안을 재검토해 주세요.');
-  const next=mergeStudio(draft,proposal.owner,proposal.payload);await api('preview',{catalog:next});draft=next;changed();renderPicker();restoreScene();enterRoom(proposal.owner);status('변경안을 미리보기에 가져왔습니다. 검토 후 저장·콘텐츠 배포하세요.');
+  const next=mergeStudio(draft,proposal.owner,proposal.payload),changes=studioChanges(draft,proposal.owner,proposal.payload);
+  if(!confirm(`'${changes.name}' 작업실(${proposal.owner}) 변경안입니다.\n\n${changes.lines.join('\n')||'변경 없음'}\n\n파일 안의 작업실은 누구나 바꿀 수 있습니다. 요청한 참여자의 작업실이 맞는지 확인한 뒤 가져오세요.`)){status('변경안 가져오기를 취소했습니다.');return;}
+  await api('preview',{catalog:next});draft=next;changed();renderPicker();restoreScene();enterRoom(proposal.owner);status('변경안을 미리보기에 가져왔습니다. 검토 후 저장·콘텐츠 배포하세요.');
 }).finally(()=>{event.target.value='';});});
 function syncTools(){if(frameReady)$('map').contentWindow.postMessage({source:'induo-editor',arranging:$('arrange').checked,tool,grid:$('grid').checked,exhibit:$('display-ref').value,char:$('letter-char').value,color:$('letter-color').value,theme:document.documentElement.dataset.theme},location.origin);}
 for(const id of ['arrange','grid','letter-char','letter-color','display-ref'])$(id).addEventListener('change',syncTools);

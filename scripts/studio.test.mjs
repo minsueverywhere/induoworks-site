@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFile} from 'node:fs/promises';
 import {discordLogin,discordCallback,session,authorize,sameOrigin,logout,hash} from '../src/server/studio-auth.ts';
-import {studioSlice,mergeStudio} from '../src/server/studio-content.mjs';
+import {studioSlice,mergeStudio,studioChanges} from '../src/server/studio-content.mjs';
 import {studioDrafts} from '../src/server/studio-drafts.ts';
 const schema=await readFile(new URL('../migrations/0001_studio.sql',import.meta.url),'utf8')+await readFile(new URL('../migrations/0002_studio_hosts.sql',import.meta.url),'utf8');
 const catalog=JSON.parse(await readFile(new URL('../content/catalog.json',import.meta.url),'utf8'));
@@ -47,6 +47,21 @@ test('participant data can add owned Works and interiors but never village, fore
   assert.equal(JSON.stringify(catalog),before);
 });
 
+test('proposal import summary names the target studio and surfaces added, removed and relinked Works',()=>{
+  const payload=structuredClone(studioSlice(catalog,'frondward')),[first]=payload.projects;
+  assert.deepEqual(studioChanges(catalog,'frondward',payload).lines,[]);
+  const added={...structuredClone(first),slug:'participant-new-work',title:{ko:'새 작품',en:'New work'}};first.href='https://phish.example/login';payload.projects.push(added);
+  const {name,lines}=studioChanges(catalog,'frondward',payload);
+  assert.equal(name,catalog.workers.find(w=>w.id==='frondward').name);
+  assert.ok(lines.includes('작품 수정: '+first.title.ko)&&lines.includes('  외부 링크(href): https://phish.example/login')&&lines.includes('작품 추가: 새 작품'));
+  payload.projects=[];assert.ok(studioChanges(catalog,'frondward',payload).lines.includes('작품 삭제: '+first.title.ko));
+});
+test('session lookups and logout are rate limited like the other studio routes',async()=>{
+  const {sql,env}=database(),limited={...env,STUDIO_RATE_LIMITER:{limit:async()=>({success:false})}};
+  await assert.rejects(logout(new Request('https://induo.works/api/studio/logout',{method:'POST',headers:{Origin:'https://induo.works','Content-Type':'application/json'},body:'{}'}),limited),error=>error.status===429);
+  const route=await readFile(new URL('../src/pages/api/studio/[action].ts',import.meta.url),'utf8');
+  assert.match(route,/action==='session'\)\{await rateLimit\(/);sql.close();
+});
 test('private drafts detect concurrent saves; submissions are deduplicated and never claim publication before public content matches',async()=>{
   const {sql,env}=database(),token='b'.repeat(72),user='123456789012345678';sql.prepare('INSERT INTO studio_hosts VALUES(?)').run(user);
   sql.prepare('INSERT INTO studio_sessions VALUES(?,?,?,?)').run(await hash(token),user,'Host',Math.floor(Date.now()/1000)+600);
