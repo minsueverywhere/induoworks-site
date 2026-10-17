@@ -19,7 +19,8 @@
     "content:edit": "node scripts/editor-start.mjs",
     "content:import": "node scripts/content-prepare.mjs import",
     "content:deploy": "npm run content:prepare && wrangler deploy --config content/wrangler.jsonc",
-    "check:links": "node scripts/check-site-links.mjs"
+    "check:links": "node scripts/check-site-links.mjs",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.4.0",
@@ -31,6 +32,7 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
     "@cloudflare/workers-types": "^5.20260815.1",
+    "@playwright/test": "^1.56.1",
     "typescript": "^6.0.3",
     "wrangler": "^4.124.0"
   },
