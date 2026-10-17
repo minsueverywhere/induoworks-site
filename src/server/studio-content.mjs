@@ -31,3 +31,18 @@ export function mergeStudio(catalog,owner,proposal){
   }
   return result;
 }
+// Host-facing summary shown before importing a proposal file, which is participant-controlled.
+export function studioChanges(catalog,owner,proposal){
+  const before=studioSlice(catalog,owner),name=catalog.workers.find(w=>w.id===owner).name,lines=[],title=item=>item.title?.ko??item.title;
+  for(const [kind,key,label] of [['projects','slug','작품'],['media','id','이미지'],['tracks','id','음악']]){
+    const old=new Map(before[kind].map(item=>[item[key],item])),next=new Map(proposal[kind].map(item=>[item[key],item]));
+    for(const [id,item] of next){
+      const prev=old.get(id);
+      if(!prev)lines.push(label+' 추가: '+title(item));else if(JSON.stringify(prev)!==JSON.stringify(item))lines.push(label+' 수정: '+title(item));
+      for(const link of ['href','repo','steamUrl'])if(item[link]&&item[link]!==prev?.[link])lines.push('  외부 링크('+link+'): '+item[link]);
+    }
+    for(const [id,item] of old)if(!next.has(id))lines.push(label+' 삭제: '+title(item));
+  }
+  if(JSON.stringify(before.room)!==JSON.stringify(proposal.room))lines.push('집 내부 배치 변경');
+  return {name,lines};
+}
