@@ -1,6 +1,6 @@
 # 씬 내부 편집·Discord 참여자 작성본
 
-2026-10-17 사용자가 Discord 로그인·서버 권한 구현 보류를 해제했다. 마을 외관은 호스트가 관리하고, 승인된 Discord 계정은 자기 업체의 작품과 집 내부만 편집한다. **현재는 로컬 코드·검증 단계**이며 운영 D1 연결·Discord 비밀 설정·실제 계정 검증·사이트 코드 배포는 별도로 완료해야 한다. 요구사항과 실제 진행 상태는 [이슈 #2](https://github.com/minsueverywhere/induoworks-site/issues/2), 호스트 로컬 도구는 [CONTENT.md](CONTENT.md)를 따른다.
+2026-10-17 사용자가 Discord 로그인·서버 권한 구현 보류를 해제했다. 마을 외관은 호스트가 관리하고, 승인된 Discord 계정은 자기 업체의 작품과 집 내부만 편집한다. **사이트 코드·콘텐츠·D1·Discord 설정은 운영 반영 완료**이며 실제 계정의 로그인·저장·변경 요청 검증은 사용자 Discord 일반 로그인을 기다리는 단계다. 요구사항과 실제 진행 상태는 [이슈 #2](https://github.com/minsueverywhere/induoworks-site/issues/2), 호스트 로컬 도구는 [CONTENT.md](CONTENT.md)를 따른다.
 
 ## 현재 구현 계약
 
@@ -16,14 +16,14 @@
 
 ## 운영 연결에 필요한 설정
 
-아래는 아직 운영 실행 완료 기록이 아니다. 기존 앱 ID는 사용자가 재사용 방향으로 논의한 `1469603219695992895`다.
+아래는 운영 연결 상태와 이후 관리 절차다. 재사용한 기존 앱 ID는 `1469603219695992895`다.
 
 1. 사용자 승인으로 기존 Wrangler 권한을 유지하고 D1 쓰기만 추가한 재로그인을 완료했다. 다른 제품의 전체 권한을 일괄 추가하지 않았다.
-2. 전용 D1 `induoworks-studio`(APAC)를 생성하고 `wrangler.jsonc`에 `STUDIO_DB` 바인딩과 실제 DB ID를 기록했다. `migrations/0001_studio.sql`, `0002_studio_hosts.sql`은 로컬·원격 모두 적용했다. 현재 운영 사이트 코드에는 아직 배포하지 않았다.
+2. 전용 D1 `induoworks-studio`(APAC)를 생성하고 `wrangler.jsonc`에 `STUDIO_DB` 바인딩과 실제 DB ID를 기록했다. `migrations/0001_studio.sql`, `0002_studio_hosts.sql`은 로컬·원격 모두 적용했다. 사이트 코드에도 배포해 연결했다.
 3. Discord Developer Portal → 기존 앱 → OAuth2 → Redirects에 `https://induo.works/api/studio/callback`을 등록·저장했다. `identify`만 사용하며 봇 권한을 추가하지 않았다.
 4. `DISCORD_CLIENT_ID`는 Wrangler vars에 등록했다. Cloudflare Workers & Pages → induoworks-site → Settings → Variables and Secrets에 `DISCORD_CLIENT_SECRET`(Secret)을 등록한다. 사용자가 직접 새로 발급해 등록을 완료했고, 비밀 값은 읽지 않고 이름 존재만 확인했다. 비밀을 채팅·이슈·Git에 넣지 않는다. Client Secret 생성/재설정·입력은 사용자가 직접 수행한다.
 5. 사용자가 제공한 본인 Discord ID를 원격 DB의 `studio_hosts`와 `studio_members`의 Frondward에 연결했다. 이후 참여자는 관리자가 확인한 Discord 계정 ID와 기존 업체 ID를 `studio_members(user_id,worker_id)`에 연결한다. ID는 사용자명/닉네임이 아니라 Discord의 숫자 ID다. 브라우저 작성본으로 권한을 등록할 수 없다.
-6. 별도 승인된 코드 배포 후 실제 계정 두 개로 자기 집·타인 집·권한 회수·저장·변경 요청·호스트 검토/발행과 모바일 조작을 확인한다. 설정 전 기능이 활성화된 것으로 안내하지 않는다.
+6. 사용자 승인 후 사이트 코드·콘텐츠 배포와 main 반영을 완료했다. 공개 52개 경로, 미로그인 작성본·검토 API 401, 로컬 전용 편집 경로 404를 확인했다. 실제 계정 로그인은 Discord 일반 계정 재인증을 기다리는 단계다. 별도 참여자 계정과 모바일 실기기 검증은 남아 있다.
 
 D1 설정 예시(실제 ID를 사용해야 하며 예시 ID를 운영 설정에 넣지 않는다):
 
