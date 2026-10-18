@@ -41,6 +41,9 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
 <section id="village-section" class="village page-main" aria-label={text.title} data-world={JSON.stringify(world)} data-places={JSON.stringify(allPlaces)} data-text={JSON.stringify(text)} data-workers={JSON.stringify(villageWorkers)} data-music={JSON.stringify(villageMusic)} data-media={JSON.stringify(villageMedia.map(m => ({...m,title:m.title[lang]})))}>
   <div id="village-tutorial-spotlight" class="tutorial-spotlight" aria-hidden="true" hidden></div>
   <div class="village-scene" id="village-scene">
+    <p id="village-notice" class="village-notice" data-ui role="status" aria-live="polite" hidden></p>
+    <button id="village-account" type="button" data-ui aria-label={ko?'계정':'Account'} title={ko?'계정':'Account'} aria-expanded="false" aria-controls="village-account-menu" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3" /><path d="M5 21v-2a7 7 0 0 1 14 0v2" /></svg></button>
+    <div id="village-account-menu" data-ui hidden></div>
 <button id="village-studio" type="button" data-ui aria-expanded="false" aria-label={ko?'작업실 설정':'Workshop settings'} title={ko?'작업실 설정':'Workshop settings'}><svg class="settings-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-.6 3-2 .9-2.7-.9-2 3.5 2.2 2v2.3l-2.2 2 2 3.5 2.7-.9 2 .9.6 3h4l.6-3 2-.9 2.7.9 2-3.5-2.2-2v-2.3l2.2-2-2-3.5-2.7.9-2-.9-.6-3Z"/><circle cx="11" cy="12" r="3" /></svg><svg class="login-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3h7v18h-7M3 12h13m-5-5 5 5-5 5" /></svg><svg class="close-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg><span class="login-copy">Discord로 로그인</span></button>
     <nav id="village-floors" data-ui aria-label={ko?'층 이동':'Floors'} hidden></nav>
     <canvas id="village-canvas" tabindex="0" aria-label={text.title} aria-describedby="village-hint">{text.hint}</canvas>
@@ -123,7 +126,7 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
   .village-scene { position: relative; flex: 1; min-height: 336px; overflow: hidden; border: 1px solid var(--color-border); border-radius: .5rem; background: #e9e5d6; cursor: grab; user-select: none; }
   .village-scene[data-area="village"]{background:var(--sky-background,#e9e5d6)}
   .village-scene[data-area="village"]::before{content:'';position:absolute;inset:0;pointer-events:none;opacity:var(--sky-stars,0);background:radial-gradient(circle at 12% 15%,#fff2d8 0 1px,transparent 1.5px),radial-gradient(circle at 28% 8%,#fff2d8 0 .8px,transparent 1.3px),radial-gradient(circle at 61% 18%,#fff2d8 0 1px,transparent 1.5px),radial-gradient(circle at 85% 10%,#fff2d8 0 .8px,transparent 1.3px),radial-gradient(circle at 93% 35%,#fff2d8 0 1px,transparent 1.5px),radial-gradient(circle at 7% 44%,#fff2d8 0 .8px,transparent 1.3px)}
-  .village-scene[data-area="village"] .village-location,.village-scene[data-area="village"] .village-hud,.village-scene[data-area="village"] #village-studio{color:var(--sky-ink,#526347)}
+  .village-scene[data-area="village"] .village-location,.village-scene[data-area="village"] .village-hud,.village-scene[data-area="village"] #village-studio,.village-scene[data-area="village"] #village-account{color:var(--sky-ink,#526347)}
   .village-scene.is-dragging { cursor: grabbing; }
   canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline-offset: -4px; touch-action: none; }
   .village-place { display: none; position: absolute; transform: translate(-50%,-100%); border: 0; background: transparent; cursor: pointer; color: #30422e; touch-action: none; }
@@ -160,6 +163,9 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
   #village-seek { width:100%; min-width:0; accent-color:#597158; cursor:pointer; }
   #village-time { flex:none; white-space:nowrap; font-size:.65rem; font-variant-numeric:tabular-nums; color:#5f7050; }
   #village-links:empty,#village-gallery:empty,#village-description:empty { display:none; }
+  .village-popup[data-guestbook="true"] .village-popup-heading{position:relative;justify-content:center}
+  .village-popup[data-guestbook="true"] h3{text-align:center;padding-inline:28px}
+  .village-popup[data-guestbook="true"] #village-close{position:absolute;right:0;top:0}
   .village-popup[data-music="true"] { width:min(300px,calc(100% - 24px)); }
   .village-popup[data-music="true"] h3 { font-size:.85rem; margin:0; overflow-wrap:anywhere; }
   .village-popup[data-music="true"] #village-links { display:none; }
@@ -176,10 +182,11 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
 
 <style>
   :global(html.studio-open) { overflow:hidden; }
-  .village-scene.studio-fullscreen { position:fixed; inset:0; z-index:1000; width:100%; height:100dvh; min-height:0; border:0; border-radius:0; }
+  .village-scene.studio-fullscreen { position:fixed; inset:auto;left:var(--scene-view-left,0px);top:var(--scene-view-top,0px); z-index:1000; width:var(--scene-view-width,100%); height:var(--scene-view-height,100dvh); min-height:0; border:0; border-radius:0; }
   /* Align the 15px icon inside its 44px target, including the scene border. */
   .village-scene { --scene-control-inset:calc(var(--section-gap) - (44px - 15px)/2 - 1px); }
   .village-location,.village-hud { position:absolute; bottom:max(var(--scene-control-inset),env(safe-area-inset-bottom)); display:flex; align-items:center; gap:8px; height:44px; z-index:10; color:#526347; font:10px system-ui; }
+  .village-notice{position:absolute;left:calc(var(--scene-control-inset) + 14.5px);top:calc(var(--scene-control-inset) + 14.5px);z-index:13;max-width:calc(100% - 140px);margin:0;color:#526347;font:11px/1.5 system-ui;pointer-events:none}
   .village-location { left:max(var(--scene-control-inset),env(safe-area-inset-left)); }.village-hud { right:max(var(--scene-control-inset),env(safe-area-inset-right)); }
   .village-location button,.village-hud button { display:flex; align-items:center; justify-content:center; width:44px;min-width:44px;height:44px;min-height:44px; padding:0; border:0; background:transparent; color:inherit; cursor:pointer; }
   .village-location button[hidden] { display:none; }
@@ -192,11 +199,14 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
   #village-zoom-range { min-height:44px; }
   #village-zoom { position:absolute; bottom:32px; left:0; width:var(--zoom-width,96px); min-height:24px; visibility:hidden; opacity:0; font:10px system-ui; }
   .village-hud[data-adjusting=true] #village-zoom { visibility:visible; opacity:1; }
-  :global([data-editor-embedded="true"]) #village-home,:global([data-editor-embedded="true"]) #village-studio { display:none; }
+  :global([data-editor-embedded="true"]) #village-home,:global([data-editor-embedded="true"]) #village-studio,:global([data-editor-embedded="true"]) #village-account { display:none; }
   .village-hud #village-fullscreen { flex:0 0 44px;width:44px;min-width:44px;height:44px;min-height:44px;opacity:1; }
   .village-undo-icon,.is-decorating .village-return-icon { display:none; }
   .is-decorating .village-undo-icon { display:block; }
   #village-fullscreen svg{display:block;flex:none;pointer-events:none}
+  #village-account { position:absolute;right:calc(max(var(--scene-control-inset),env(safe-area-inset-right)) + 52px);top:max(var(--scene-control-inset),env(safe-area-inset-top));z-index:12;display:flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0;border:0;background:transparent;color:#526347;cursor:pointer; }
+  #village-account[hidden],#village-account-menu[hidden] { display:none; }
+  #village-account-menu { position:absolute;right:max(var(--scene-control-inset),env(safe-area-inset-right));top:calc(max(var(--scene-control-inset),env(safe-area-inset-top)) + 52px);z-index:14; }
   #village-studio { position:absolute;right:max(var(--scene-control-inset),env(safe-area-inset-right));top:max(var(--scene-control-inset),env(safe-area-inset-top));z-index:12;display:flex;align-items:center;justify-content:center;width:44px;min-width:44px;height:44px;min-height:44px;padding:0;border:0;background:transparent;color:#526347;cursor:pointer; }
   #village-fullscreen .fullscreen-exit,#village-fullscreen[aria-pressed=true] .fullscreen-enter { display:none; }
   #village-fullscreen[aria-pressed=true] .fullscreen-exit { display:block; }

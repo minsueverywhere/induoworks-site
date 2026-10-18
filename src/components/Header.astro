@@ -28,7 +28,7 @@ const languagePath = currentBasePath === '/404/' ? '/' : currentBasePath;
   <div class="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
     <a href={localizePath('/', lang)} aria-label={site.name} class="focus-ring flex items-center gap-2.5 rounded font-semibold tracking-tight">
       <img src="/brand/dewy-profile.png" width="36" height="36" class="brand-mark h-9 w-9 rounded-full" alt="" />
-      <span class="hidden sm:inline">{site.name}</span>
+      <span class="whitespace-nowrap text-sm sm:text-base">{site.name}</span>
     </a>
 
     <nav id="primary-nav" class="desktop-nav hidden items-center gap-4 md:flex" aria-label="Primary">

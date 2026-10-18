@@ -16,3 +16,11 @@ export function popupPosition(anchor, popup, scene) {
     side: preferred.side,
   };
 }
+
+export function guestbookFrame(scene,viewportHeight,viewportTop=0){
+  const margin=12,width=Math.max(1,Math.min(720,scene.width-margin*2));
+  const top=Math.max(56,Math.min(scene.height-margin,viewportTop-scene.top+56));
+  const bottom=Math.max(top+1,Math.min(scene.height-margin,viewportTop+viewportHeight-scene.top-margin));
+  const available=bottom-top,height=Math.min(available,Math.max(240,available*.85));
+  return {x:(scene.width-width)/2,y:top+(available-height)/2,width,height};
+}

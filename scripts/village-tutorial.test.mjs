@@ -5,6 +5,25 @@ import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import { pinchPoints, zoomCamera, panCamera, isDrag } from '../src/scripts/village-camera.mjs';
 
+test('jukebox clicks toggle playback while popup dismissal leaves playback alone',()=>{
+  const source=readFileSync(new URL('../src/scripts/village.js',import.meta.url),'utf8');
+  const nodes=new Map(),node=id=>{if(!nodes.has(id))nodes.set(id,{hidden:false,replaceChildren(){},setAttribute(){}});return nodes.get(id);};
+  let playing=false,toggles=0;
+  const track={title:'Sunlit Circuit'},jukebox={id:'lp',shape:'jukebox',music:track},sign={id:'sign',shape:'sign'};
+  const popup={hidden:true,dataset:{},focus(){}},context={
+    places:[jukebox,sign],tutorialStep:null,popup,popupObject:null,clearExternal:null,
+    buttons:new Map(),$:node,root:{dataset:{music:JSON.stringify(track)}},text:{music:track.title},
+    selectMusic(){},music:{toggle(){playing=!playing;toggles++;}},positionPopup(){},matchMedia:()=>({matches:false})
+  };
+  runInNewContext(source.slice(source.indexOf('function closePopup('),source.indexOf("$('close').addEventListener")),context);
+  context.visit('lp');assert.equal(playing,true);assert.equal(popup.hidden,false);
+  context.visit('lp');assert.equal(playing,false);assert.equal(popup.hidden,false);
+  context.visit('lp');assert.equal(playing,true);assert.equal(popup.hidden,false);
+  context.closePopup();assert.equal(playing,true);assert.equal(popup.hidden,true);assert.equal(toggles,3);
+  context.visit('lp');assert.equal(playing,false);assert.equal(popup.hidden,false);
+  context.visit('sign');context.visit('sign');assert.equal(popup.hidden,true);assert.equal(toggles,4);
+});
+
 test('tutorial restarts with the current place and only offers owned-room editing',()=>{
   assert.deepEqual(contextTutorialSteps('village',false,{music:true}),['drag','zoom','music']);
   assert.deepEqual(contextTutorialSteps('room',true,{exhibit:true}),['drag','zoom','edit','exit']);

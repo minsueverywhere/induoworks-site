@@ -6,7 +6,7 @@ import {villageContent} from '../src/scripts/village-content.mjs';
 import {roomFloors,validateRoom,roomStack,roomElevation,roomScreen,roomPoint} from '../src/scripts/village-room.mjs';
 import {clampCamera,panCamera,zoomCamera} from '../src/scripts/village-camera.mjs';
 import {runInNewContext} from 'node:vm';
-import {objectFootprint,groundPosition,setTerrain} from '../src/scripts/village-world.mjs';
+import {objectFootprint,groundPosition,setTerrain,validateWorld,villageWorld} from '../src/scripts/village-world.mjs';
 import {roomCatalog,objectPlacementError,paintError,placementObjects} from './editor-placement.mjs';
 import {createHistory} from './editor/history.mjs';
 import {createTutorial} from '../src/scripts/village-tutorial.mjs';
@@ -132,4 +132,69 @@ test('transparent cells draw no tile or walls while suppressing a neighboring in
  const context={activeWorker:{},roomLevel:0,roomStack:()=>[{floor,elevation:0}],terrainBounds:()=>({minX:0,maxX:1,minY:0,maxY:0}),toScreen:(x,y)=>({x:(x-y)*24,y:(x+y)*12}),terrainAt:(f,x,y)=>f.tiles.find(t=>t.x===x&&t.y===y)?.type,document:{createElement:()=>({getContext:()=>c})},polygon:(_c,_p,color)=>walls.push(color),tile:(_c,x,y)=>tiles.push([x,y])};
  runInNewContext(source.slice(source.indexOf('function makeRoom()'),source.indexOf('function setRoomLevel('))+'makeRoom();',context);
  assert.deepEqual(tiles,[[1,0]]);assert.equal(walls.filter(color=>color==='#e7d8ad').length,1);assert.equal(walls.includes('#d7c79e'),false);
+});
+
+
+test('host-selected house stages preserve placement and the existing style remains compatible',()=>{
+ for(const style of ['tent','cabin','house']){
+  const data=structuredClone(original),worker=data.workers.find(w=>w.house),before={...worker.house};worker.house.style=style;validateCatalog(data);
+  const house=villageContent(data,'ko','').places.find(p=>p.id===worker.id);assert.equal(house.style,style);assert.equal(house.x,before.x);assert.equal(house.y,before.y);
+ }
+ const bad=structuredClone(original);bad.workers.find(w=>w.house).house.style='castle';assert.throws(()=>validateCatalog(bad));
+});
+
+test('house renderer distinguishes tent, cabin and home; LP deck stays a static cube',async()=>{
+ const source=await readFile(new URL('../src/scripts/village.js',import.meta.url),'utf8');
+ const calls=[],c=new Proxy({},{get:(_,key)=>(...args)=>calls.push([key,...args]),set:()=>true});
+ const context={polygon:(_c,_p,color)=>calls.push(['polygon',color]),box:(_c,_x,_y,w,d,h)=>calls.push(['box',w,d,h]),facingText(){}};
+ const house=runInNewContext(source.slice(source.indexOf('function house('),source.indexOf('function grass('))+'house;',context);
+ for(const style of ['tent','cabin','house']){calls.length=0;house(c,{id:'worker',title:'Studio',style,storeys:1});assert.equal(calls.some(call=>call[0]==='box'),style!=='tent');if(style==='cabin')assert.ok(calls.some(call=>call[0]==='stroke'));}
+ calls.length=0;const deck=runInNewContext(source.slice(source.indexOf('function jukebox('),source.indexOf('function artwork('))+'jukebox;',{...context,playing:false,sameMusic:()=>false,playingTrack:null});deck(c);
+ assert.deepEqual(calls.find(call=>call[0]==='box'),['box',22,11,22]);assert.ok(calls.filter(call=>call[0]==='ellipse').length>=3);
+ const scene=villageContent(original,'ko','');assert.equal(scene.places.find(p=>p.id==='display:outdoor-jukebox').height,48);
+});
+
+test('indoor objects sit on their tile center and multi-cell depth follows their footprint center',async()=>{
+ const source=await readFile(new URL('../src/scripts/village.js',import.meta.url),'utf8');
+ for(const [name,end] of [['game','jukebox'],['jukebox','artwork'],['artwork','makeRoom']]){
+  let y=0,base;const c=new Proxy({translate:(_x,dy)=>{y+=dy;},fillRect:(_x,top,_w,h)=>{if(name==='artwork'&&h===24)base=y+top+h;}},{get:(target,key)=>target[key]||(()=>{}),set:()=>true});
+  const draw=runInNewContext(source.slice(source.indexOf('function '+name+'('),source.indexOf('function '+end+'('))+name+';',{polygon(){},box:(_c,_x,top,_w,d)=>{base=y+top+d;},badges:new Map(),playing:false,sameMusic:()=>false,playingTrack:null});
+  draw(c,{id:'object'});assert.equal(base,0,name+' base must be centered on the tile');
+ }
+ const depth=runInNewContext(source.slice(source.indexOf('function objectPoint('),source.indexOf('const decorationObject='))+'objectDepth;',{groundPosition});
+ assert.equal(depth({area:'room',editType:'exhibit',x:4,y:4,ground:{x:3,y:3}}),6);
+ assert.ok(depth({area:'room',editType:'exhibit',x:4,y:4,ground:{x:3,y:3}})<depth({area:'room',x:4,y:3}));
+});
+
+test('notebook titles survive renaming and new board identities remain distinct across floors',()=>{
+ const data=structuredClone(original),worker=data.workers.find(w=>w.house);worker.room={floors:structuredClone(roomFloors(worker))};
+ const f=worker.room.floors[0];f.exhibits.push({id:'notes',kind:'guestbook',ref:'guestbook',boardId:'notes',title:'음원 피드백',x:0,y:0,width:1,depth:1});validateRoom(worker.room);
+ let note=villageContent(data,'ko','').places.find(p=>p.worldId==='notes');assert.equal(note.title,'음원 피드백');assert.equal(note.board,'notes');
+ f.exhibits[0].title='새 제목';assert.equal(villageContent(data,'ko','').places.find(p=>p.worldId==='notes').board,'notes');
+ const bad=structuredClone(worker.room);bad.floors[0].exhibits[0].title='x'.repeat(61);assert.throws(()=>validateRoom(bad));
+ const duplicate=structuredClone(worker.room);duplicate.floors.push(structuredClone(duplicate.floors[0]));assert.throws(()=>validateRoom(duplicate));
+});
+
+test('LP stylus and indicator change only for the jukebox whose track is playing',async()=>{
+ const source=await readFile(new URL('../src/scripts/village.js',import.meta.url),'utf8'),track={sources:{ogg:'/song.ogg'}},other={sources:{ogg:'/other.ogg'}},calls=[];
+ const c=new Proxy({},{get:(_,key)=>(...args)=>calls.push([key,...args]),set:()=>true});
+ const draw=runInNewContext(source.slice(source.indexOf('function jukebox('),source.indexOf('function artwork('))+'jukebox;',{box(){},playing:true,playingTrack:track,sameMusic:(a,b)=>JSON.stringify(a)===JSON.stringify(b)});
+ draw(c,{music:track});assert.ok(calls.some(x=>x[0]==='lineTo'&&x[1]===2&&x[2]===-22));calls.length=0;
+ draw(c,{music:other});assert.ok(calls.some(x=>x[0]==='lineTo'&&x[1]===17&&x[2]===-15));
+});
+
+test('stationery desk fits one tile and the two display panels stand along the isometric tile edge',async()=>{
+ const source=await readFile(new URL('../src/scripts/village.js',import.meta.url),'utf8'),calls=[];
+ const c=new Proxy({},{get:(_,key)=>(...args)=>calls.push([key,...args]),set:()=>true}),context={polygon(){},box:(_c,x,y,w,d,h)=>calls.push(['box',x,y,w,d,h]),badges:new Map()};
+ const draw=runInNewContext(source.slice(source.indexOf('function guestbook('),source.indexOf('function spriteBounds('))+'guestbook;',context);draw(c);
+ assert.ok(calls.some(call=>call[0]==='lineTo'&&call[1]===0&&call[2]===9));assert.ok(calls.some(call=>call[0]==='box'&&call[3]===22&&call[4]===11));
+ for(const [name,end]of [['game','jukebox'],['artwork','makeRoom']]){calls.length=0;const draw=runInNewContext(source.slice(source.indexOf('function '+name+'('),source.indexOf('function '+end+'('))+name+';',context);draw(c,{id:'art'});assert.ok(calls.some(call=>call[0]==='transform'&&call[1]===1&&call[2]===.5));assert.ok(calls.some(call=>call[0]==='box'&&call[3]<=24&&call[4]<=12));}
+});
+
+
+test('small editable signs are valid in both legacy and compact villages and reject oversized text',()=>{
+ for(const world of [structuredClone(original.world),villageWorld({workers:[]})]){
+  world.decorations.push({id:'feedback-sign',type:'sign',x:1,y:1,width:1,depth:1,size:1,title:'Welcome'});validateWorld(world);
+  const bad=structuredClone(world);bad.decorations.at(-1).title='x'.repeat(41);assert.throws(()=>validateWorld(bad));
+ }
 });

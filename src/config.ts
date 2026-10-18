@@ -122,15 +122,16 @@ export const showcase: ShowcaseItem[] = [
 ];
 
 export type Worker = {
+  contact?: {email?:string;discordUserId?:string};
   id: string;
   name: string;
   description: LocalizedText;
   href?: string;
   logoMediaId?: string;
-  house?: { x: number; y: number };
+  house?: { x: number; y: number; style?: 'tent'|'cabin'|'house' };
 };
 
-export const workers: Worker[] = catalog.workers;
+export const workers = catalog.workers as Worker[];
 export const villageNotices: { id: string; title: LocalizedText; body: LocalizedText; href?: string; linkLabel?: LocalizedText }[] = catalog.notices;
 
 export function worksByWorker(workerId: string) {

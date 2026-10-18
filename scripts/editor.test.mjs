@@ -21,6 +21,7 @@ async function fixture(t){
   await mkdir(join(directory,'content'),{recursive:true});
   await writeFile(join(directory,'content/catalog.json'),JSON.stringify(original));
   await cp(new URL('public/',root),join(directory,'public'),{recursive:true});
+  await cp(new URL('content/files/',root),join(directory,'content/files'),{recursive:true});
   return directory;
 }
 
@@ -46,7 +47,8 @@ test('saving keeps outdoor displays, reflection and three floors while protectin
   const saved=await store.save(draft,before.revision);
   assert.deepEqual((await createEditorStore(directory).read()).catalog,draft);
   const scene=villageContent(draft,'ko','');
-  assert.equal(scene.places.find(p=>p.id===worker.id).storeys,3);
+  assert.equal(roomFloors(worker).length,3);
+  assert.deepEqual(scene.places.find(p=>p.id===worker.id),villageContent({...draft,workers:draft.workers.map(w=>w.id===worker.id?{...w,room:{floors:[w.room.floors[0]]}}:w)},'ko','').places.find(p=>p.id===worker.id),'interior floors must not alter the exterior');
   const invalid=structuredClone(draft);setTerrain(invalid.workers.find(w=>w.id===worker.id).room.floors[0],1,7,'empty');
   await assert.rejects(()=>store.save(invalid,saved.revision),/바닥/);
   assert.deepEqual((await store.read()).catalog,draft);
@@ -140,7 +142,7 @@ test('editor bridge transforms only the map during dev and does not enter normal
   assert.equal(plugin.apply,'serve');assert.equal(await plugin.transform(source,'other.js'),undefined);
   const transformed=await plugin.transform(source,'F:/repo/src/scripts/village.js');
   assert.match(transformed.code,/fetch\('\/__editor\/preview\?t='/);
-  const line=transformed.code.split('\n').find(line=>line.startsWith('const remoteContent='));
+  const line=transformed.code.split('\n').find(line=>line.startsWith('let remoteContent='));
   const run=new (Object.getPrototypeOf(async function(){}).constructor)('location','fetch','loadContent',line+'return remoteContent;');
   assert.equal(await run({hostname:'192.168.219.127'},()=>{throw Error('LAN must not read the host editor');},async()=>'public'),'public');
   assert.equal(await run({hostname:'127.0.0.1'},async()=>({json:async()=>'local'}),()=>{throw Error('Loopback must keep local preview');}),'local');
@@ -148,6 +150,6 @@ test('editor bridge transforms only the map during dev and does not enter normal
   assert.match(transformed.code,/drawEditorOverlay\(layer.index\); for \(const object of objects\)/);
   const parsed=spawnSync(process.execPath,['--check','--input-type=module'],{input:transformed.code,encoding:'utf8',windowsHide:true});
   assert.equal(parsed.status,0,parsed.stderr);
-  assert.ok(!transformed.code.includes('const remoteContent=await loadContent();'));
+  assert.ok(!transformed.code.includes('let remoteContent=await loadContent();'));
   assert.ok(!source.includes('/__editor/'));
 });

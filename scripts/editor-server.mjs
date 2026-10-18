@@ -77,7 +77,7 @@ export function localEditorPlugin() {
     async transform(code,id){
       if(!id.replaceAll('\\','/').split('?')[0].endsWith('/src/scripts/village.js'))return;
       this.addWatchFile?.(fileURLToPath(new URL('./editor/bridge.js',import.meta.url)));
-      code=code.replace('const remoteContent=await loadContent();',"const remoteContent=['localhost','127.0.0.1','[::1]'].includes(location.hostname)?await fetch('/__editor/preview?t='+Date.now(),{cache:'no-store'}).then(r=>r.json()):await loadContent();");
+      code=code.replace('let remoteContent=await loadContent();',"let remoteContent=['localhost','127.0.0.1','[::1]'].includes(location.hostname)?await fetch('/__editor/preview?t='+Date.now(),{cache:'no-store'}).then(r=>r.json()):await loadContent();");
       code=code.replace('for (const object of objects) {','drawEditorOverlay(layer.index); for (const object of objects) { if(object.editorHidden)continue;');
       code=code.replace('area=next;updateFloors();',"area=next;updateFloors();sendEditor({type:'area',owner:area==='room'?activeWorker.id:null,level:roomLevel});");
       code=code.replace('sprites.clear();updateFloors();requestDraw();',"sprites.clear();updateFloors();requestDraw();sendEditor({type:'area',owner:activeWorker.id,level:roomLevel});");

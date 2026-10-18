@@ -34,7 +34,7 @@ test('content IDs and ownership references stay valid across pages', () => {
   for (const worker of workers) {
     assert.ok(!('works' in worker),'owned titles must be derived, not copied');
     if (worker.logoMediaId) assert.ok(mediaIds.includes(worker.logoMediaId),'unknown logo');
-    if (worker.house) assert.ok(Object.values(worker.house).every(n=>Number.isInteger(n)&&n>=0&&n<24),'house outside village');
+    if (worker.house) assert.ok([worker.house.x,worker.house.y].every(n=>Number.isInteger(n)&&n>=0&&n<24),'house outside village');
   }
   assert.deepEqual(worksByWorker('missing-worker'),[]);
   for(const notice of villageNotices)assert.ok(notice.title.en&&notice.title.ko&&notice.body.en&&notice.body.ko,'notice needs bilingual copy');

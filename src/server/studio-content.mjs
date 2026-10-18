@@ -23,7 +23,7 @@ export function mergeStudio(catalog,owner,proposal){
   const files=new Set(mediaPaths(catalog));
   if(mediaPaths(result).some(path=>!files.has(path)))throw new Error('새 파일은 호스트가 먼저 등록해야 합니다. 등록된 파일을 선택해 주세요.');
   if(result.projects.filter(p=>p.workerIds.includes(owner)).length>9||result.media.filter(m=>m.workerIds.includes(owner)).length>4)throw new Error('현재 자동 전시는 작품 9개·이미지 4개까지 지원합니다.');
-  const allowed=(kind,ref)=>kind==='music'&&ref==='legacy'||(kind==='project'?result.projects:kind==='media'?result.media:result.tracks).some(item=>(item.slug||item.id)===ref&&item.workerIds.includes(owner));
+  const allowed=(kind,ref)=>kind==='guestbook'&&ref==='guestbook'||kind==='music'&&ref==='legacy'||(kind==='project'?result.projects:kind==='media'?result.media:result.tracks).some(item=>(item.slug||item.id)===ref&&item.workerIds.includes(owner));
   for(const [level,floor] of worker.room.floors.entries()){
     const space=roomCatalog(result,owner,level);
     for(const item of floor.exhibits){if(!allowed(item.kind,item.ref))throw new Error('자기 작품과 공용 기본 음악만 전시할 수 있습니다.');const error=objectPlacementError(space,'exhibit',item.id,item);if(error)throw new Error(error);}

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createVillageMusic, musicTime } from '../src/scripts/village-music.mjs';
+import {createMusicSession} from '../src/scripts/site-music.mjs';
+import { createVillageMusic, createBufferMusic, musicTime } from '../src/scripts/village-music.mjs';
 
 test('music is requested only on play, loops, and prefers Opus', async () => {
   let created = 0, audio;
@@ -46,4 +47,25 @@ test('late play completion cannot restart a paused song',async()=>{
   const player=createVillageMusic({sources:{ogg:'/slow.ogg'},onState:s=>states.push(s),createAudio:()=>audio});
   const pending=player.toggle();player.stop();finish();await pending;
   assert.ok(paused>=2);assert.equal(states.includes('playing'),false);
+});
+
+function bufferFixture(fetcher){
+ const nodes=[],states=[],updates=[];let requests=0,contexts=0,tick,closed=false;
+ const context={currentTime:0,destination:{},resume:async()=>{},suspend:async()=>{},close:async()=>{closed=true;},decodeAudioData:async()=>({duration:1.03}),createGain:()=>({gain:{value:0},connect(){},disconnect(){}}),createBufferSource:()=>{const n={connect(){},disconnect(){},start(...args){this.args=args;},stop(){this.stopped=true;}};nodes.push(n);return n;}};
+ const player=createBufferMusic({sources:{ogg:'/a.ogg',mp3:'/a.mp3'},loopDuration:1,onState:s=>states.push(s),onProgress:p=>updates.push(p),createContext:()=>{contexts++;return context;},fetcher:async(...args)=>{requests++;return fetcher?fetcher(...args):new Response(new Uint8Array([1]));},setTimer:fn=>{tick=fn;return 1;},clearTimer(){tick=null;}});
+ return{player,context,nodes,states,updates,get requests(){return requests;},get contexts(){return contexts;},get tick(){return tick;},get closed(){return closed;}};
+}
+test('buffer looping is lazy and uses audio-engine loop points without a timer to restart each lap',async()=>{
+ const f=bufferFixture();assert.equal(f.requests,0);assert.equal(f.contexts,0);await f.player.toggle();assert.equal(f.requests,1);assert.equal(f.nodes[0].loop,true);assert.equal(f.nodes[0].loopEnd,1);assert.deepEqual(f.nodes[0].args,[0,0]);
+ f.context.currentTime=5.25;f.tick();assert.equal(f.updates.at(-1).current,.25);assert.equal(f.nodes.length,1);
+ f.player.stop();assert.equal(f.nodes[0].stopped,true);assert.equal(f.tick,null);await f.player.toggle();assert.equal(f.requests,1);assert.equal(f.nodes.length,2);assert.equal(f.nodes[1].args[1],.25);
+ f.player.seek(.6);assert.equal(f.nodes[2].args[1],.6);f.player.dispose();assert.equal(f.closed,true);assert.equal(f.tick,null);
+});
+test('pausing during decode cannot start stale audio and source failures try the alternate encoding',async()=>{
+ let resolve;const f=bufferFixture(()=>new Promise(done=>resolve=done)),pending=f.player.toggle();f.player.stop();resolve(new Response(new Uint8Array([1])));await pending;assert.equal(f.nodes.length,0);assert.notEqual(f.states.at(-1),'playing');await f.player.toggle();assert.equal(f.nodes.length,1);f.player.dispose();
+ let calls=0;const fallback=bufferFixture(async()=>++calls===1?new Response('',{status:404}):new Response(new Uint8Array([1])));await fallback.player.toggle();assert.equal(fallback.requests,2);assert.equal(fallback.states.at(-1),'playing');fallback.player.dispose();
+});
+test('switching music and closing release the previous decoded player',async()=>{
+ const players=[];const session=createMusicSession(()=>{const p={disposeCount:0,toggle:async()=>{},stop(){},dispose(){this.disposeCount++;}};players.push(p);return p;});
+ await session.toggle({sources:{ogg:'/one.ogg'},duration:1});await session.toggle({sources:{ogg:'/two.ogg'},duration:1});assert.equal(players[0].disposeCount,1);session.close();assert.equal(players[1].disposeCount,1);
 });

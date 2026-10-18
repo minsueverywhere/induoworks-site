@@ -30,7 +30,7 @@ export function validFootprint(point,type,world){
   const lot=objectFootprint(point,type);
   return ['width','depth'].every(k=>Number.isInteger(lot[k])&&lot[k]>=1&&lot[k]<=maxSize)&&lot.x>=(expanded?-64:0)&&lot.y>=(expanded?-64:0)&&lot.x+lot.width<=limit+1&&lot.y+lot.depth<=limit+1;
 }
-export function validHouse(house,world){return validFootprint(house,'house',world)&&['x','y'].every(k=>Number.isInteger(house[k]));}
+export function validHouse(house,world){return validFootprint(house,'house',world)&&(!('style' in house)||['tent','cabin','house'].includes(house.style))&&['x','y'].every(k=>Number.isInteger(house[k]));}
 export function footprintContains(point,type,target){
   const lot=objectFootprint(point,type),x=Math.round(target.x),y=Math.round(target.y);
   return x>=lot.x&&x<lot.x+lot.width&&y>=lot.y&&y<lot.y+lot.depth;
@@ -68,7 +68,7 @@ export function validateWorld(world){
     !world.tiles.every((t,i)=>Number.isInteger(t.x)&&Number.isInteger(t.y)&&Math.abs(t.x)<=64&&Math.abs(t.y)<=64&&(expanded||(t.x===i%24&&t.y===Math.floor(i/24)))&&['grass','path','water'].includes(t.type))||
     new Set(world.tiles.map(t=>t.x+','+t.y)).size!==world.tiles.length||
     !Array.isArray(world.decorations)||world.decorations.length>MAX_DECORATIONS||
-    !world.decorations.every(d=>/^[a-z0-9-]+$/.test(d.id)&&d.id.length<=80&&(expanded?['tree','grass','letter']:['tree','grass']).includes(d.type)&&point(d,d.type)&&Number.isFinite(d.size)&&d.size>=.5&&d.size<=1.6&&(!('flower'in d)||typeof d.flower==='boolean')&&(d.type!=='letter'||(/^[A-Z0-9]$/.test(d.char)&&/^#[0-9a-fA-F]{6}$/.test(d.color))))||
+    !world.decorations.every(d=>/^[a-z0-9-]+$/.test(d.id)&&d.id.length<=80&&(expanded?['tree','grass','letter','sign']:['tree','grass','sign']).includes(d.type)&&point(d,d.type)&&Number.isFinite(d.size)&&d.size>=.5&&d.size<=1.6&&(!('flower'in d)||typeof d.flower==='boolean')&&(d.type!=='sign'||(typeof d.title==='string'&&d.title.length<=40))&&(d.type!=='letter'||(/^[A-Z0-9]$/.test(d.char)&&/^#[0-9a-fA-F]{6}$/.test(d.color))))||
     new Set(world.decorations.map(d=>d.id)).size!==world.decorations.length)throw new Error('Invalid village terrain or decorations');
   if(world.exhibits!==undefined&&(!Array.isArray(world.exhibits)||world.exhibits.length>100||!world.exhibits.every(e=>/^[a-z0-9-]+$/.test(e.id)&&e.id.length<=80&&['project','media','music'].includes(e.kind)&&typeof e.ref==='string'&&e.ref.length<=80&&point(e,'exhibit'))||new Set(world.exhibits.map(e=>e.id)).size!==world.exhibits.length||world.exhibits.some(e=>world.decorations.some(d=>d.id===e.id)||['noticeboard','mascot','welcome'].includes(e.id))))throw new Error('Invalid outdoor exhibits');
   const bounds=terrainBounds(world);

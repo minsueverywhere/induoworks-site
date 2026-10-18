@@ -2,6 +2,7 @@ export interface StudioEnv {
   STUDIO_DB?: D1Database;
   STUDIO_RATE_LIMITER?: {limit(options:{key:string}):Promise<{success:boolean}>};
   DISCORD_CLIENT_ID?: string;
+  DISCORD_GUILD_ID?: string;
   DISCORD_CLIENT_SECRET?: string;
 }
 export class StudioError extends Error {
@@ -39,26 +40,30 @@ export async function authorize(request:Request,env:StudioEnv,owner:string){
 }
 export async function discordLogin(request:Request,env:StudioEnv){
   await rateLimit(request,env);const db=studioDB(env);
-  if(!env.DISCORD_CLIENT_ID||!env.DISCORD_CLIENT_SECRET)throw new StudioError('Discord 로그인이 아직 설정되지 않았습니다.',503);
+  if(!env.DISCORD_CLIENT_ID||!env.DISCORD_CLIENT_SECRET||!env.DISCORD_GUILD_ID)throw new StudioError('Discord 로그인이 아직 설정되지 않았습니다.',503);
   const state=nonce();await db.batch([db.prepare('DELETE FROM studio_oauth_states WHERE expires<?').bind(now()),db.prepare('INSERT INTO studio_oauth_states(hash,expires) VALUES(?,?)').bind(await hash(state),now()+600)]);
-  const url=new URL('https://discord.com/oauth2/authorize');url.search=new URLSearchParams({client_id:env.DISCORD_CLIENT_ID,response_type:'code',scope:'identify',redirect_uri:'https://induo.works/api/studio/callback',state}).toString();
+  const url=new URL('https://discord.com/oauth2/authorize');url.search=new URLSearchParams({client_id:env.DISCORD_CLIENT_ID,response_type:'code',scope:'identify guilds.members.read',redirect_uri:'https://induo.works/api/studio/callback',state}).toString();
   return new Response(null,{status:302,headers:{Location:url.href,'Cache-Control':'no-store','Set-Cookie':cookie('__Host-induo-oauth',state,600),'Referrer-Policy':'no-referrer'}});
 }
 export async function discordCallback(request:Request,env:StudioEnv,fetcher:typeof fetch=fetch){
   await rateLimit(request,env);const db=studioDB(env),url=new URL(request.url),state=url.searchParams.get('state')||'';
-  if(!env.DISCORD_CLIENT_ID||!env.DISCORD_CLIENT_SECRET)throw new StudioError('Discord 로그인이 아직 설정되지 않았습니다.',503);
+  if(!env.DISCORD_CLIENT_ID||!env.DISCORD_CLIENT_SECRET||!env.DISCORD_GUILD_ID)throw new StudioError('Discord 로그인이 아직 설정되지 않았습니다.',503);
   if(!/^[a-f0-9-]{72}$/.test(state)||readCookie(request,'__Host-induo-oauth')!==state||url.searchParams.get('iss')&&url.searchParams.get('iss')!=='https://discord.com')throw new StudioError('로그인 확인 정보가 맞지 않습니다. 다시 시작해 주세요.',400);
   const once=await db.prepare('DELETE FROM studio_oauth_states WHERE hash=? AND expires>? RETURNING hash').bind(await hash(state),now()).first();
   if(!once||!url.searchParams.get('code')||url.searchParams.has('error'))throw new StudioError('로그인이 취소되었거나 만료되었습니다.',400);
   const response=await fetcher('https://discord.com/api/oauth2/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({client_id:env.DISCORD_CLIENT_ID,client_secret:env.DISCORD_CLIENT_SECRET,grant_type:'authorization_code',code:url.searchParams.get('code')!,redirect_uri:'https://induo.works/api/studio/callback'}),signal:AbortSignal.timeout(10000)});
   if(!response.ok)throw new StudioError('Discord 로그인을 완료하지 못했습니다.',502);
   const token=await response.json() as {access_token?:string;scope?:string};
-  if(!token.access_token||!token.scope?.split(' ').includes('identify'))throw new StudioError('Discord 계정 확인 권한이 없습니다.',403);
+  if(!token.access_token||!['identify','guilds.members.read'].every(scope=>token.scope?.split(' ').includes(scope)))throw new StudioError('Discord 계정 확인 권한이 없습니다.',403);
   const profile=await fetcher('https://discord.com/api/v10/users/@me',{headers:{Authorization:'Bearer '+token.access_token},signal:AbortSignal.timeout(10000)});
   if(!profile.ok)throw new StudioError('Discord 계정을 확인하지 못했습니다.',502);
   const user=await profile.json() as {id?:string;username?:string;global_name?:string};
   if(!user.id||!/^\d{15,22}$/.test(user.id))throw new StudioError('Discord 계정 정보가 올바르지 않습니다.',502);
-  const value=nonce();await db.batch([db.prepare('DELETE FROM studio_sessions WHERE expires<?').bind(now()),db.prepare('INSERT INTO studio_sessions(hash,user_id,name,expires) VALUES(?,?,?,?)').bind(await hash(value),user.id,(user.global_name||user.username||'Participant').slice(0,100),now()+604800)]);
+  const member=await fetcher('https://discord.com/api/v10/users/@me/guilds/'+env.DISCORD_GUILD_ID+'/member',{headers:{Authorization:'Bearer '+token.access_token},signal:AbortSignal.timeout(10000)});
+  if(!member.ok&&member.status!==404)throw new StudioError('서버 닉네임을 확인하지 못했습니다. 다시 로그인해 주세요.',502);
+  const nick=member.ok?(await member.json() as {nick?:string|null}).nick:null;
+  const name=(nick||user.global_name||user.username||'Participant').slice(0,100);
+  const value=nonce();await db.batch([db.prepare('DELETE FROM studio_sessions WHERE expires<?').bind(now()),db.prepare('INSERT INTO studio_sessions(hash,user_id,name,expires) VALUES(?,?,?,?)').bind(await hash(value),user.id,name,now()+604800)]);
   const headers=new Headers({Location:'/ko/?studio=1','Cache-Control':'no-store','Referrer-Policy':'no-referrer'});
   headers.append('Set-Cookie',cookie('__Host-induo-session',value,604800));headers.append('Set-Cookie',cookie('__Host-induo-oauth','',0));
   return new Response(null,{status:303,headers});

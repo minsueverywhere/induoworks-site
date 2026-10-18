@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { popupPosition } from '../src/scripts/village-popup.mjs';
+import { popupPosition,guestbookFrame } from '../src/scripts/village-popup.mjs';
 
 test('object popups follow their anchor and stay inside small and large scenes', () => {
   const popup={width:200,height:150}, scene={width:800,height:600};
@@ -20,4 +20,13 @@ test('object popups follow their anchor and stay inside small and large scenes',
       assert.ok(p.x+popup.width<=scene.width-12&&p.y+popup.height<=scene.height-12);
     }
   }
+});
+
+test('guestbook expands within the visible scene on desktop, phone, landscape and scrolled pages',()=>{
+ for(const [scene,viewport] of [[{width:976,height:1000,top:98},1200],[{width:342,height:520,top:80},740],[{width:740,height:520,top:60},390],[{width:342,height:520,top:-180},500]]){
+  const frame=guestbookFrame(scene,viewport);assert.ok(frame.width<=scene.width-24);assert.ok(frame.x>=12);assert.ok(frame.y>=12);assert.ok(frame.y+scene.top>=12);assert.ok(frame.y+frame.height<=scene.height-12);assert.ok(frame.y+scene.top+frame.height<=viewport-12);
+ }
+ const keyboard=guestbookFrame({width:342,height:520,top:80},250,100);assert.ok(keyboard.y+80>=112);assert.ok(keyboard.y+80+keyboard.height<=338);
+ assert.equal(guestbookFrame({width:976,height:1000,top:98},1200).width,720);
+ assert.ok(guestbookFrame({width:342,height:520,top:80},740).height>330);
 });

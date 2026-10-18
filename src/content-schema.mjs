@@ -32,6 +32,7 @@ export function validateCatalog(data) {
   if(data.musicId)check(tracks.some(t=>t.id===data.musicId),'Unknown default music');
   for (const worker of data.workers) {
     check(text(worker.name) && localized(worker.description), 'Invalid worker');
+    if(worker.contact!==undefined){const c=worker.contact;check(c&&typeof c==='object'&&!Array.isArray(c)&&Object.keys(c).every(k=>['email','discordUserId'].includes(k)),'Invalid public contact');if(c.email!==undefined)check(typeof c.email==='string'&&c.email.length<=254&&/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(c.email),'Invalid public email');if(c.discordUserId!==undefined)check(typeof c.discordUserId==='string'&&/^\d{17,20}$/.test(c.discordUserId),'Invalid public Discord ID');}
     if(worker.room)validateRoom(worker.room);
     if (worker.house) check(validHouse(worker.house,data.world), 'House footprint outside village or invalid dimensions');
     if (worker.href) check(safeUrl(worker.href), 'Unsafe worker URL');
@@ -39,7 +40,7 @@ export function validateCatalog(data) {
     if(worker.musicId)check(tracks.some(t=>t.id===worker.musicId),'Unknown workshop music');
   }
   check(data.workers.some(w=>w.id==='induo-works'), 'Missing Induo Works profile');
-  for(const e of [...(data.world?.exhibits||[]),...data.workers.flatMap(w=>w.room?.floors.flatMap(f=>f.exhibits)||[])])check((e.kind==='project'?data.projects:e.kind==='media'?data.media:[{...data.music,id:'legacy'},...tracks]).some(item=>(item.id||item.slug)===e.ref),'Unknown outdoor exhibit reference');
+  for(const e of [...(data.world?.exhibits||[]),...data.workers.flatMap(w=>w.room?.floors.flatMap(f=>f.exhibits)||[])])check(e.kind==='guestbook'&&e.ref==='guestbook'||(e.kind==='project'?data.projects:e.kind==='media'?data.media:[{...data.music,id:'legacy'},...tracks]).some(item=>(item.id||item.slug)===e.ref),'Unknown outdoor exhibit reference');
   for (const item of [...data.projects,...data.media]) {
     if(item.description!==undefined)check(localized(item.description),'Invalid artwork description');
     check(localized(item.title) && ids(item.workerIds || []) && (item.workerIds || []).every(id=>owners.has(id)), 'Invalid work owner or title');

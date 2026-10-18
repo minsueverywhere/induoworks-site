@@ -183,6 +183,9 @@
   "workers": [
     {
       "id": "induo-works",
+      "contact": {
+        "email": "contact@induo.works"
+      },
       "name": "Induo Works",
       "description": {
         "en": "Independent, Together! Visit the village hub and find our website and social channels.",
@@ -192,6 +195,9 @@
     },
     {
       "id": "frondward",
+      "contact": {
+        "discordUserId": "388951283312361473"
+      },
       "name": "Frondward",
       "description": {
         "en": "An independent game studio. Explore the games being made in this workshop.",
@@ -199,6 +205,7 @@
       },
       "logoMediaId": "frondward-logo",
       "house": {
+        "style": "tent",
         "x": 9,
         "y": 3,
         "width": 2,
@@ -259,7 +266,83 @@
       "frondward"
     ]
   },
-  "tracks": [],
+  "tracks": [
+    {
+      "id": "evening-return",
+      "title": "Evening Return",
+      "duration": 64.0,
+      "sourceSha256": "9edde1f359c4e56000b323387ff44619d9a757ed37b1f032d70084be47d89380",
+      "sources": {
+        "ogg": "/village/music/evening-return-9edde1f359c4.ogg",
+        "mp3": "/village/music/evening-return-9edde1f359c4.mp3"
+      },
+      "project": "GRENCH BOSS",
+      "artist": "Frondward",
+      "workerIds": [
+        "frondward"
+      ]
+    },
+    {
+      "id": "main-menu-theme",
+      "title": "Main Menu Theme",
+      "duration": 72.0,
+      "sourceSha256": "a544c8bc1bfbacd5b529e29c9da3b2ebe8759d809987dc5513fe6f3464b550d8",
+      "sources": {
+        "ogg": "/village/music/main-menu-theme-a544c8bc1bfb.ogg",
+        "mp3": "/village/music/main-menu-theme-a544c8bc1bfb.mp3"
+      },
+      "project": "GRENCH BOSS",
+      "artist": "Frondward",
+      "workerIds": [
+        "frondward"
+      ]
+    },
+    {
+      "id": "merchant-theme",
+      "title": "Merchant Theme",
+      "duration": 68.5714375,
+      "sourceSha256": "039782f1764d2c19f62933068dbdc332f030c7fd7dcdae2d1e074b055f9ef54c",
+      "sources": {
+        "ogg": "/village/music/merchant-theme-039782f1764d.ogg",
+        "mp3": "/village/music/merchant-theme-039782f1764d.mp3"
+      },
+      "project": "GRENCH BOSS",
+      "artist": "Frondward",
+      "workerIds": [
+        "frondward"
+      ]
+    },
+    {
+      "id": "quiet-harbor",
+      "title": "Quiet Harbor",
+      "duration": 64.0,
+      "sourceSha256": "b3875d0505c20acc426ce264382e342f43dcd1c781d32117562ff7813053f5b1",
+      "sources": {
+        "ogg": "/village/music/quiet-harbor-b3875d0505c2.ogg",
+        "mp3": "/village/music/quiet-harbor-b3875d0505c2.mp3"
+      },
+      "project": "GRENCH BOSS",
+      "artist": "Frondward",
+      "workerIds": [
+        "frondward"
+      ]
+    },
+    {
+      "id": "veiled-garden",
+      "title": "Veiled Garden",
+      "duration": 64.0,
+      "sourceSha256": "2e0582ffbb7b3fcf1e9cf654dd4ba3f0742794b9944b84f5c61175633765ca33",
+      "sources": {
+        "ogg": "/village/music/veiled-garden-2e0582ffbb7b.ogg",
+        "mp3": "/village/music/veiled-garden-2e0582ffbb7b.mp3"
+      },
+      "project": "GRENCH BOSS",
+      "artist": "Frondward",
+      "workerIds": [
+        "frondward"
+      ]
+    }
+  ],
   "world": {
     "layoutVersion": 2,
     "mascot": {

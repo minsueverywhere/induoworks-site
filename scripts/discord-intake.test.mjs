@@ -86,7 +86,7 @@ test('Workers-compatible manual mode refuses a CDN redirect without fetching its
 });
 test('host approval imports, saves and publishes content once; rejection and uncertain deployment preserve correct state',async t=>{
   const f=fixture(t),root=await mkdtemp(join(tmpdir(),'induo-intake-test-'));
-  t.after(()=>rm(root,{recursive:true,force:true,maxRetries:5,retryDelay:100}));await mkdir(join(root,'content'),{recursive:true});await writeFile(join(root,'content/catalog.json'),JSON.stringify(catalog));await cp(new URL('../public/',import.meta.url),join(root,'public'),{recursive:true});
+  t.after(()=>rm(root,{recursive:true,force:true,maxRetries:5,retryDelay:100}));await mkdir(join(root,'content'),{recursive:true});await writeFile(join(root,'content/catalog.json'),JSON.stringify(catalog));await cp(new URL('../public/',import.meta.url),join(root,'public'),{recursive:true});await cp(new URL('../content/files/',import.meta.url),join(root,'content/files'),{recursive:true});
   let calls=0,publicCatalog=catalog;
   const review=createDiscordReview(root,{query:f.query,deploy:async()=>{calls++;publicCatalog=(await createEditorStore(root).read()).catalog;return 'content deployed';},fetcher:async()=>Response.json(publicCatalog)});
   await submit(f.env);const row=f.sql.prepare('SELECT * FROM studio_uploads').get();assert.equal((await review.preview(row.id)).mime,'image/png');
