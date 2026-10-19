@@ -179,8 +179,9 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
   #village-now-track:focus-visible { outline:1px solid currentColor; outline-offset:-2px; }
   .village-marquee { flex:1; min-width:0; display:block; overflow:hidden; white-space:nowrap; pointer-events:none; }
   .village-marquee span { display:inline-block; }
-  .village-marquee[data-overflow=true] span { animation:village-marquee var(--marquee-time) ease-in-out infinite alternate; }
-  @keyframes village-marquee { 0%,15% { transform:none; } 85%,100% { transform:translateX(var(--marquee-shift)); } }
+  .village-marquee[data-overflow=true] span { animation:village-marquee var(--marquee-time) linear infinite; }
+  /* Scrolls one way only (leftward), pausing at each end before starting over. */
+  @keyframes village-marquee { 0%,12% { transform:none; } 88%,100% { transform:translateX(var(--marquee-shift)); } }
   @media(prefers-reduced-motion:reduce) { .village-marquee[data-overflow=true] span { animation:none; } }
 </style>
 
