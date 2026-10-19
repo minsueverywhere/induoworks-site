@@ -1,7 +1,7 @@
 import {musicPosition,musicDock} from './music-position.mjs';
 import {siteMusic} from './site-music.mjs';
 import {musicTime} from './village-music.mjs';
-import {musicArtist,musicWorkPath} from './village-tracks.mjs';
+import {musicArtist} from './village-tracks.mjs';
 import {fitMarquee} from './marquee.mjs';
 const root=document.getElementById('site-music'),el=id=>document.getElementById('site-music-'+id);
 let position=null,dock='',drag=null,suppressClick=false;
@@ -24,12 +24,12 @@ function render(data=siteMusic.snapshot()){
   const wasHidden=root.hidden;root.hidden=!data.visible||inVillage;if(wasHidden&&!root.hidden){place();requestAnimationFrame(()=>fitMarquee(el('work')));}document.body.classList.toggle('has-site-music',!root.hidden);
   root.setAttribute('aria-label',ko?'음악 플레이어':'Music player');
   if(!data.track)return;
-  const title=data.track.title+' — '+musicArtist(data.track);el('work').href=musicWorkPath(data.track,ko?'ko':'en');
+  const title=data.track.title+' — '+musicArtist(data.track);
   if(el('work').firstElementChild.textContent!==title){el('work').firstElementChild.textContent=title;if(!root.hidden)fitMarquee(el('work'));}
   el('toggle').dataset.loading=String(data.state==='loading');el('toggle').setAttribute('aria-label',playing?(ko?'일시정지':'Pause'):(ko?'재생':'Play'));el('toggle').setAttribute('aria-pressed',String(playing));
-  labels();el('close').setAttribute('aria-label',ko?'음악 정지·닫기':'Stop and close music');
-  el('seek').setAttribute('aria-label',ko?'재생 위치':'Playback position');el('seek').max=String(data.duration||1);el('seek').value=String(data.current);el('seek').disabled=!data.duration;
-  el('seek').setAttribute('aria-valuetext',musicTime(data.current)+' / '+musicTime(data.duration));el('time').textContent=musicTime(data.current)+' / '+musicTime(data.duration);
+  labels();
+  const track=el('track');track.setAttribute('aria-label',(ko?'재생 위치 · ':'Playback position · ')+title);track.setAttribute('aria-valuemax',String(data.duration||1));track.setAttribute('aria-valuenow',String(data.current));
+  track.setAttribute('aria-valuetext',musicTime(data.current)+' / '+musicTime(data.duration));track.style.setProperty('--progress',(data.duration?Math.min(100,data.current/data.duration*100):0)+'%');
   const message=data.state==='error'?(ko?'음악을 재생하지 못했습니다. 다시 눌러 주세요.':'Could not play music. Please retry.'):data.state==='loading'?(ko?'음악을 불러오는 중':'Loading music'):'';
   if(el('status').textContent!==message)el('status').textContent=message;
 }
@@ -46,8 +46,16 @@ if(navigator.mediaSession){
   for(const [action,handler]of Object.entries(actions))try{navigator.mediaSession.setActionHandler(action,handler);}catch{/* Unsupported actions are optional. */}
 }
 siteMusic.subscribe(render);siteMusic.subscribe(syncMediaSession);document.addEventListener('astro:page-load',()=>{render();place();});
-el('toggle').addEventListener('click',()=>void siteMusic.toggle());el('close').addEventListener('click',()=>siteMusic.close());
-el('seek').addEventListener('input',()=>siteMusic.seek(Number(el('seek').value)));
+el('toggle').addEventListener('click',()=>void siteMusic.toggle());
+let seeking=null;
+function seekAt(event){const {duration}=siteMusic.snapshot();if(!duration)return;const r=el('track').getBoundingClientRect();siteMusic.seek(Math.max(0,Math.min(1,(event.clientX-r.left)/r.width))*duration);}
+el('track').addEventListener('pointerdown',event=>{if(event.button!==0)return;seeking=event.pointerId;el('track').setPointerCapture(event.pointerId);seekAt(event);});
+el('track').addEventListener('pointermove',event=>{if(seeking===event.pointerId)seekAt(event);});
+for(const type of ['pointerup','pointercancel','lostpointercapture'])el('track').addEventListener(type,()=>{seeking=null;});
+el('track').addEventListener('keydown',event=>{
+  const {current,duration}=siteMusic.snapshot(),next={ArrowLeft:current-5,ArrowRight:current+5,Home:0,End:duration-1}[event.key];
+  if(next===undefined||!duration)return;event.preventDefault();siteMusic.seek(Math.max(0,Math.min(duration,next)));
+});
 window.addEventListener('resize',()=>place());
 el('handle').addEventListener('click',()=>{
   if(suppressClick){suppressClick=false;return;}

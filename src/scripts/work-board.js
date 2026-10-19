@@ -15,27 +15,31 @@ if(content) {
     field.replaceChildren(placeholder,...items.map(([value,label])=>new Option(label,value)));
   };
   select('worker',content.workers.map(w=>[w.id,w.name]));
-  select('tag',[...new Set(entries.flatMap(e=>e.tags))].sort().map(tag=>[tag,tag]));
+  document.getElementById('work-tags').replaceChildren(...[...new Set(entries.flatMap(e=>e.tags))].sort().map(tag=>new Option('','#'+tag)));
 }
 root.dataset.contentSource=content?'remote':'embedded';
 const categories=document.getElementById('work-categories'),el=elements(root),ko=root.dataset.lang==='ko',labels=JSON.parse(root.dataset.labels),chips=[];
 // Shop-style chip rows: each chip shows how many works it would leave, given every other filter.
 function chipRow(title,name,items){
   const row=el('div',{class:'work-chip-row',role:'group','aria-label':title},el('span',{class:'work-chip-label'},title));
-  for(const [value,label]of items){
-    const b=el('button',{type:'button',class:'work-chip','data-name':name,'data-value':value},label);
+  for(const [i,[value,label]]of items.entries()){
+    if(i)row.append(el('span',{class:'work-sep','aria-hidden':'true'},'·'));
+    const b=el('button',{type:'button',class:'work-chip','data-name':name,'data-value':value},label,' ',el('span',{class:'work-chip-count'}));
     b.addEventListener('click',()=>{const field=form.elements.namedItem(name);field.value=field.value===value?'':value;update();});
     chips.push(b);row.append(b);
   }
   categories.append(row);
 }
-const all=el('button',{type:'button',class:'work-all'});all.addEventListener('click',()=>{form.elements.namedItem('worker').value='';form.elements.namedItem('kind').value='';update();});categories.append(all);
+const all=el('button',{type:'button',class:'work-all'});all.addEventListener('click',()=>{for(const name of ['worker','kind','status'])form.elements.namedItem(name).value='';update();});
+// The reset button lives on the summary line but still resets the form through its form attribute.
+categories.append(el('div',{class:'work-summary-line'},all,form.querySelector('.work-reset')));
 chipRow('Worker','worker',[...form.elements.namedItem('worker').options].filter(o=>o.value&&entries.some(e=>e.workerIds.includes(o.value))).map(o=>[o.value,o.textContent]));
 chipRow(ko?'분류':'Field','kind',Object.entries(labels.kinds).filter(([id])=>entries.some(e=>e.kind===id)));
+chipRow(ko?'상태':'Status','status',Object.entries(labels.statuses).filter(([id])=>entries.some(e=>e.status===id)));
 const cards=[...grid.querySelectorAll('[data-entry]')],viewButtons=[...root.querySelectorAll('button[data-view]')];
 const defaultView=grid.dataset.view;
 let view=defaultView;
-const names=['q','worker','kind','status','tag'];
+const names=['q','worker','kind','status'];
 function closeInfo() {
   cards.forEach(card=>{delete card.dataset.infoOpen;card.querySelector('.work-info-toggle').setAttribute('aria-expanded','false');});
 }
@@ -45,18 +49,19 @@ function restore() {
     const field=form.elements.namedItem(name),value=params.get(name)||'';
     if(field.tagName==='SELECT')field.value=[...field.options].some(o=>o.value===value)?value:'';else field.value=value;
   }
+  if(params.get('tag')&&!params.get('q'))form.elements.namedItem('q').value='#'+params.get('tag');
   view=['gallery','mosaic','posts'].includes(params.get('view'))?params.get('view'):defaultView;
   update(false);
 }
 function update(writeUrl=true) {
   closeInfo();
   const filters=Object.fromEntries(new FormData(form));
-  for(const b of chips){const {name,value}=b.dataset,count=entries.filter(e=>matchesWork(e,{...filters,[name]:value})).length;b.setAttribute('aria-pressed',String(filters[name]===value));b.disabled=!count&&filters[name]!==value;b.dataset.count=count;}
+  for(const b of chips){const {name,value}=b.dataset,count=entries.filter(e=>matchesWork(e,{...filters,[name]:value})).length;b.setAttribute('aria-pressed',String(filters[name]===value));b.disabled=!count&&filters[name]!==value;b.lastChild.textContent=count;}
   let count=0;
   for(let i=0;i<entries.length;i++){const visible=matchesWork(entries[i],filters);cards[i].hidden=!visible;if(visible)count++;}
   grid.dataset.view=view;viewButtons.forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===view)));
   document.getElementById('work-count').textContent=root.dataset.count.replace('{count}',count);
-  all.textContent=(ko?'전체 보기 · ':'Show all · ')+entries.filter(e=>matchesWork(e,{...filters,worker:'',kind:''})).length;all.setAttribute('aria-pressed',String(!filters.worker&&!filters.kind));
+  all.textContent=(ko?'전체 보기 · ':'Show all · ')+entries.filter(e=>matchesWork(e,{...filters,worker:'',kind:'',status:''})).length;all.setAttribute('aria-pressed',String(!filters.worker&&!filters.kind&&!filters.status));
   document.getElementById('work-empty').hidden=count!==0;
   if(writeUrl){const params=new URLSearchParams();for(const name of names)if(filters[name])params.set(name,filters[name]);if(view!==defaultView)params.set('view',view);history.replaceState(history.state,'',location.pathname+(params.size?'?'+params:''));}
 }
@@ -66,7 +71,7 @@ form.addEventListener('change',()=>update());
 // The reset event fires before the fields are cleared, so update after the reset finishes.
 form.addEventListener('reset',()=>setTimeout(update));
 viewButtons.forEach(b=>b.addEventListener('click',()=>{view=b.dataset.view;update();}));
-root.querySelectorAll('[data-tag]').forEach(b=>b.addEventListener('click',()=>{form.elements.namedItem('tag').value=b.dataset.tag;update();}));
+root.querySelectorAll('[data-tag]').forEach(b=>b.addEventListener('click',()=>{form.elements.namedItem('q').value='#'+b.dataset.tag;update();}));
 root.querySelectorAll('.work-info-toggle').forEach(button=>button.addEventListener('click',()=>{
   const card=button.closest('[data-entry]'),open=card.dataset.infoOpen!=='true';
   delete card.dataset.infoDismissed;

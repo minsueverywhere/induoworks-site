@@ -7,39 +7,31 @@ const {lang}=Astro.props;
   <div class="site-music-row">
     <button id="site-music-handle" type="button" aria-label="Move or tuck away music player"><svg viewBox="0 0 24 24" aria-hidden="true"><path stroke-width="2.5" d="M9 5h.01M15 5h.01M9 12h.01M15 12h.01M9 19h.01M15 19h.01" /></svg></button>
     <button id="site-music-toggle" class="music-toggle" type="button" aria-label="Play"></button>
-    <a id="site-music-work" class="site-music-marquee" href="/work/"><span></span></a>
-    <button id="site-music-close" type="button" aria-label="Stop and close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg></button>
-  </div>
-  <div id="site-music-details">
-    <div id="site-music-progress">
-      <input id="site-music-seek" type="range" min="0" max="1" step=".1" value="0" aria-label="Playback position" />
-      <span id="site-music-time"></span>
-    </div>
+    <div id="site-music-track" role="slider" tabindex="0" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0"><span id="site-music-work" class="site-music-marquee"><span></span></span></div>
   </div>
   <span id="site-music-status" class="sr-only" role="status"></span>
 </aside>
 <script>import '../scripts/site-music-ui.js';</script>
 <style>
-  #site-music{position:fixed;z-index:1100;bottom:max(10px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:min(300px,calc(100% - 20px));background:var(--color-bg);color:var(--color-text-muted);border:1px solid var(--color-border);font:12px/1.5 system-ui,sans-serif;box-sizing:border-box;transition:background-color .12s,border-color .12s,box-shadow .12s}
+  #site-music{position:fixed;z-index:1100;bottom:max(10px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:min(260px,calc(100% - 20px));background:var(--color-bg);color:var(--color-text-muted);border:1px solid var(--color-border);font:12px/1.5 system-ui,sans-serif;box-sizing:border-box;transition:background-color .12s,border-color .12s,box-shadow .12s}
   #site-music[hidden]{display:none}
-  .site-music-row,#site-music-progress{display:flex;align-items:center}
-  .site-music-row{justify-content:space-between}
-  button{flex:none;width:43.5px;height:44px;padding:0;border:0;background:transparent;color:inherit;font:inherit;cursor:pointer;display:grid;place-items:center}
+  .site-music-row{display:flex;align-items:center}
+  button{flex:none;width:32px;height:40px;padding:0;border:0;background:transparent;color:inherit;font:inherit;cursor:pointer;display:grid;place-items:center}
   button:active{color:var(--color-text);background:var(--color-bg-elevated)}
   svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
   #site-music-handle{width:32px;cursor:grab;touch-action:none;color:var(--color-text);background:var(--color-bg-elevated)}#site-music-handle:active{cursor:grabbing}
   #site-music[data-dock]{height:44px;overflow:hidden;border:0;background:transparent}
   #site-music[data-dock] #site-music-handle{box-sizing:border-box;border:1px solid var(--color-border);background:var(--color-bg-elevated)}
   #site-music[data-dock="left"] #site-music-handle{order:4}
-  #site-music[data-dock] button:not(#site-music-handle),#site-music[data-dock] .site-music-marquee,#site-music[data-dock] #site-music-details{visibility:hidden;pointer-events:none}
-  #site-music-details{padding:0 12px 6px}
+  #site-music[data-dock] button:not(#site-music-handle),#site-music[data-dock] #site-music-track{visibility:hidden;pointer-events:none}
   /* The title scrolls when it is too long instead of widening the player. */
-  .site-music-marquee{flex:1;min-width:0;display:block;overflow:hidden;white-space:nowrap;color:inherit;text-decoration:none;padding:0 4px}.site-music-marquee:hover{text-decoration:underline}
+  .site-music-marquee{flex:1;min-width:0;display:block;overflow:hidden;white-space:nowrap;pointer-events:none}
   .site-music-marquee span{display:inline-block}
   .site-music-marquee[data-overflow=true] span{animation:site-music-marquee var(--marquee-time) ease-in-out infinite alternate}
   @keyframes site-music-marquee{0%,15%{transform:none}85%,100%{transform:translateX(var(--marquee-shift))}}
   @media(prefers-reduced-motion:reduce){.site-music-marquee[data-overflow=true] span{animation:none}}
-  #site-music-progress{gap:8px}input{flex:1;min-width:0;min-height:32px;accent-color:var(--color-text-muted)}#site-music-time{white-space:nowrap;font-size:11px;font-variant-numeric:tabular-nums}
+  /* The title doubles as the progress bar: it fills as the track plays and seeks where pressed. */
+  #site-music-track{flex:1;min-width:0;align-self:stretch;display:flex;align-items:center;padding:0 8px;cursor:pointer;touch-action:none;background:linear-gradient(to right,color-mix(in srgb,var(--color-accent) 22%,transparent) var(--progress,0%),transparent var(--progress,0%))}
   #site-music-toggle::before{border-top-width:6px;border-bottom-width:6px;border-left-width:10px}
   #site-music-toggle[aria-pressed="true"]::before{width:10px;height:12px;border-top:0;border-bottom:0;border-left-width:3px;border-right-width:3px}
   #site-music-toggle[data-loading="true"]::before{border:0}
@@ -49,5 +41,5 @@ const {lang}=Astro.props;
   #site-music[data-drop] #site-music-handle svg{transform:scale(.8)}
   #site-music[data-drop]::after{content:'';position:fixed;top:0;bottom:0;width:4px;background:var(--color-accent);opacity:.4;pointer-events:none;box-shadow:0 0 16px var(--color-accent)}
   #site-music[data-drop="left"]::after{left:0}#site-music[data-drop="right"]::after{right:0}
-  button:focus-visible,a:focus-visible,input:focus-visible{outline:1px solid currentColor;outline-offset:-3px}
+  button:focus-visible,#site-music-track:focus-visible{outline:1px solid currentColor;outline-offset:-3px}
 </style>
