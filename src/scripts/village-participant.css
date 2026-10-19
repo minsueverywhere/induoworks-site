@@ -71,3 +71,6 @@
 
 /* Scene notices sit under the editor status line instead of on top of it. */
 .village-scene:has(>.participant-studio:not([hidden])>p:not(:empty)) .village-notice{margin-top:22px}
+
+/* On phones the edit/done button takes the bottom-right corner, so the editor toolbars stack above it. */
+@media(max-width:600px){.participant-tools{bottom:106px}.participant-subtools{bottom:156px}.participant-work-picker{bottom:206px}}
