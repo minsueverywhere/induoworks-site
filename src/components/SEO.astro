@@ -12,7 +12,7 @@ interface Props {
   imageAlt?: string;
 }
 
-const { lang, title, description, noindex = false, image = '/og.png', imageAlt } = Astro.props;
+const { lang, title, description, noindex = false, image = '/og-dewy.png', imageAlt } = Astro.props;
 const dict = t(lang);
 const finalDescription = description ?? dict.meta.description;
 const pageTitle = title === site.name ? site.name : `${title} · ${site.name}`;

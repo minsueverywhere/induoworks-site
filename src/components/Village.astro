@@ -208,7 +208,7 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
   #village-fullscreen svg{display:block;flex:none;pointer-events:none}
   #village-account-menu[hidden],#village-edit[hidden] { display:none; }
   /* Sits right above the full-screen button, its icon on the same vertical line. */
-  #village-edit { position:absolute;right:max(var(--scene-control-inset),env(safe-area-inset-right));bottom:calc(max(var(--scene-control-inset),env(safe-area-inset-bottom)) + 40px);z-index:12;display:flex;flex-direction:row-reverse;align-items:center;gap:6px;height:36px;padding:0 14.5px 0 6px;border:0;background:transparent;color:#526347;font:10px system-ui;letter-spacing:.08em;cursor:pointer; }
+  #village-edit { position:absolute;right:max(var(--scene-control-inset),env(safe-area-inset-right));bottom:calc(max(var(--scene-control-inset),env(safe-area-inset-bottom)) + 44px);z-index:12;display:flex;flex-direction:column;align-items:center;gap:2px;width:44px;min-height:40px;padding:2px 0;border:0;background:transparent;color:#526347;font:9px system-ui;letter-spacing:.04em;cursor:pointer; }
   #village-edit[aria-pressed=true] { font-weight:600; }
   #village-edit .done-icon,#village-edit[aria-pressed=true] .edit-icon { display:none; }
   #village-edit[aria-pressed=true] .done-icon { display:block; }

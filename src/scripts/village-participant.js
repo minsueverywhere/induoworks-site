@@ -83,7 +83,7 @@ export async function createParticipantEditor(api){
     return [['guestbook:guestbook','노트'],...approved.projects.filter(own).map(p=>['project:'+p.slug,p.title.ko||p.slug]),...approved.media.filter(own).map(m=>['media:'+m.id,m.title.ko||m.id]),...(own(approved.music)?[['music:legacy',approved.music.title]]:[]),...(approved.tracks||[]).filter(own).map(t=>['music:'+t.id,t.title])];
   };
   let reference='',objectKind='project';
-  const objectKinds=[['project','전시대','stand'],['media','이미지 전시대','image'],['music','주크박스','music'],['guestbook','노트','note']];
+  const objectKinds=[['project','전시대','stand'],['media','그림','image'],['music','음악','music'],['guestbook','노트','note']];
   const kindChoices=kind=>allChoices().filter(([id])=>id.startsWith(kind+':'));
   const selectedItem=()=>floor().exhibits.find(e=>e.id===selected)||villageContent(model,'ko','').places.find(p=>p.id===selected&&p.area==='room'&&p.owner===owner&&(p.floor||0)===state().level);
   function editableItem(item){
@@ -137,7 +137,7 @@ export async function createParticipantEditor(api){
       icon(tools,'실행 취소','undo',()=>{travel('undo');api.requestDraw();});
       const row=key=>{const el=node('div');el.className='participant-subtools participant-'+key;el.setAttribute('role','toolbar');el.setAttribute('aria-label',key==='objects'?'물건 종류':key==='tiles'?'타일 종류':'선택한 물건 도구');body.append(el);return el;};
       if(sheet==='objects'){
-        const palette=row('objects');for(const [kind,label,key]of objectKinds.filter(([kind])=>kindChoices(kind).length)){const b=icon(palette,label,key,()=>{objectKind=kind;reference=kindChoices(kind)[0]?.[0]||'';sheet='';render();api.requestDraw();});b.setAttribute('aria-pressed',String(objectKind===kind));}
+        const palette=row('objects');for(const [kind,label,key]of objectKinds.filter(([kind])=>kindChoices(kind).length)){const b=icon(palette,label,key,()=>{objectKind=kind;reference=kindChoices(kind)[0]?.[0]||'';render();api.requestDraw();});b.setAttribute('aria-pressed',String(objectKind===kind));}
       }
       if(sheet==='tiles'){
         const palette=row('tiles');for(const [id,label]of [['floor','실내 타일'],['transparent','투명 타일'],['empty','타일 제거']]){const b=icon(palette,label,id,()=>{tool=id;render();api.requestDraw();});b.setAttribute('aria-pressed',String(tool===id));}

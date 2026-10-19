@@ -38,7 +38,7 @@ The editor is excluded from public builds. See [docs/CONTENT.md](docs/CONTENT.md
 /
 ├── public/
 │   ├── logos/              # company logos for the /companies page (see below)
-│   ├── og.png              # default 1200×630 social sharing image
+│   ├── og-dewy.png         # default 1200×630 social sharing image (rename to refresh platform caches)
 │   ├── _headers            # security headers (CSP, HSTS, etc.) — base rules;
 │   │                       # scripts/generate-csp.mjs appends script hashes at build time
 │   └── robots.txt
