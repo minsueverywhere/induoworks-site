@@ -12,7 +12,7 @@ export function createVillageEditor(api){
   const paths={undo:'M4 10h9a7 7 0 0 1 7 7M4 10l5-5M4 10l5 5',trash:'M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7m4-7v7',work:'M5 3h10l4 4v14H5ZM14 3v5h5M8 12h8M8 16h6',place:'m12 3 9 5v9l-9 5-9-5V8Zm-9 5 9 5 9-5M12 13v9',tree:'m12 2 7 10h-4l6 7H3l6-7H5ZM12 19v4',sign:'M3 4h18v10H3ZM12 14v8M7 8h10',project:'m5 3 14 7v10L5 13ZM8 15v5m8-1v3M5 21l7 3 7-3',music:'m3 9 9-5 9 5v9l-9 5-9-5Zm0 0 9 5 9-5M12 14v9M8 9a4 2 0 1 0 8 0 4 2 0 1 0-8 0',move:'m4 3 7 17 2-7 7-2Z',tile:'m12 4 9 5-9 5-9-5Zm-4 3 8 4',grass:'m3 17 5-7 4 5 5-9 4 11M3 20h18',path:'M8 3 5 21M16 3l3 18M11 6h2m-2 6h2m-2 6h2',water:'M3 8q3-3 6 0t6 0 6 0M3 15q3-3 6 0t6 0 6 0',empty:'m4 8 8-5 8 5-8 5Zm3 10h10',flip:'M12 3v18M3 17l6-10v10Zm18 0L15 7v10Z'};
   const choices=kind=>kind==='project'?approved.projects.map(p=>[p.slug,p.title.ko||p.slug]):kind==='media'?approved.media.map(m=>[m.id,m.title.ko||m.id]):[['legacy',approved.music.title],...(approved.tracks||[]).map(t=>[t.id,t.title])];
   const kinds=[['tree','나무'],['grass','풀'],['sign','간판'],['project','전시대'],['music','음악']];
-  const labels={place:'물건 놓기',move:'선택·이동',grass:'잔디 타일',path:'길 타일',water:'물 타일',empty:'타일 제거'};
+  const labels={place:'물건',move:'선택·이동',grass:'잔디',path:'길',water:'물',empty:'제거'};
   const listen=(target,type,fn,options={})=>target.addEventListener(type,fn,{...options,...(api.signal?{signal:api.signal}:{})});
   const active=()=>!panel.hidden&&!busy&&api.state().area==='village';
   const dirty=()=>layout&&JSON.stringify(layout)!==saved;
@@ -27,9 +27,9 @@ export function createVillageEditor(api){
   function render(){
     body.replaceChildren();api.scene.dataset.placing=String(tool==='place'&&!panel.hidden);api.editorUI?.(labels[tool],!panel.hidden);const bar=node('div');bar.className='participant-tools';bar.setAttribute('role','toolbar');bar.setAttribute('aria-label','마을 편집 도구');body.append(bar);
     icon(bar,'move','선택·이동',()=>{tool='move';tiles=false;objectsOpen=false;workOpen=false;selected='';render();api.requestDraw();},tool==='move');
-    icon(bar,'place','물건 놓기',()=>{tool='place';selected='';tiles=false;workOpen=false;objectsOpen=!objectsOpen;render();api.requestDraw();},tool==='place');
-    icon(bar,'tile','마을 타일',()=>{if(['move','place'].includes(tool))tool='grass';selected='';objectsOpen=false;workOpen=false;tiles=!tiles;render();api.requestDraw();},!['move','place'].includes(tool));
-    icon(bar,'undo','실행 취소',()=>undo());
+    icon(bar,'place','물건',()=>{tool='place';selected='';tiles=false;workOpen=false;objectsOpen=!objectsOpen;render();api.requestDraw();},tool==='place');
+    icon(bar,'tile','타일',()=>{if(['move','place'].includes(tool))tool='grass';selected='';objectsOpen=false;workOpen=false;tiles=!tiles;render();api.requestDraw();},!['move','place'].includes(tool));
+    icon(bar,'undo','취소',()=>undo());
     if(objectsOpen){const row=node('div');row.className='participant-subtools';row.setAttribute('role','toolbar');row.setAttribute('aria-label','물건 종류');body.append(row);for(const [id,label]of kinds)icon(row,id,label,()=>{objectKind=id;render();api.requestDraw();},objectKind===id);}
     if(tiles){const row=node('div');row.className='participant-subtools';row.setAttribute('role','toolbar');row.setAttribute('aria-label','마을 타일 종류');body.append(row);for(const id of ['grass','path','water','empty'])icon(row,id,labels[id],()=>{tool=id;render();api.requestDraw();},tool===id);}
     const item=current();if(item&&tool==='move'){

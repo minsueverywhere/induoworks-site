@@ -25,7 +25,7 @@ export async function createParticipantEditor(api){
     if(!villageEditor){const {createVillageEditor}=await import('./village-host.js');villageEditor=createVillageEditor({...api,identity});}
     try{await villageEditor.open();}catch(error){panel.hidden=false;throw error;}
   }
-  const toolLabels={move:'선택·이동',exhibit:'물건 놓기',floor:'타일 놓기',transparent:'투명 타일',empty:'타일 지우기'};
+  const toolLabels={move:'선택·이동',exhibit:'물건',floor:'실내',transparent:'투명',empty:'제거'};
   const placement=()=>{if(!placementCache||placementCache.level!==state().level)placementCache={level:state().level,space:roomCatalog(model,owner,state().level)};return placementCache.space;};
   const state=()=>api.state(),floor=()=>payload.room.floors[state().level];
   const inRoom=()=>state().area==='room'&&state().worker?.id===owner;
@@ -126,7 +126,7 @@ export async function createParticipantEditor(api){
     if(!inRoom())button(body,'작업실로 이동',()=>{api.enter(owner);render();});
     else{
       const tools=node('div');tools.className='participant-tools';tools.setAttribute('role','toolbar');tools.setAttribute('aria-label','작업실 편집 도구');body.append(tools);
-      for(const [id,label] of [['move','선택·이동'],['exhibit','물건 놓기'],['floor','타일 놓기']]){
+      for(const [id,label] of [['move','선택·이동'],['exhibit','물건'],['floor','타일']]){
         const b=icon(tools,label,id,()=>{
           selected='';cursor=null;
           if(id==='exhibit'){tool='exhibit';sheet=sheet==='objects'?'':'objects';if(!kindChoices(objectKind).length)objectKind=objectKinds.find(([kind])=>kindChoices(kind).length)?.[0]||objectKind;}
@@ -134,13 +134,13 @@ export async function createParticipantEditor(api){
           else{tool=id;sheet='';}render();api.requestDraw();
         });b.setAttribute('aria-pressed',String(id==='floor'?['floor','transparent','empty'].includes(tool):tool===id));
       }
-      icon(tools,'실행 취소','undo',()=>{travel('undo');api.requestDraw();});
+      icon(tools,'취소','undo',()=>{travel('undo');api.requestDraw();});
       const row=key=>{const el=node('div');el.className='participant-subtools participant-'+key;el.setAttribute('role','toolbar');el.setAttribute('aria-label',key==='objects'?'물건 종류':key==='tiles'?'타일 종류':'선택한 물건 도구');body.append(el);return el;};
       if(sheet==='objects'){
         const palette=row('objects');for(const [kind,label,key]of objectKinds.filter(([kind])=>kindChoices(kind).length)){const b=icon(palette,label,key,()=>{objectKind=kind;reference=kindChoices(kind)[0]?.[0]||'';render();api.requestDraw();});b.setAttribute('aria-pressed',String(objectKind===kind));}
       }
       if(sheet==='tiles'){
-        const palette=row('tiles');for(const [id,label]of [['floor','실내 타일'],['transparent','투명 타일'],['empty','타일 제거']]){const b=icon(palette,label,id,()=>{tool=id;render();api.requestDraw();});b.setAttribute('aria-pressed',String(tool===id));}
+        const palette=row('tiles');for(const [id,label]of [['floor','실내'],['transparent','투명'],['empty','제거']]){const b=icon(palette,label,id,()=>{tool=id;render();api.requestDraw();});b.setAttribute('aria-pressed',String(tool===id));}
       }
       const item=selectedItem();
       if(item&&tool==='move'){

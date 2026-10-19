@@ -60,7 +60,7 @@ test('participant settings preserve independent full-screen state and collapse t
   await ui.editor.close();assert.equal(ui.scene.attributes['studio-fullscreen'],undefined);
   await ui.editor.open();assert.equal(ui.scene.attributes['studio-fullscreen'],undefined);
   assert.equal(elements(ui.scene).some(e=>e.tag==='details'),false);
-  const add=elements(ui.scene).find(e=>e.attributes['aria-label']==='물건 놓기');add.events.click();
+  const add=elements(ui.scene).find(e=>e.attributes['aria-label']==='물건');add.events.click();
   assert.ok(elements(ui.scene).some(e=>e.attributes['aria-label']==='물건 종류'));
   elements(ui.scene).find(e=>e.attributes['aria-label']==='음악').events.click();
   assert.ok(elements(ui.scene).some(e=>e.attributes['aria-label']==='물건 종류'),'choosing a kind keeps the palette open');
@@ -114,7 +114,7 @@ test('floor navigation leaves the toolbar, active tool labels and undo use the l
   assert.ok(elements(ui.api.floorBar).some(e=>e.className==='floor-height'));
   assert.ok(elements(ui.api.floorBar).some(e=>e.attributes['aria-label']==='층 삭제'));
   ui.editor.undo();assert.equal(ui.preview().workers.find(w=>w.id==='frondward').room.floors.length,1);
-  elements(ui.scene).find(e=>e.attributes['aria-label']==='타일 놓기').events.click();elements(ui.scene).find(e=>e.attributes['aria-label']==='투명 타일').events.click();assert.equal(ui.api.toolLabel,'투명 타일');
+  elements(ui.scene).find(e=>e.attributes['aria-label']==='타일').events.click();elements(ui.scene).find(e=>e.attributes['aria-label']==='투명').events.click();assert.equal(ui.api.toolLabel,'투명');
   await ui.editor.close();assert.equal(ui.api.editing,false);
 });
 
@@ -174,7 +174,7 @@ test('reopening clears the selected exhibit panel and tile/erase tools work afte
  let e=event(0,0,'display:frondward:0:test-display');ui.scene.events.pointerdown(e);ui.scene.events.pointerup(e);
  assert.ok(elements(ui.scene).some(el=>el.className==='participant-subtools participant-selection'));assert.equal(elements(ui.scene).some(el=>el.type==='number'||el.textContent==='너비'||el.textContent==='깊이'),false);
  await ui.editor.close();await ui.editor.open();assert.equal(elements(ui.scene).some(el=>el.className==='participant-subtools participant-selection'),false);assert.equal(ui.api.toolLabel,'선택·이동');
- elements(ui.scene).find(el=>el.attributes['aria-label']==='타일 놓기').events.click();e=event(-1,0);ui.scene.events.pointerdown(e);ui.scene.events.pointerup(e);
+ elements(ui.scene).find(el=>el.attributes['aria-label']==='타일').events.click();e=event(-1,0);ui.scene.events.pointerdown(e);ui.scene.events.pointerup(e);
  assert.ok(ui.preview().workers.find(w=>w.id==='frondward').room.floors[0].tiles.some(t=>t.x===-1&&t.y===0));
  elements(ui.scene).find(el=>el.attributes['aria-label']==='선택·이동').events.click();e=event(0,0,'display:frondward:0:test-display');ui.scene.events.pointerdown(e);ui.scene.events.pointerup(e);elements(ui.scene).find(el=>el.attributes['aria-label']==='삭제').events.click();
  assert.equal(ui.preview().workers.find(w=>w.id==='frondward').room.floors[0].exhibits.length,0);
@@ -182,7 +182,7 @@ test('reopening clears the selected exhibit panel and tile/erase tools work afte
 
 
 test('plain HTTP preview can place a registered exhibit without secure-context randomUUID',async()=>{
- const ui=await setup(undefined,true);elements(ui.scene).find(e=>e.attributes['aria-label']==='물건 놓기').events.click();elements(ui.scene).find(e=>e.attributes['aria-label']==='음악').events.click();
+ const ui=await setup(undefined,true);elements(ui.scene).find(e=>e.attributes['aria-label']==='물건').events.click();elements(ui.scene).find(e=>e.attributes['aria-label']==='음악').events.click();
  const event={button:0,pointerId:1,clientX:0,clientY:0,point:{x:0,y:0},target:{closest:()=>null},preventDefault(){},stopImmediatePropagation(){}};
  ui.scene.events.pointerdown(event);ui.scene.events.pointerup(event);
  const item=ui.preview().workers.find(w=>w.id==='frondward').room.floors[0].exhibits.at(-1);assert.match(item.id,/^display-[0-9a-f]{8}$/);assert.equal(item.kind,'music');assert.equal(ui.writes.length,0);
@@ -271,7 +271,7 @@ test('guestbook contact menus distinguish team from individual and hidden posts 
 
 test('object palette exposes types only; legacy displays can flip and choose a different registered Work',async()=>{
  const ui=await setup();const press=label=>elements(ui.scene).find(e=>e.attributes['aria-label']===label).events.click();
- press('물건 놓기');assert.ok(elements(ui.scene).some(e=>e.attributes['aria-label']==='물건 종류'));assert.equal(ui.button('GRENCH BOSS'),undefined);press('전시대');
+ press('물건');assert.ok(elements(ui.scene).some(e=>e.attributes['aria-label']==='물건 종류'));assert.equal(ui.button('GRENCH BOSS'),undefined);press('전시대');
  const event={button:0,pointerId:1,clientX:0,clientY:0,point:{x:0,y:0},target:{closest:()=>null},preventDefault(){},stopImmediatePropagation(){}};
  ui.scene.events.pointerdown(event);ui.scene.events.pointerup(event);assert.equal(ui.api.toolLabel,'선택·이동');
  const item=()=>ui.preview().workers.find(w=>w.id==='frondward').room.floors[0].exhibits.at(-1);assert.equal(item().kind,'project');assert.equal(item().width,1);assert.equal(item().depth,1);
@@ -285,7 +285,7 @@ test('object palette exposes types only; legacy displays can flip and choose a d
 test('height presets cycle low normal high without numeric inputs and tile painting is one undo gesture',async()=>{
  const ui=await setup();const height=()=>elements(ui.api.floorBar).find(e=>e.className==='floor-height');
  assert.equal(height().textContent,'보통');height().events.click();assert.equal(height().textContent,'높음');height().events.click();assert.equal(height().textContent,'낮음');height().events.click();assert.equal(height().textContent,'보통');
- elements(ui.scene).find(e=>e.attributes['aria-label']==='타일 놓기').events.click();assert.equal(elements(ui.scene).filter(e=>e.attributes['aria-label']==='타일 종류').length,1);
+ elements(ui.scene).find(e=>e.attributes['aria-label']==='타일').events.click();assert.equal(elements(ui.scene).filter(e=>e.attributes['aria-label']==='타일 종류').length,1);
  const event=x=>({button:0,pointerId:1,clientX:x*10,clientY:0,point:{x,y:0},target:{closest:()=>null},preventDefault(){},stopImmediatePropagation(){}});
  ui.scene.events.pointerdown(event(-1));ui.scene.events.pointermove(event(-2));ui.scene.events.pointerup(event(-2));
  const tiles=()=>ui.preview().workers.find(w=>w.id==='frondward').room.floors[0].tiles;
@@ -303,15 +303,15 @@ test('host scene editor moves a house, rejects collision and groups terrain stro
  const house=catalog.workers.find(w=>w.house),first=event(house.house.x,house.house.y,house.id);
  let point;for(const t of catalog.world.tiles)if(!objectPlacementError(catalog,'house',house.id,t)&&(t.x!==house.house.x||t.y!==house.house.y)){point=t;break;}assert.ok(point);
  scene.events.pointerdown(first);scene.events.pointermove(event(point.x,point.y,house.id));scene.events.pointerup(event(point.x,point.y,house.id));assert.equal(rendered.workers.find(w=>w.id===house.id).house.x,point.x);assert.equal(saved,undefined);editor.undo();assert.deepEqual(rendered.workers.find(w=>w.id===house.id).house,house.house);
- press('마을 타일');scene.events.pointerdown(event(-1,0));scene.events.pointermove(event(-2,0));scene.events.pointerup(event(-2,0));assert.ok(rendered.world.tiles.some(t=>t.x===-2));editor.undo();assert.equal(rendered.world.tiles.some(t=>t.x<0),false);
+ press('타일');scene.events.pointerdown(event(-1,0));scene.events.pointermove(event(-2,0));scene.events.pointerup(event(-2,0));assert.ok(rendered.world.tiles.some(t=>t.x===-2));editor.undo();assert.equal(rendered.world.tiles.some(t=>t.x<0),false);
  for(const [kind,label]of [['tree','나무'],['grass','풀'],['sign','간판'],['project','전시대'],['music','음악']]){
-  press('물건 놓기');press(label);const type=['project','music'].includes(kind)?'exhibit':kind,point=rendered.world.tiles.find(t=>!objectPlacementError(rendered,type,'',t));assert.ok(point,kind);
+  press('물건');press(label);const type=['project','music'].includes(kind)?'exhibit':kind,point=rendered.world.tiles.find(t=>!objectPlacementError(rendered,type,'',t));assert.ok(point,kind);
   scene.events.pointerdown(event(point.x,point.y));scene.events.pointerup(event(point.x,point.y));
   const items=type==='exhibit'?rendered.world.exhibits:rendered.world.decorations,item=items.at(-1);assert.equal(item.kind||item.type,kind);
   if(type==='exhibit'){const options=elements(scene).filter(e=>e.tag==='button'&&e.textContent&&e.attributes['aria-pressed']!==undefined);assert.ok(options.length);options.at(-1).events.click();}
   assert.ok(elements(scene).some(e=>e.attributes['aria-label']==='삭제'));press('삭제');assert.equal((type==='exhibit'?rendered.world.exhibits:rendered.world.decorations).some(e=>e.id===item.id),false);
  }
- press('마을 타일');scene.events.pointerdown(event(-1,0));scene.events.pointerup(event(-1,0));assert.equal(await editor.close(),true);assert.deepEqual(Object.keys(saved).sort(),['layout','revision']);assert.equal(saved.layout.houses.length,catalog.workers.filter(w=>w.house).length);
+ press('타일');scene.events.pointerdown(event(-1,0));scene.events.pointerup(event(-1,0));assert.equal(await editor.close(),true);assert.deepEqual(Object.keys(saved).sort(),['layout','revision']);assert.equal(saved.layout.houses.length,catalog.workers.filter(w=>w.house).length);
 });
 
 test('leaving for the village awaits successful editor close and never leaves edit mode enabled on reentry',async()=>{
@@ -335,7 +335,7 @@ test('a selected jukebox names its current song directly and its song picker upd
 
 test('placement follows a preview until release and cancellation leaves no exhibit behind',async()=>{
  const ui=await setup(undefined,true),press=label=>elements(ui.scene).find(e=>e.attributes['aria-label']===label).events.click();
- press('물건 놓기');press('음악');const event=x=>({button:0,pointerId:1,clientX:x*10,clientY:0,point:{x,y:0},target:{closest:()=>null},preventDefault(){},stopImmediatePropagation(){}}),items=()=>ui.preview().workers.find(w=>w.id==='frondward').room.floors[0].exhibits;
+ press('물건');press('음악');const event=x=>({button:0,pointerId:1,clientX:x*10,clientY:0,point:{x,y:0},target:{closest:()=>null},preventDefault(){},stopImmediatePropagation(){}}),items=()=>ui.preview().workers.find(w=>w.id==='frondward').room.floors[0].exhibits;
  const count=items().length;ui.scene.events.pointerdown(event(0));assert.equal(items().length,count);ui.scene.events.pointermove(event(1));ui.editor.draw(0);assert.equal(ui.ghosts.at(-1)[0],'music');assert.equal(ui.ghosts.at(-1)[1].x,1);assert.equal(ui.ghosts.at(-1)[3],true);
  ui.scene.events.pointercancel(event(1));assert.equal(items().length,count);
  ui.scene.events.pointerdown(event(0));ui.scene.events.pointermove(event(1));ui.scene.events.pointerup(event(1));assert.equal(items().length,count+1);assert.equal(items().at(-1).x,1);assert.ok(ui.button('Veiled Garden'));

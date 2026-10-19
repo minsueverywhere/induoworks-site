@@ -33,7 +33,7 @@ test('compact terrain extensions and colored letters survive saving and reloadin
   const saved=await store.save(draft,before.revision);
   assert.deepEqual((await createEditorStore(directory).read()).catalog,draft);
   const invalid=structuredClone(draft);setTerrain(invalid.world,-1,0,'empty');
-  await assert.rejects(()=>store.save(invalid,saved.revision),/밖/);
+  await assert.rejects(()=>store.save(invalid,saved.revision),/바닥 타일 위에만/);
   assert.deepEqual((await store.read()).catalog,draft);
 });
 
