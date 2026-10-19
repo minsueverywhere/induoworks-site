@@ -13,19 +13,18 @@ const views=[{id:'gallery',label:ko?'갤러리':'Gallery',path:'M3 3h7v7H3ZM14 3
 ---
 <Layout lang={lang} title={dict.work.title} description={dict.work.description}>
   <section class="page-main" id="work-board" data-lang={lang} data-labels={JSON.stringify({kinds:Object.fromEntries(kinds.map(k=>[k.id,k.label])),statuses:Object.fromEntries(statuses.map(s=>[s.id,s.label])),placeholder:ko?'이미지 준비 중':'Image coming soon',info:ko?'작품 정보: ':'Work information: '})} data-entries={JSON.stringify(entries.map(({id,search,kind,status,workerIds,tags})=>({id,search,kind,status,workerIds,tags})))} data-count={ko?'{count}개의 작품':'{count} works'}>
-    <div class="work-heading"><h1 class="page-title">{dict.work.title}</h1><a href={localizePath('/',lang)+'?studio=1'}>{ko?'내 작품 관리':'Manage my work'}</a></div>
-    <p class="page-intro">{ko?'게임, 음악, 아트워크를 둘러보고 만드는 사람과 분야로 찾아보세요.':'Explore games, music and artwork. Find work by its maker, field or tags.'}</p>
-    <div class="work-browser"><nav id="work-categories" aria-label={ko?'작품 분류':'Work categories'}></nav><div class="work-results">
+    <div class="work-heading"><h1 class="page-title">{dict.work.title}</h1></div>
+    <div class="work-browser"><div class="work-results"><nav id="work-categories" aria-label={ko?'작품 분류':'Work categories'}></nav>
     <div class="work-filter-panel">
     <form id="work-filters" class="work-filters" role="search" aria-label={ko?'작품 검색':'Search works'}>
-      <label class="search-field"><span class="sr-only">{ko?'검색':'Search'}</span><input type="search" name="q" placeholder={ko?'검색':'Search'} autocomplete="off" /></label>
-      <label hidden><span class="sr-only">{ko?'참여자':'Worker'}</span><select name="worker"><option value="">{ko?'- 참여자 -':'- Worker -'}</option><optgroup label={ko?'참여자':'Worker'}>{workers.map(w=><option value={w.id}>{w.name}</option>)}</optgroup></select></label>
-      <label hidden><span class="sr-only">{ko?'분야':'Field'}</span><select name="kind"><option value="">{ko?'- 분야 -':'- Field -'}</option><optgroup label={ko?'분야':'Field'}>{kinds.map(k=><option value={k.id}>{k.label}</option>)}</optgroup></select></label>
-      <label><span class="sr-only">{ko?'상태':'Status'}</span><select name="status"><option value="">{ko?'- 상태 -':'- Status -'}</option><optgroup label={ko?'상태':'Status'}>{statuses.map(s=><option value={s.id}>{s.label}</option>)}</optgroup></select></label>
-      <label><span class="sr-only">{ko?'태그':'Tag'}</span><select name="tag"><option value="">{ko?'- 태그 -':'- Tag -'}</option><optgroup label={ko?'태그':'Tag'}>{tags.map(tag=><option value={tag}>{tag}</option>)}</optgroup></select></label>
-      <button class="work-reset" type="reset" aria-label={ko?'검색·필터 초기화':'Reset search and filters'} title={ko?'검색·필터 초기화':'Reset search and filters'}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10a9 9 0 1 1 2 8M3 4v6h6" /></svg></button>
+      <label class="search-field"><span class="sr-only">{ko?'검색':'Search'}</span><input type="search" name="q" list="work-tags" placeholder={ko?'검색 · #태그':'Search · #tag'} autocomplete="off" /></label>
+      <datalist id="work-tags">{tags.map(tag=><option value={'#'+tag} />)}</datalist>
+      <label hidden><span class="sr-only">{ko?'작업자':'Worker'}</span><select name="worker"><option value=""></option>{workers.map(w=><option value={w.id}>{w.name}</option>)}</select></label>
+      <label hidden><span class="sr-only">{ko?'분야':'Field'}</span><select name="kind"><option value=""></option>{kinds.map(k=><option value={k.id}>{k.label}</option>)}</select></label>
+      <label hidden><span class="sr-only">{ko?'상태':'Status'}</span><select name="status"><option value=""></option>{statuses.map(s=><option value={s.id}>{s.label}</option>)}</select></label>
+      <button class="work-reset" type="reset" form="work-filters" aria-label={ko?'검색·필터 초기화':'Reset search and filters'} title={ko?'검색·필터 초기화':'Reset search and filters'}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10a9 9 0 1 1 2 8M3 4v6h6" /></svg></button>
     </form></div>
-    <div class="work-toolbar"><p id="work-count" role="status" aria-live="polite">{ko?entries.length+'개의 작품':entries.length+' works'}</p><div class="work-views" role="group" aria-label={ko?'보기 방식':'View style'}>{views.map(v=><button type="button" data-view={v.id} aria-pressed={v.id==='posts'} aria-label={v.label} title={v.label}><svg viewBox="0 0 24 24" aria-hidden="true"><path d={v.path} /></svg></button>)}</div></div>
+    <div class="work-toolbar"><p id="work-count" role="status" aria-live="polite">{ko?entries.length+'개의 작품':entries.length+' works'}</p><div class="work-toolbar-end"><a class="work-manage" href={localizePath('/',lang)+'?studio=1'} title={ko?'내 작업물 관리':'Manage my work'}>{ko?'내 작업물':'My Work'}</a><div class="work-views" role="group" aria-label={ko?'보기 방식':'View style'}>{views.map(v=><button type="button" data-view={v.id} aria-pressed={v.id==='posts'} aria-label={v.label} title={v.label}><svg viewBox="0 0 24 24" aria-hidden="true"><path d={v.path} /></svg></button>)}</div></div></div>
     <div id="work-grid" data-view="posts">
       {entries.map(entry=><article class="work-card" data-entry={entry.id}>
         <a class="work-preview focus-ring" href={entry.href} aria-label={entry.title} target={entry.file?'_blank':undefined} rel={entry.file?'noopener noreferrer':undefined}>
@@ -50,23 +49,32 @@ const views=[{id:'gallery',label:ko?'갤러리':'Gallery',path:'M3 3h7v7H3ZM14 3
 </Layout>
 <script>import '../scripts/work-board.js';</script>
 <style>
-  .work-heading{display:flex;align-items:baseline;justify-content:space-between;gap:1rem}.work-heading a{font-size:.75rem;color:var(--color-text-muted);text-decoration:underline;text-underline-offset:3px}
-  .work-filter-panel { display: none; margin-top: 1.5rem; }
-  .ready .work-filter-panel { display: block; }
-  .work-filters { display: none; grid-template-columns: minmax(180px,2fr) repeat(2,minmax(0,1fr)) auto; align-items: end; gap: .5rem; margin-top: 0; }
+  .work-heading{display:flex;align-items:center;flex-wrap:wrap;gap:.5rem 1rem}
+  .work-toolbar-end{display:flex;align-items:center;gap:.75rem}.work-manage{white-space:nowrap;font-size:.75rem;color:var(--color-text-muted);text-decoration:underline;text-underline-offset:3px}
+  /* The script moves the search form onto the summary line; this panel only holds it until then. */
+  .work-filter-panel { display: none; }
+  .work-filters { display: none; grid-template-columns: 1fr; margin-top: 0; }
   .ready .work-filters { display: grid; }
   label { display: grid; gap: .4rem; font-size: .75rem; color: var(--color-text-muted); min-width: 0; }
   input,select,.work-filters button { width: 100%; min-width: 0; min-height: 44px; padding: .6rem .65rem; color: var(--color-text); background: transparent; border: 0; border-bottom: 1px solid var(--color-border); border-radius: 0; font-size: .8rem; }
   label[hidden]{display:none}
-  select option,select optgroup{color:var(--color-text);background:var(--color-bg)}
-  .work-browser{display:grid;grid-template-columns:160px minmax(0,1fr);gap:2rem}
-  #work-categories{margin-top:1.5rem;min-width:0}
-  #work-categories :global(button),#work-categories :global(summary){min-height:40px;padding:.5rem 0;font-size:.8rem;color:var(--color-text-muted);cursor:pointer;text-align:left}
-  #work-categories :global(button){display:block;width:100%}
-  #work-categories :global(details){border-top:1px solid var(--color-border)}
-  #work-categories :global(details button){padding-left:1rem}
-  #work-categories :global(button[aria-current=true]){color:var(--color-text);font-weight:600}
-  @media(max-width:760px){.work-browser{grid-template-columns:1fr;gap:0}#work-categories{display:flex;flex-wrap:wrap;gap:.5rem 1rem}#work-categories :global(details){border:0}#work-categories :global(>button){width:auto}}
+  select option{color:var(--color-text);background:var(--color-bg)}
+  #work-categories{display:grid;gap:.5rem;margin-top:1.5rem}
+  .work-summary-line{flex:0 1 320px;margin-left:auto;display:flex;align-items:center;gap:.25rem}
+  .work-summary-line .work-filters{flex:1;min-width:0}
+  @media(max-width:639px){.work-summary-line{flex-basis:100%}}
+  .work-summary-line input{min-height:36px;padding:.3rem .25rem}
+  .work-chip-row{display:flex;align-items:center;flex-wrap:wrap;column-gap:.5rem}
+  .work-chip-label{min-width:4.5rem;font-size:.7rem;color:var(--color-text-muted)}
+  .work-sep{font-size:.75rem;color:var(--color-text-muted);opacity:.6}
+  .work-chip{min-height:32px;padding:0;font-size:.8rem;color:var(--color-text-muted);background:transparent;cursor:pointer}
+  .work-chip-count{font-size:.7rem;font-variant-numeric:tabular-nums;opacity:.7}
+  .work-chip:not(:disabled):hover{color:var(--color-text)}
+  /* A team colour, once set as --worker-color, tints the selected worker. */
+  .work-chip[aria-pressed=true]{color:var(--worker-color,var(--color-text));font-weight:600;text-decoration:underline;text-underline-offset:4px}
+  .work-chip:disabled{opacity:.35;cursor:default}
+  /* On phones the row names become small headings so they read apart from the choices below. */
+  @media(max-width:639px){.work-chip-row{margin-top:.25rem}.work-chip-label{min-width:100%;font-size:.65rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--color-text);opacity:.55}}
   button { cursor: pointer; }
   input:focus-visible,select:focus-visible,button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }
   .work-toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem; padding: 1.25rem 0; font-size: .8rem; color: var(--color-text-muted); }
@@ -76,7 +84,7 @@ const views=[{id:'gallery',label:ko?'갤러리':'Gallery',path:'M3 3h7v7H3ZM14 3
   .work-views button:hover,.work-views button[aria-pressed="true"] { opacity:1;color:var(--color-text); }
   .work-views button[aria-pressed="true"]::after{content:'';position:absolute;left:12px;right:12px;bottom:3px;height:1px;background:currentColor}
   .work-reset svg,.work-views svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
-  .work-filters .work-reset{width:44px;display:grid;place-items:center;padding:0;border:0;background:transparent;color:var(--color-text-muted)}
+  .work-reset{width:44px;min-height:36px;display:grid;place-items:center;padding:0;border:0;background:transparent;color:var(--color-text-muted)}
   .work-reset:hover{color:var(--color-text)}
   #work-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 1.25rem; }
   .work-card { position: relative; min-width: 0; overflow: hidden; border: 1px solid var(--color-border); border-radius: .75rem; }
@@ -124,7 +132,7 @@ const views=[{id:'gallery',label:ko?'갤러리':'Gallery',path:'M3 3h7v7H3ZM14 3
   [data-view="posts"] .work-placeholder small { display: none; }
   [data-view="posts"] .work-meta { grid-column: 2; grid-row: 1 / span 2; padding: 0; flex-direction: column; align-items: flex-end; }
   #work-empty { padding: 3rem 0; color: var(--color-text-muted); font-size: .875rem; }
-  @media(max-width:900px) { .work-filters { grid-template-columns: repeat(2,minmax(0,1fr)) 44px; }.search-field { grid-column: 1/-1; } #work-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } #work-grid[data-view="mosaic"] { columns: 2; } }
-  @media(max-width:639px) { .work-filters { grid-template-columns: repeat(2,minmax(0,1fr)); } .search-field { grid-column: 1/-1; grid-row:1; padding-right:52px; } .work-filters .work-reset{grid-column:2;grid-row:1;justify-self:end} #work-grid { grid-template-columns: minmax(0,1fr); } #work-grid[data-view="mosaic"] { columns: 1; } [data-view="posts"] .work-card { grid-template-columns: 72px minmax(0,1fr); } [data-view="posts"] .work-info { grid-template-columns: minmax(0,1fr); } [data-view="posts"] .work-meta { grid-column: 1; grid-row: auto; flex-direction: row; } [data-view="posts"] .work-placeholder span { font-size: 1.4rem; } }
+  @media(max-width:900px) { #work-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } #work-grid[data-view="mosaic"] { columns: 2; } }
+  @media(max-width:639px) { #work-grid { grid-template-columns: minmax(0,1fr); } #work-grid[data-view="mosaic"] { columns: 1; } [data-view="posts"] .work-card { grid-template-columns: 72px minmax(0,1fr); } [data-view="posts"] .work-info { grid-template-columns: minmax(0,1fr); } [data-view="posts"] .work-meta { grid-column: 1; grid-row: auto; flex-direction: row; } [data-view="posts"] .work-placeholder span { font-size: 1.4rem; } }
   @media(prefers-reduced-motion:reduce) { .work-info { transition: none; } }
 </style>

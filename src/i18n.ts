@@ -52,8 +52,7 @@ export const ui = {
     },
     meta: {
       tagline: 'Independent, Together!',
-      description:
-        'Games, music, artwork, and other projects.',
+      description: 'Independent, Together! Create your way. Share it here — games, music and artwork from Induo Works and friends.',
     },
     home: {
       heading: 'Independent, Together!',
@@ -178,7 +177,7 @@ export const ui = {
     nav: {
       home: 'Induohood',
       work: '작업물',
-      workers: '함께하는 사람들',
+      workers: '작업자들',
       showcase: '사이트 정보',
       labs: '실험실',
       companies: '계열사',
@@ -187,7 +186,7 @@ export const ui = {
     },
     meta: {
       tagline: 'Independent, Together!',
-      description: '게임, 음악, 아트워크와 그 외 작업물을 모읍니다.',
+      description: 'Independent, Together! 각자의 방식으로 만들고 여기서 나눠요. Induo Works와 친구들의 게임, 음악, 아트워크.',
     },
     home: {
       heading: 'Independent, Together!',
@@ -215,9 +214,9 @@ export const ui = {
       empty: '아직 등록된 작업물이 없습니다.',
     },
     workers: {
-      title: '함께하는 사람들',
-      description: '함께하는 사람들과 그들의 작업물을 소개합니다.',
-      intro: '함께하는 사람들과 각자의 작업물을 소개합니다.',
+      title: '작업자들',
+      description: '함께 만드는 작업자들과 그들의 작업물을 소개합니다.',
+      intro: '함께 만드는 작업자들과 각자의 작업물을 소개합니다.',
       empty: '아직 등록된 프로필이 없습니다.',
       website: '웹사이트',
       works: '작업물',

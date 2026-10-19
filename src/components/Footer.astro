@@ -41,5 +41,6 @@ const { lang } = Astro.props;
     .footer-social { flex-wrap:nowrap;gap:0; }
     .footer-social a { width:20px; }
   }
-  @media(max-width:359px) { .footer-social{margin-left:auto} }
+  /* The tagline is what wraps the row on narrow phones; the icons matter more there. */
+  @media(max-width:479px) { .footer-tagline{display:none} .footer-top{flex-wrap:nowrap} }
 </style>

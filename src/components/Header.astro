@@ -84,6 +84,15 @@ const languagePath = currentBasePath === '/404/' ? '/' : currentBasePath;
   </nav>
 </header>
 
+<script>
+  import { navigate } from 'astro:transitions/client';
+  // Client-side navigation keeps the persisted music player playing across languages.
+  document.addEventListener('change', (event) => {
+    const language = event.target;
+    if (language instanceof HTMLSelectElement && language.id === 'site-language') navigate(language.value + location.search + location.hash);
+  });
+</script>
+
 <script is:inline data-astro-rerun>
   (function () {
     const btn = document.getElementById('menu-toggle');
@@ -92,9 +101,6 @@ const languagePath = currentBasePath === '/404/' ? '/' : currentBasePath;
       const isHidden = menu?.classList.toggle('hidden');
       btn.setAttribute('aria-expanded', String(!isHidden));
     });
-
-    const language = document.getElementById('site-language');
-    language?.addEventListener('change', () => window.location.assign(language.value + window.location.search + window.location.hash));
 
     const nav = document.getElementById('primary-nav');
     const indicator = nav?.querySelector('.nav-indicator');

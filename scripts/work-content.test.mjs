@@ -49,4 +49,7 @@ test('search combines normalized words and all selected properties', () => {
   }
   assert.equal(matchesWork({...entry,workerIds:[]},{worker:'frondward'}),false);
   assert.equal(matchesWork({...entry,tags:[]},{tag:'Godot'}),false);
+  assert.equal(matchesWork(entry,{q:'#godot 개발'}),true);
+  assert.equal(matchesWork(entry,{q:'#logo'}),false);
+  assert.equal(matchesWork({...entry,search:entry.search+' #Logo'},{q:'#logo'}),false,'#words never match plain text');
 });
