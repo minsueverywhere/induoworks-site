@@ -33,5 +33,10 @@ const dict = t(lang);
         </div>
       ))}
     </div>
+    <p class="mt-10 max-w-xl text-xs leading-relaxed text-[var(--color-text-muted)]">
+      {lang==='ko'
+        ? '방문 집계: 이 사이트는 브라우저에 무작위 기기 ID를 하나 저장하고, 페이지를 열 때 그 ID의 해시와 날짜만 기록해 방문·기기 수를 셉니다. 이름·IP·쿠키 정보는 기록하지 않으며, 사이트 데이터를 지우면 ID도 지워집니다. Cloudflare Web Analytics의 쿠키 없는 집계도 사용합니다.'
+        : 'Visit counts: this site keeps one random device ID in your browser and, when a page opens, records only a hash of that ID and the date to count visits and devices. No names, IP addresses or cookies are stored, and clearing site data removes the ID. Cookie-free Cloudflare Web Analytics is also used.'}
+    </p>
   </section>
 </Layout>

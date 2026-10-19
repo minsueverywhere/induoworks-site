@@ -23,6 +23,10 @@
 		"name": "STUDIO_RATE_LIMITER",
 		"namespace_id": "2026101701",
 		"simple": { "limit": 30, "period": 60 }
+	}, {
+		"name": "VISIT_RATE_LIMITER",
+		"namespace_id": "2026101901",
+		"simple": { "limit": 120, "period": 60 }
 	}],
 	"observability": {
 		"enabled": true
