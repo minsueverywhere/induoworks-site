@@ -467,8 +467,8 @@
     "duration": 64,
     "sourceSha256": "930fee2b274ed2475f15068165e8a2062d3344b9463924b5330cd9df37b5be36",
     "sources": {
-      "ogg": "/village/music/sunlit-circuit-930fee2b274e.ogg",
-      "mp3": "/village/music/sunlit-circuit-930fee2b274e.mp3"
+      "ogg": "/village/music/sunlit-circuit-6526919d0a84.ogg",
+      "mp3": "/village/music/sunlit-circuit-6526919d0a84.mp3"
     },
     "artist": "Frondward",
     "workerIds": [
@@ -482,8 +482,8 @@
       "duration": 64,
       "sourceSha256": "9edde1f359c4e56000b323387ff44619d9a757ed37b1f032d70084be47d89380",
       "sources": {
-        "ogg": "/village/music/evening-return-9edde1f359c4.ogg",
-        "mp3": "/village/music/evening-return-9edde1f359c4.mp3"
+        "ogg": "/village/music/evening-return-e0400f0a1715.ogg",
+        "mp3": "/village/music/evening-return-e0400f0a1715.mp3"
       },
       "project": "GRENCH BOSS",
       "artist": "Frondward",
@@ -497,8 +497,8 @@
       "duration": 72,
       "sourceSha256": "a544c8bc1bfbacd5b529e29c9da3b2ebe8759d809987dc5513fe6f3464b550d8",
       "sources": {
-        "ogg": "/village/music/main-menu-theme-a544c8bc1bfb.ogg",
-        "mp3": "/village/music/main-menu-theme-a544c8bc1bfb.mp3"
+        "ogg": "/village/music/main-menu-theme-0ffb9e82829c.ogg",
+        "mp3": "/village/music/main-menu-theme-0ffb9e82829c.mp3"
       },
       "project": "GRENCH BOSS",
       "artist": "Frondward",
@@ -512,8 +512,8 @@
       "duration": 68.5714375,
       "sourceSha256": "039782f1764d2c19f62933068dbdc332f030c7fd7dcdae2d1e074b055f9ef54c",
       "sources": {
-        "ogg": "/village/music/merchant-theme-039782f1764d.ogg",
-        "mp3": "/village/music/merchant-theme-039782f1764d.mp3"
+        "ogg": "/village/music/merchant-theme-0c691b674572.ogg",
+        "mp3": "/village/music/merchant-theme-0c691b674572.mp3"
       },
       "project": "GRENCH BOSS",
       "artist": "Frondward",
@@ -527,8 +527,8 @@
       "duration": 64,
       "sourceSha256": "b3875d0505c20acc426ce264382e342f43dcd1c781d32117562ff7813053f5b1",
       "sources": {
-        "ogg": "/village/music/quiet-harbor-b3875d0505c2.ogg",
-        "mp3": "/village/music/quiet-harbor-b3875d0505c2.mp3"
+        "ogg": "/village/music/quiet-harbor-61ba7311fba4.ogg",
+        "mp3": "/village/music/quiet-harbor-61ba7311fba4.mp3"
       },
       "project": "GRENCH BOSS",
       "artist": "Frondward",
@@ -542,8 +542,8 @@
       "duration": 64,
       "sourceSha256": "2e0582ffbb7b3fcf1e9cf654dd4ba3f0742794b9944b84f5c61175633765ca33",
       "sources": {
-        "ogg": "/village/music/veiled-garden-2e0582ffbb7b.ogg",
-        "mp3": "/village/music/veiled-garden-2e0582ffbb7b.mp3"
+        "ogg": "/village/music/veiled-garden-f0f3c2ca18b6.ogg",
+        "mp3": "/village/music/veiled-garden-f0f3c2ca18b6.mp3"
       },
       "project": "GRENCH BOSS",
       "artist": "Frondward",
