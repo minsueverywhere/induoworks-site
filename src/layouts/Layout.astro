@@ -33,6 +33,8 @@ const dict = t(lang);
     <meta name="generator" content={Astro.generator} />
 
     <SEO lang={lang} title={title} description={description} noindex={noindex} image={image} imageAlt={imageAlt} />
+    {/* Cloudflare Web Analytics: set PUBLIC_CF_ANALYTICS_TOKEN at build time, or enable automatic setup in the dashboard. */}
+    {import.meta.env.PUBLIC_CF_ANALYTICS_TOKEN && <script is:inline defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon={JSON.stringify({token:import.meta.env.PUBLIC_CF_ANALYTICS_TOKEN})}></script>}
 
     <!--
       Blocking, inline, and tiny on purpose: sets the theme before first paint
@@ -58,5 +60,6 @@ const dict = t(lang);
     </main>
     <Footer lang={lang} />
     <MusicPlayer lang={lang} />
+    <script>import '../scripts/visit-beacon.mjs';</script>
   </body>
 </html>

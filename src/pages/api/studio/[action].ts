@@ -5,10 +5,13 @@ import {studioDrafts} from '../../../server/studio-drafts.ts';
 import {studioRooms} from '../../../server/studio-rooms.ts';
 import {studioVillage} from '../../../server/studio-village.ts';
 import {studioGuestbook} from '../../../server/studio-guestbook.ts';
+import {recordVisit,visitStats} from '../../../server/site-visits.ts';
 export const prerender=false;
 export const ALL:APIRoute=async({request,params})=>{
   const bindings=env as unknown as StudioEnv;
   try{
+    if(params.action==='visit')return await recordVisit(request,bindings);
+    if(params.action==='visit-stats')return await visitStats(request,bindings);
     if(params.action==='worker-profiles')return await workerProfiles(request,bindings,await caches.open('studio-public-worker-profiles'));
     if(['village','village-view'].includes(params.action||''))return await studioVillage(request,bindings,params.action!,params.action==='village-view'?await caches.open('studio-public-village'):undefined);
     if(params.action==='guestbook')return await studioGuestbook(request,bindings);

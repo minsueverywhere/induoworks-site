@@ -218,6 +218,7 @@ export async function createParticipantEditor(api){
   listen(window,'keydown',event=>{if(event.key==='Escape'&&!top.hidden){event.preventDefault();hideAccount();return;}if(panel.hidden||confirmation.open)return;if(event.key==='Escape'){event.preventDefault();void closeStudio();return;}if(!payload)return;const action=historyShortcut(event);if(action){event.preventDefault();travel(action);}});
   try{
     identity=api.identity||await request('session');const workers=JSON.parse(api.root.dataset.workers),owners=workers.filter(w=>identity.host||identity.owners.includes(w.id));
+    if(identity.host)button(top,'방문 통계',()=>location.assign('/ko/stats/'));
     if(identity.host)button(top,'변경 요청 검토',()=>void task(async()=>{
       await persist();const proposals=await request('proposals');hideAccount();panel.hidden=false;api.onOpen?.();body.replaceChildren();editing=false;panel.dataset.room='false';api.scene.classList.toggle('is-decorating',false);api.editorUI?.('',false);api.updateFloors?.();
       for(const proposal of proposals){const row=node('div');row.append(node('p',proposal.worker_id+' · '+proposal.reason));
