@@ -30,9 +30,9 @@ function chipRow(title,name,items){
   }
   categories.append(row);
 }
-// The reset button lives on the summary line but still resets the form through its form attribute.
-categories.append(el('div',{class:'work-summary-line'},form,form.querySelector('.work-reset')));
-chipRow('Worker','worker',[...form.elements.namedItem('worker').options].filter(o=>o.value&&entries.some(e=>e.workerIds.includes(o.value))).map(o=>[o.value,o.textContent]));
+// Search and reset sit beside the title; reset still targets the form through its form attribute.
+root.querySelector('.work-heading h1').after(el('div',{class:'work-summary-line'},form,form.querySelector('.work-reset')));
+chipRow(ko?'작업자':'Worker','worker',[...form.elements.namedItem('worker').options].filter(o=>o.value&&entries.some(e=>e.workerIds.includes(o.value))).map(o=>[o.value,o.textContent]));
 chipRow(ko?'분류':'Field','kind',Object.entries(labels.kinds).filter(([id])=>entries.some(e=>e.kind===id)));
 chipRow(ko?'상태':'Status','status',Object.entries(labels.statuses).filter(([id])=>entries.some(e=>e.status===id)));
 const cards=[...grid.querySelectorAll('[data-entry]')],viewButtons=[...root.querySelectorAll('button[data-view]')];

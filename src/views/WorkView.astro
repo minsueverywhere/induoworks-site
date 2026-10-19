@@ -14,13 +14,12 @@ const views=[{id:'gallery',label:ko?'갤러리':'Gallery',path:'M3 3h7v7H3ZM14 3
 <Layout lang={lang} title={dict.work.title} description={dict.work.description}>
   <section class="page-main" id="work-board" data-lang={lang} data-labels={JSON.stringify({kinds:Object.fromEntries(kinds.map(k=>[k.id,k.label])),statuses:Object.fromEntries(statuses.map(s=>[s.id,s.label])),placeholder:ko?'이미지 준비 중':'Image coming soon',info:ko?'작품 정보: ':'Work information: '})} data-entries={JSON.stringify(entries.map(({id,search,kind,status,workerIds,tags})=>({id,search,kind,status,workerIds,tags})))} data-count={ko?'{count}개의 작품':'{count} works'}>
     <div class="work-heading"><h1 class="page-title">{dict.work.title}</h1><a href={localizePath('/',lang)+'?studio=1'}>{ko?'내 작품 관리':'Manage my work'}</a></div>
-    <p class="page-intro">{ko?'게임, 음악, 아트워크를 둘러보고 만드는 사람과 분야로 찾아보세요.':'Explore games, music and artwork. Find work by its maker, field or tags.'}</p>
     <div class="work-browser"><div class="work-results"><nav id="work-categories" aria-label={ko?'작품 분류':'Work categories'}></nav>
     <div class="work-filter-panel">
     <form id="work-filters" class="work-filters" role="search" aria-label={ko?'작품 검색':'Search works'}>
       <label class="search-field"><span class="sr-only">{ko?'검색':'Search'}</span><input type="search" name="q" list="work-tags" placeholder={ko?'검색 · #태그':'Search · #tag'} autocomplete="off" /></label>
       <datalist id="work-tags">{tags.map(tag=><option value={'#'+tag} />)}</datalist>
-      <label hidden><span class="sr-only">{ko?'참여자':'Worker'}</span><select name="worker"><option value=""></option>{workers.map(w=><option value={w.id}>{w.name}</option>)}</select></label>
+      <label hidden><span class="sr-only">{ko?'작업자':'Worker'}</span><select name="worker"><option value=""></option>{workers.map(w=><option value={w.id}>{w.name}</option>)}</select></label>
       <label hidden><span class="sr-only">{ko?'분야':'Field'}</span><select name="kind"><option value=""></option>{kinds.map(k=><option value={k.id}>{k.label}</option>)}</select></label>
       <label hidden><span class="sr-only">{ko?'상태':'Status'}</span><select name="status"><option value=""></option>{statuses.map(s=><option value={s.id}>{s.label}</option>)}</select></label>
       <button class="work-reset" type="reset" form="work-filters" aria-label={ko?'검색·필터 초기화':'Reset search and filters'} title={ko?'검색·필터 초기화':'Reset search and filters'}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10a9 9 0 1 1 2 8M3 4v6h6" /></svg></button>
@@ -50,7 +49,7 @@ const views=[{id:'gallery',label:ko?'갤러리':'Gallery',path:'M3 3h7v7H3ZM14 3
 </Layout>
 <script>import '../scripts/work-board.js';</script>
 <style>
-  .work-heading{display:flex;align-items:baseline;justify-content:space-between;gap:1rem}.work-heading a{font-size:.75rem;color:var(--color-text-muted);text-decoration:underline;text-underline-offset:3px}
+  .work-heading{display:flex;align-items:center;flex-wrap:wrap;gap:.5rem 1rem}.work-heading a{white-space:nowrap}.work-heading a{font-size:.75rem;color:var(--color-text-muted);text-decoration:underline;text-underline-offset:3px}
   /* The script moves the search form onto the summary line; this panel only holds it until then. */
   .work-filter-panel { display: none; }
   .work-filters { display: none; grid-template-columns: 1fr; margin-top: 0; }
@@ -60,8 +59,9 @@ const views=[{id:'gallery',label:ko?'갤러리':'Gallery',path:'M3 3h7v7H3ZM14 3
   label[hidden]{display:none}
   select option{color:var(--color-text);background:var(--color-bg)}
   #work-categories{display:grid;gap:.5rem;margin-top:1.5rem}
-  .work-summary-line{display:flex;align-items:center;justify-content:flex-end;gap:.5rem}
-  .work-summary-line .work-filters{flex:1;max-width:320px}
+  .work-summary-line{flex:0 1 320px;margin-left:auto;display:flex;align-items:center;gap:.25rem}
+  .work-summary-line .work-filters{flex:1;min-width:0}
+  @media(max-width:639px){.work-summary-line{order:3;flex-basis:100%}.work-heading a{margin-left:auto}}
   .work-summary-line input{min-height:36px;padding:.3rem .25rem}
   .work-chip-row{display:flex;align-items:center;flex-wrap:wrap;column-gap:.5rem}
   .work-chip-label{min-width:4.5rem;font-size:.7rem;color:var(--color-text-muted)}

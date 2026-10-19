@@ -177,7 +177,7 @@ export const ui = {
     nav: {
       home: 'Induohood',
       work: '작업물',
-      workers: '함께하는 사람들',
+      workers: '작업자들',
       showcase: '사이트 정보',
       labs: '실험실',
       companies: '계열사',
@@ -214,9 +214,9 @@ export const ui = {
       empty: '아직 등록된 작업물이 없습니다.',
     },
     workers: {
-      title: '함께하는 사람들',
-      description: '함께하는 사람들과 그들의 작업물을 소개합니다.',
-      intro: '함께하는 사람들과 각자의 작업물을 소개합니다.',
+      title: '작업자들',
+      description: '함께 만드는 작업자들과 그들의 작업물을 소개합니다.',
+      intro: '함께 만드는 작업자들과 각자의 작업물을 소개합니다.',
       empty: '아직 등록된 프로필이 없습니다.',
       website: '웹사이트',
       works: '작업물',
