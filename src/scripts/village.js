@@ -670,6 +670,7 @@ function syncEditButton(){
   const who=participantEditor?.identity||identity,open=Boolean(participantEditor?.isOpen);
   const canEdit=Boolean(who)&&(area==='room'?who.host||who.owners?.includes(activeWorker?.id):who.host);
   editButton.hidden=!open&&!canEdit;
+  if(open)scene.style.setProperty('--edit-width',editButton.offsetWidth+'px');
   const ko=document.documentElement.lang.startsWith('ko'),label=open?(ko?'완료':'Done'):(ko?'편집':'Edit');if(editButton.lastChild.textContent!==label){editButton.lastChild.textContent=label;editButton.setAttribute('aria-pressed',String(open));}
 }
 editButton.addEventListener('click',async()=>{

@@ -72,5 +72,8 @@
 /* Scene notices sit under the editor status line instead of on top of it. */
 .village-scene:has(>.participant-studio:not([hidden])>p:not(:empty)) .village-notice{margin-top:22px}
 
-/* On phones the edit/done button takes the bottom-right corner, so the editor toolbars stack above it. */
-@media(max-width:600px){.participant-tools{bottom:106px}.participant-subtools{bottom:156px}.participant-work-picker{bottom:206px}}
+/* Editor tools open on the done button's row, just to its left; option rows stack above the tools. */
+.participant-tools,.participant-subtools,.participant-work-picker{left:auto;transform:none;right:calc(max(var(--scene-control-inset),env(safe-area-inset-right)) + var(--edit-width,72px))}
+.participant-tools{bottom:calc(max(var(--scene-control-inset),env(safe-area-inset-bottom)) + 41px);width:auto;max-width:none;flex-wrap:nowrap}
+.participant-subtools{bottom:calc(max(var(--scene-control-inset),env(safe-area-inset-bottom)) + 92px)}
+.participant-work-picker{bottom:calc(max(var(--scene-control-inset),env(safe-area-inset-bottom)) + 140px)}
