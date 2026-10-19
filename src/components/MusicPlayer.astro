@@ -34,7 +34,7 @@ const {lang}=Astro.props;
   #site-music-track{flex:1;min-width:0;align-self:stretch;display:flex;align-items:center;padding:0 8px;cursor:pointer;touch-action:none;--fill:11%;background:linear-gradient(to right,color-mix(in srgb,var(--color-accent) var(--fill),transparent) var(--progress,0%),transparent var(--progress,0%))}
   /* Pressing deepens the fill and swaps the title for the chosen position. */
   #site-music[data-seeking] #site-music-track{--fill:22%}
-  #site-music-time{display:none;font-variant-numeric:tabular-nums;white-space:nowrap}
+  #site-music-time{display:none;margin-left:auto;font-variant-numeric:tabular-nums;white-space:nowrap}
   #site-music[data-seeking] #site-music-time{display:block}#site-music[data-seeking] .site-music-marquee{display:none}
   #site-music-handle::before{border-top-width:6px;border-bottom-width:6px;border-left-width:10px}
   #site-music-handle[aria-pressed="true"]::before{width:10px;height:12px;border-top:0;border-bottom:0;border-left-width:3px;border-right-width:3px}
