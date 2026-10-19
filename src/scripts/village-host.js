@@ -1,3 +1,4 @@
+import {soundtrackChoices} from './village-tracks.mjs';
 import './village-participant.css';
 import {createHistory,historyShortcut} from '../../scripts/editor/history.mjs';
 import {villageSlice,mergeVillage} from '../server/studio-village-layout.mjs';
@@ -38,7 +39,7 @@ export function createVillageEditor(api){
       }
       if(item.type==='exhibit'){
         const title=choices(item.point.kind).find(([id])=>id===item.point.ref)?.[1]||(item.point.kind==='music'?'곡 선택':'작품 선택');const choose=icon(row,item.point.kind==='music'?'music':'work',item.point.kind==='music'?'곡 선택':'작품 선택',()=>{workOpen=!workOpen;render();});choose.className='participant-reference';choose.children[1].textContent=title;choose.setAttribute('aria-expanded',String(workOpen));
-        if(workOpen){const list=node('div');list.className='participant-work-picker';list.setAttribute('aria-label','연결할 Work');body.append(list);for(const [id,title]of choices(item.point.kind)){const b=node('button',title);b.type='button';b.setAttribute('aria-pressed',String(item.point.ref===id));listen(b,'click',()=>mutate(()=>{target(item).ref=id;workOpen=false;changed();render();}));list.append(b);}}
+        if(workOpen){const list=node('div');list.className='participant-work-picker';list.setAttribute('aria-label','연결할 Work');body.append(list);const groups=item.point.kind==='music'?soundtrackChoices(approved,choices(item.point.kind)):[{choices:choices(item.point.kind)}];for(const group of groups){let target=list;if(group.title){target=node('details');target.append(node('summary',group.title+' Soundtrack'));list.append(target);}for(const [id,title]of group.choices){const b=node('button',title);b.type='button';b.setAttribute('aria-pressed',String(item.point.ref===id));listen(b,'click',()=>mutate(()=>{target(item).ref=id;workOpen=false;changed();render();}));target.append(b);}}}
       }
       icon(row,'flip','좌우 반전',()=>mutate(()=>{const next={...item.point,flip:!item.point.flip},error=objectPlacementError(model,item.type,item.id,next);if(error)throw Error(error);Object.assign(target(item),next);changed();render();api.requestDraw();}),!!item.point.flip);
       if(['tree','grass','letter','sign','exhibit'].includes(item.type)&&item.id!=='welcome')icon(row,'trash','삭제',()=>mutate(()=>{if(item.type==='exhibit')layout.world.exhibits=layout.world.exhibits.filter(e=>e.id!==item.id);else layout.world.decorations=layout.world.decorations.filter(d=>d.id!==item.id);selected='';workOpen=false;changed();render();api.requestDraw();}));

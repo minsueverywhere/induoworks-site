@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFile} from 'node:fs/promises';
-import {discordLogin,discordCallback,session,authorize,sameOrigin,logout,hash} from '../src/server/studio-auth.ts';
+import {discordLogin,discordCallback,session,authorize,sameOrigin,logout,hash,workerProfiles} from '../src/server/studio-auth.ts';
 import {studioSlice,mergeStudio} from '../src/server/studio-content.mjs';
 import {studioDrafts} from '../src/server/studio-drafts.ts';
 import {studioGuestbook} from '../src/server/studio-guestbook.ts';
@@ -12,9 +12,10 @@ import {studioRooms} from '../src/server/studio-rooms.ts';
 const schema=await readFile(new URL('../migrations/0001_studio.sql',import.meta.url),'utf8')+await readFile(new URL('../migrations/0002_studio_hosts.sql',import.meta.url),'utf8')+await readFile(new URL('../migrations/0004_studio_rooms.sql',import.meta.url),'utf8');
 const guestbookSchema=await readFile(new URL('../migrations/0005_studio_guestbook.sql',import.meta.url),'utf8')+await readFile(new URL('../migrations/0006_guestbook_identity.sql',import.meta.url),'utf8')+await readFile(new URL('../migrations/0007_guestbook_replies.sql',import.meta.url),'utf8')+await readFile(new URL('../migrations/0008_guestbook_reply_targets.sql',import.meta.url),'utf8')+await readFile(new URL('../migrations/0009_guestbook_notebooks_contacts.sql',import.meta.url),'utf8');
 const villageSchema=await readFile(new URL('../migrations/0010_studio_village.sql',import.meta.url),'utf8');
+const awaitProfileSchema=await readFile(new URL('../migrations/0011_studio_worker_profiles.sql',import.meta.url),'utf8');
 const catalog=JSON.parse(await readFile(new URL('../content/catalog.json',import.meta.url),'utf8'));
 function database(){
-  const sql=new DatabaseSync(':memory:');sql.exec(schema+guestbookSchema);sql.exec(villageSchema);
+  const sql=new DatabaseSync(':memory:');sql.exec(schema+guestbookSchema);sql.exec(villageSchema);sql.exec(awaitProfileSchema);
   const wrap=statement=>({bind(...values){const s=sql.prepare(statement);return{first:async()=>s.get(...values)||null,all:async()=>({results:s.all(...values)}),run:async()=>s.run(...values)};}});
   return{sql,env:{STUDIO_DB:{prepare:wrap,batch:async items=>{for(const item of items)await item.run();}},STUDIO_RATE_LIMITER:{limit:async()=>({success:true})},DISCORD_GUILD_ID:'123456789012345679',DISCORD_CLIENT_ID:'test-id',DISCORD_CLIENT_SECRET:'test-secret'}};
 }
@@ -22,13 +23,17 @@ test('Discord state is browser-bound and single-use; sessions contain no provide
   const {sql,env}=database();const start=await discordLogin(new Request('https://induo.works/api/studio/login'),env),url=new URL(start.headers.get('Location'));
   assert.equal(url.searchParams.get('scope'),'identify guilds.members.read');const state=url.searchParams.get('state');
   const callback=(cookie=state)=>new Request('https://induo.works/api/studio/callback?code=test&state='+state,{headers:{Cookie:'__Host-induo-oauth='+cookie}});
+  sql.prepare('INSERT INTO studio_members VALUES(?,?)').run('123456789012345678','personal');
+  sql.prepare('INSERT INTO studio_worker_profiles VALUES(?,?,?,?)').run('personal','123456789012345678','Old name',0);
   let calls=0;const fetcher=async()=>Response.json(++calls===1?{access_token:'provider-secret',scope:'identify guilds.members.read'}:calls===2?{id:'123456789012345678',username:'Test',global_name:'Main name'}:{nick:'Server nickname'});
   await assert.rejects(discordCallback(callback('wrong'),env,fetcher),/확인 정보/);assert.equal(calls,0);
   const response=await discordCallback(callback(),env,fetcher),cookies=response.headers.getSetCookie();assert.ok(cookies.every(c=>c.includes('Secure; HttpOnly; SameSite=Lax')));
   const cookie=cookies.find(c=>c.startsWith('__Host-induo-session=')).split(';')[0];assert.ok(!cookie.includes('provider-secret'));
   await assert.rejects(discordCallback(callback(),env,fetcher),/만료/);assert.equal(calls,3);
   const request=new Request('https://induo.works/api/studio/session',{headers:{Cookie:cookie}});
-  assert.deepEqual((await session(request,env)).owners,[]);assert.equal((await session(request,env)).name,'Server nickname');await assert.rejects(authorize(request,env,'frondward'),error=>error.status===403);
+  assert.equal(sql.prepare('SELECT display_name FROM studio_worker_profiles').get().display_name,'Server nickname');
+  assert.deepEqual((await session(request,env)).owners,['personal']);assert.equal((await session(request,env)).name,'Server nickname');await assert.rejects(authorize(request,env,'frondward'),error=>error.status===403);
+  sql.prepare("DELETE FROM studio_members WHERE worker_id='personal'").run();
   sql.prepare('INSERT INTO studio_members(user_id,worker_id) VALUES(?,?)').run('123456789012345678','frondward');
   assert.deepEqual((await authorize(request,env,'frondward')).owners,['frondward']);
   sql.prepare('DELETE FROM studio_members').run();await assert.rejects(authorize(request,env,'frondward'),error=>error.status===403);
@@ -93,7 +98,7 @@ test('room self-publication restricts ownership and shape, detects conflicts and
     assert.equal((await(await call({revision:0,room})).json()).revision,1);
     await assert.rejects(call({revision:0,room}),error=>error.status===409);
     await assert.rejects(call({revision:1,room}),error=>error.status===429);
-    const publicRoom=await call(undefined,'frondward','room-view');assert.equal(publicRoom.headers.get('Cache-Control'),'public, max-age=60');const publicData=await publicRoom.json();assert.deepEqual(Object.keys(publicData).sort(),['revision','room']);assert.deepEqual(publicData.room,room);
+    const publicRoom=await call(undefined,'frondward','room-view');assert.equal(publicRoom.headers.get('Cache-Control'),'public, max-age=0, s-maxage=15');const publicData=await publicRoom.json();assert.deepEqual(Object.keys(publicData).sort(),['revision','room']);assert.deepEqual(publicData.room,room);
     sql.exec('UPDATE studio_rooms SET updated=0');
     const restored=await(await call({revision:1,restore:true})).json();assert.deepEqual(restored.room,initial.payload.room);
     assert.equal(sql.prepare('SELECT COUNT(*) AS n FROM studio_rooms').get().n,1);
@@ -106,7 +111,7 @@ test('public room cache omits credentials and uses one canonical key across quer
   const {sql,env}=database(),stored=new Map(),keys=[];
   const cache={match:async key=>{keys.push(key.url);return stored.get(key.url)?.clone();},put:async(key,response)=>stored.set(key.url,response)};
   const call=query=>studioRooms(new Request('https://induo.works/api/studio/room-view?owner=frondward&'+query,{headers:{Cookie:'private'}}),env,'room-view',cache);
-  const response=await call('noise=one');assert.equal(response.headers.get('Cache-Control'),'public, max-age=60');assert.equal(response.headers.has('Set-Cookie'),false);
+  const response=await call('noise=one');assert.equal(response.headers.get('Cache-Control'),'public, max-age=0, s-maxage=15');assert.equal(response.headers.has('Set-Cookie'),false);
   sql.close();
   assert.deepEqual(await(await call('noise=two')).json(),{room:null,revision:0});assert.equal(keys[0],keys[1]);
 });
@@ -246,4 +251,15 @@ test('only authenticated hosts can save village layouts; revisions, terrain, col
   const changed=mergeVillage(catalog,layout);assert.deepEqual(changed.projects,catalog.projects);assert.deepEqual(changed.workers.map(w=>w.name),catalog.workers.map(w=>w.name));
   await call('POST',{revision:1,layout});assert.ok(sql.prepare('SELECT previous_layout FROM studio_village').get().previous_layout);assert.equal((await(await call()).json()).revision,2);
  }finally{globalThis.fetch=original;sql.close();}
+});
+
+
+test('public personal-worker names omit account IDs and exclude shared or unlinked teams',async()=>{
+  const {sql,env}=database();
+  for(const [id,user]of [['personal','123456789012345678'],['shared','223456789012345678'],['orphan','323456789012345678']])sql.prepare('INSERT INTO studio_worker_profiles VALUES(?,?,?,?)').run(id,user,'Name '+id,0);
+  for(const [id,user]of [['personal','123456789012345678'],['shared','223456789012345678'],['shared','423456789012345678']])sql.prepare('INSERT INTO studio_members VALUES(?,?)').run(user,id);
+  const response=await workerProfiles(new Request('https://induo.works/api/studio/worker-profiles'),env);
+  assert.deepEqual(await response.json(),[{id:'personal',name:'Name personal'}]);
+  assert.equal(response.headers.get('Cache-Control'),'public, max-age=0, s-maxage=60');
+  await assert.rejects(workerProfiles(new Request('https://induo.works/api/studio/worker-profiles',{method:'POST'}),env),e=>e.status===405);sql.close();
 });

@@ -98,17 +98,17 @@ test('real touch handlers recognize pinch zoom without counting it as a drag', (
   assert.deepEqual(completed, ['zoom','drag']);
 });
 
-test('tutorial house step only enters the highlighted village hub', () => {
+test('tutorial house step only enters the highlighted village hub', async () => {
   const source=readFileSync(new URL('../src/scripts/village.js',import.meta.url),'utf8');
   const visitSource=source.slice(source.indexOf('function visit('),source.indexOf("$('close').addEventListener"));
   const actions=[], hub={id:'induo-works',shape:'house'},studio={id:'frondward',shape:'house'};
   const context={places:[hub,studio],workers:[hub,studio],tutorialHouse:hub,tutorialStep:'house',
     refreshPublicRoom:async()=>{},changeArea:area=>actions.push(area),tutorial:{complete:step=>actions.push(step)}};
-  runInNewContext(visitSource+"\nvisit('frondward');",context);
+  await runInNewContext(visitSource+"\nvisit('frondward');",context);
   assert.deepEqual(actions,[]);
-  runInNewContext(visitSource+"\nvisit('induo-works');",context);
+  await runInNewContext(visitSource+"\nvisit('induo-works');",context);
   assert.deepEqual(actions,['room','house']);
   context.tutorialStep='drag';actions.length=0;
-  runInNewContext(visitSource+"\nvisit('induo-works');",context);
+  await runInNewContext(visitSource+"\nvisit('induo-works');",context);
   assert.deepEqual(actions,[]);
 });

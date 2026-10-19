@@ -4,7 +4,7 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
   Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
-  Content-Security-Policy: default-src 'self'; script-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com https://www.youtube-nocookie.com https://w.soundcloud.com; connect-src 'self' https://induoworks-content.rlaalstn0910.workers.dev; style-src 'self' 'unsafe-inline'; img-src 'self' https://raw.githubusercontent.com data: https://induoworks-content.rlaalstn0910.workers.dev; media-src 'self' https://raw.githubusercontent.com https://induoworks-content.rlaalstn0910.workers.dev; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com https://www.youtube-nocookie.com https://w.soundcloud.com; connect-src 'self' https://induoworks-content.rlaalstn0910.workers.dev; style-src 'self' 'unsafe-inline'; img-src 'self' https://raw.githubusercontent.com data: https://induoworks-content.rlaalstn0910.workers.dev; media-src 'self' blob: https://raw.githubusercontent.com https://induoworks-content.rlaalstn0910.workers.dev; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
 
 # Only Astro's content-hashed build output is safe to cache forever.
 /_astro/*

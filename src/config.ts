@@ -125,6 +125,7 @@ export type Worker = {
   contact?: {email?:string;discordUserId?:string};
   id: string;
   name: string;
+  followDiscordName?: boolean;
   description: LocalizedText;
   href?: string;
   logoMediaId?: string;

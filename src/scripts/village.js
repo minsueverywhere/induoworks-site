@@ -19,6 +19,7 @@ import { loadContent } from './content-loader.mjs';
 import { villageContent } from './village-content.mjs';
 import {roomFloors,roomStack,roomElevation,roomScreen,roomPoint} from './village-room.mjs';
 onPage('village-section',async(root,life)=>{
+const liveRooms=new Map();
 let remoteContent=await loadContent();
 if(remoteContent&&root.dataset.editor!=='true'&&new URLSearchParams(location.search).get('studio')!=='preview'){
   try{const response=await fetch('/api/studio/village-view',{credentials:'omit',signal:AbortSignal.timeout(5000)});if(response.ok){const data=await response.json();if(data.layout)remoteContent=mergeVillage(remoteContent,data.layout);}}catch{/* Keep the static village when the live layout cannot be read. */}
@@ -352,6 +353,8 @@ function positionWallLinks(ox,oy) {
 }
 function positionPopup() {
   if(popup.hidden||!popupObject)return;
+  if(popup.dataset.music==='true'){popup.style.left='auto';popup.style.right='var(--scene-inset, 16px)';popup.style.top='58px';popup.style.width='';popup.style.height='';popup.style.maxHeight=Math.max(80,height-120)+'px';return;}
+  popup.style.right='';
   const r=scene.getBoundingClientRect();
   if(popup.dataset.guestbook==='true'){
     const frame=guestbookFrame({width,height,top:r.top},globalThis.visualViewport?.height||innerHeight,globalThis.visualViewport?.offsetTop||0);
@@ -418,7 +421,7 @@ function visit(id, focusMap = false, trigger = null) {
   if(tutorialStep==='drag'||tutorialStep==='zoom'||(tutorialStep==='house'&&id!==tutorialHouse.id)||(tutorialStep==='music'&&id!==tutorialJukebox.id))return;
   if(tutorialStep==='work'&&id!==tutorialExhibit.id)return;
   if(tutorialStep==='work')tutorial.complete('work');
-  if(p.shape==='house'){activeWorker=workers.find(w=>w.id===id);changeArea('room');void refreshPublicRoom(id);tutorial.complete('house');return;}
+  if(p.shape==='house'){activeWorker=workers.find(w=>w.id===id);return refreshPublicRoom(id).then(()=>{if(activeWorker?.id!==id)return;changeArea('room');tutorial.complete('house');});}
   if(!popup.hidden&&popupObject===id){
     if(p.shape==='jukebox')void music.toggle();
     else closePopup(Boolean(trigger));
@@ -578,17 +581,19 @@ if(requestedWorker&&workers.some(w=>w.id===requestedWorker))visit(requestedWorke
 async function refreshPublicRoom(owner){
   if(!remoteContent||root.dataset.editor==='true'||participantEditor?.isOpen)return;
   try{
-    const response=await fetch('/api/studio/room-view?owner='+encodeURIComponent(owner),{credentials:'omit',signal:AbortSignal.timeout(5000)});
-    if(!response.ok)return;
+    const response=await fetch('/api/studio/room-view?owner='+encodeURIComponent(owner),{credentials:'omit',cache:'no-cache',signal:AbortSignal.timeout(5000)});
+    if(!response.ok)throw Error('Room unavailable');
     const data=await response.json();
-    if(!data.room||!life.alive()||area!=='room'||activeWorker?.id!==owner||participantEditor?.isOpen)return;
+    if(!data.room||!life.alive()||activeWorker?.id!==owner||participantEditor?.isOpen)return;
+    liveRooms.set(owner,data.room);
     const proposal=studioSlice(remoteContent,owner);proposal.room=data.room;
     applyVillageCatalog(mergeStudio(remoteContent,owner,proposal));
-  }catch{/* Keep the approved static layout when the live layout is unavailable. */}
+  }catch{sceneNotice.message('최신 배치를 불러오지 못해 기본 배치를 표시합니다.');}
 }
 
 function applyVillageCatalog(catalog){
-  if(remoteContent&&root.dataset.editor!=='true')catalog={...catalog,world:remoteContent.world,workers:catalog.workers.map(w=>({...w,house:remoteContent.workers.find(p=>p.id===w.id)?.house}))};
+  if(!participantEditor?.isOpen)catalog={...catalog,workers:catalog.workers.map(w=>liveRooms.has(w.id)?{...w,room:liveRooms.get(w.id)}:w)};
+  if(remoteContent&&root.dataset.editor!=='true')catalog={...catalog,world:remoteContent.world,workers:catalog.workers.map(w=>({...w,name:w.followDiscordName?(remoteContent.workers.find(p=>p.id===w.id)?.name||w.name):w.name,house:remoteContent.workers.find(p=>p.id===w.id)?.house}))};
   closePopup();
   const data=villageContent(catalog,document.documentElement.lang.startsWith('ko')?'ko':'en',text.title);
   Object.assign(sceneWorld,data.world);
@@ -645,7 +650,7 @@ async function openStudio(home=false,accountOnly=false){
       previewPlacement:drawPlacementPreview,
       applyLayout:layout=>{remoteContent=mergeVillage(remoteContent,layout);applyVillageCatalog(remoteContent);},
       pickVillage:event=>{const point=apiVillagePoint(event);for(const o of [...objects].reverse()){if(o.area!=='village')continue;const p=objectPoint(o),screen=toScreen(p.x,p.y),[left,top,w,h]=spriteBounds(o),x=point.x-screen.x-left,y=point.y-screen.y-top;if(x<0||y<0||x>=w||y>=h)continue;try{if(sprite({...o,id:o.id||'pick:'+o.worldId},false).getContext('2d').getImageData(Math.floor(x*2),Math.floor(y*2),1,1).data[3]>20)return o.worldId||o.id;}catch{}}return null;},
-      apply:applyVillageCatalog,enter:(owner,level=0)=>{activeWorker=workers.find(w=>w.id===owner);if(activeWorker){changeArea('room');setRoomLevel(level);}},closePopup,
+      apply:(catalog,owner)=>{if(owner)liveRooms.set(owner,catalog.workers.find(w=>w.id===owner)?.room);applyVillageCatalog(catalog);},enter:(owner,level=0)=>{activeWorker=workers.find(w=>w.id===owner);if(activeWorker){changeArea('room');setRoomLevel(level);}},closePopup,
     });
     setStudioOpen(participantEditor.isOpen);if(accountOnly)participantEditor.toggleAccount();
   }catch{studioButton.title='작업실 연결 실패 · 다시 시도';}

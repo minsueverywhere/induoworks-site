@@ -1,3 +1,4 @@
+import {soundtrackChoices} from './village-tracks.mjs';
 import './village-participant.css';
 import {villageContent} from './village-content.mjs';
 import {createHistory,historyShortcut} from '../../scripts/editor/history.mjs';
@@ -41,7 +42,7 @@ export async function createParticipantEditor(api){
     const response=await fetch('/api/studio/'+action+(owner?'?owner='+encodeURIComponent(owner):''),data?{signal:AbortSignal.timeout(15000),method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}:{cache:'no-store'});
     const result=await response.json();if(!response.ok)throw Object.assign(new Error(result.error||'요청을 처리하지 못했습니다.'),{status:response.status});return result;
   }
-  const preview=()=>{model=mergeStudio(approved,owner,payload);placementCache=null;api.apply(resolveMedia(model,CONTENT_ORIGIN));};
+  const preview=()=>{model=mergeStudio(approved,owner,payload);placementCache=null;api.apply(resolveMedia(model,CONTENT_ORIGIN),owner);};
   function changed(){preview();history.record(payload);message('편집을 마치면 자동 저장됩니다.');}
   function travel(action){if(busy)return;const next=history[action](payload);if(next){payload=next;preview();if(state().level>=payload.room.floors.length)api.enter(owner,payload.room.floors.length-1);render();api.requestDraw();}}
   const dirty=()=>payload&&JSON.stringify(payload)!==saved;
@@ -150,7 +151,10 @@ export async function createParticipantEditor(api){
           const choose=icon(controls,kind==='music'?'곡 선택':'작품 선택',kind==='music'?'music':'work',()=>{sheet=sheet==='works'?'':'works';render();});choose.className='participant-reference';choose.children[1].textContent=title;choose.setAttribute('aria-expanded',String(sheet==='works'));
           if(sheet==='works'){
             const list=node('div');list.className='participant-work-picker';list.setAttribute('aria-label','연결할 Work');body.append(list);
-            for(const [id,title]of kindChoices(kind)){const b=button(list,title,()=>{const next=editableItem(item);next.ref=id.split(':')[1];changed();sheet='';render();});b.setAttribute('aria-pressed',String(id===kind+':'+(item.ref||(kind==='music'?(item.music?.id||'legacy'):item.id.slice(owner.length+1)))));}
+            const groups=kind==='music'?soundtrackChoices(approved,kindChoices(kind)):[{choices:kindChoices(kind)}];
+            for(const group of groups){let target=list;if(group.title){target=node('details');target.append(node('summary',group.title+' Soundtrack'));list.append(target);}const items=group.choices;
+            for(const [id,title]of items){const b=button(target,title,()=>{const next=editableItem(item);next.ref=id.split(':')[1];changed();sheet='';render();});b.setAttribute('aria-pressed',String(id===kind+':'+(item.ref||(kind==='music'?(item.music?.id||'legacy'):item.id.slice(owner.length+1)))));}
+            }
           }
         }
         const flip=icon(controls,'좌우 반전','flip',()=>{const next=editableItem(item);next.flip=!next.flip;changed();render();api.requestDraw();});flip.setAttribute('aria-pressed',String(!!item.flip));

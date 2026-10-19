@@ -31,6 +31,7 @@ export function validateCatalog(data) {
   check(Array.isArray(tracks) && tracks.length<=1000 && ids(tracks.map(t=>t.id)) && new Set(tracks.map(t=>t.id)).size===tracks.length && tracks.every(t=>t.id!=='legacy'), 'Invalid music IDs');
   if(data.musicId)check(tracks.some(t=>t.id===data.musicId),'Unknown default music');
   for (const worker of data.workers) {
+    if(worker.followDiscordName!==undefined)check(typeof worker.followDiscordName==='boolean','Invalid name sync setting');
     check(text(worker.name) && localized(worker.description), 'Invalid worker');
     if(worker.contact!==undefined){const c=worker.contact;check(c&&typeof c==='object'&&!Array.isArray(c)&&Object.keys(c).every(k=>['email','discordUserId'].includes(k)),'Invalid public contact');if(c.email!==undefined)check(typeof c.email==='string'&&c.email.length<=254&&/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(c.email),'Invalid public email');if(c.discordUserId!==undefined)check(typeof c.discordUserId==='string'&&/^\d{17,20}$/.test(c.discordUserId),'Invalid public Discord ID');}
     if(worker.room)validateRoom(worker.room);

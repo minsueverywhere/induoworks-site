@@ -1,0 +1,33 @@
+---
+import Layout from '../layouts/Layout.astro';
+import catalog from '../../content/catalog.json';
+import type {Locale} from '../i18n';
+const {lang}=Astro.props as {lang:Locale};
+const ko=lang==='ko';
+---
+<Layout lang={lang} title={ko?'사운드트랙':'Soundtrack'} description={ko?'작품의 음악을 듣고 둘러보세요.':'Listen to the music behind the work.'} noindex>
+  <article class="page-main" id="soundtrack" data-lang={lang} data-catalog={JSON.stringify(catalog)}>
+    <a class="back" href={(ko?'/ko':'')+'/work/'}>← Works</a>
+    <h1 class="page-title" id="soundtrack-title">{ko?'사운드트랙':'Soundtrack'}</h1>
+    <p class="page-intro" id="soundtrack-description">{ko?'음악 목록을 불러오는 중입니다.':'Loading the track list…'}</p>
+    <p id="soundtrack-credit"></p>
+    <label class="sequence"><input type="checkbox" id="soundtrack-sequence" checked />{ko?'이어서 듣기':'Play in sequence'}</label>
+    <div id="soundtrack-tracks"></div>
+    <p id="soundtrack-notice" role="status"></p>
+  </article>
+</Layout>
+<script>import '../scripts/soundtrack.js';</script>
+<style is:global>
+  #soundtrack .back{font-size:.8rem;text-decoration:underline;text-underline-offset:4px}
+  #soundtrack-credit{display:flex;gap:1rem;margin-top:1rem;font-size:.85rem}
+  #soundtrack-credit a{text-decoration:underline;text-underline-offset:4px}
+  #soundtrack .sequence{display:flex;gap:.5rem;align-items:center;font-size:.8rem;margin-block:2rem 1rem}
+  .soundtrack-track{padding:1.25rem 0;border-top:1px solid var(--color-border);scroll-margin-top:5rem}
+  .soundtrack-track h2{font-size:1rem;font-weight:500}.soundtrack-track p{font-size:.85rem;color:var(--color-text-muted);margin-top:.5rem}
+  .soundtrack-controls{display:flex;align-items:center;gap:.75rem;margin-top:.75rem;max-width:640px}
+  .soundtrack-controls button{width:36px;height:36px;flex:none;cursor:pointer;color:inherit;background:none;border:0}
+  .soundtrack-controls svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5}
+  .soundtrack-controls input{width:100%;min-width:0;min-height:44px;accent-color:var(--color-text)}
+  .soundtrack-controls span{font-size:.75rem;font-variant-numeric:tabular-nums;white-space:nowrap}
+  #soundtrack-notice{font-size:.8rem;color:var(--color-text-muted);margin-top:1rem}
+</style>
