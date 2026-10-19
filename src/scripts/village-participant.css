@@ -67,3 +67,7 @@
 .participant-subtools button.participant-reference[aria-expanded=true]{color:#203e36}
 
 .village-scene[data-placing=true] canvas{cursor:default}
+.participant-top .participant-note{display:block;padding:4px 8px;font-size:11px;opacity:.75;overflow-wrap:anywhere}
+
+/* Scene notices sit under the editor status line instead of on top of it. */
+.village-scene:has(>.participant-studio:not([hidden])>p:not(:empty)) .village-notice{margin-top:22px}

@@ -2,6 +2,7 @@ import {musicPosition,musicDock} from './music-position.mjs';
 import {siteMusic} from './site-music.mjs';
 import {musicTime} from './village-music.mjs';
 import {musicArtist,musicWorkPath} from './village-tracks.mjs';
+import {fitMarquee} from './marquee.mjs';
 const root=document.getElementById('site-music'),el=id=>document.getElementById('site-music-'+id);
 let position=null,dock='',drag=null,suppressClick=false;
 const size=()=>({width:root.offsetWidth,height:root.offsetHeight});
@@ -12,8 +13,7 @@ function place(point=position){
   root.style.left=position.x+'px';root.style.top=position.y+'px';root.style.bottom='auto';root.style.transform='none';
 }
 function labels(){
-  const ko=document.documentElement.lang.startsWith('ko'),open=root.dataset.open==='true';
-  el('expand').setAttribute('aria-label',open?(ko?'플레이어 접기':'Collapse player'):(ko?'플레이어 펼치기':'Expand player'));
+  const ko=document.documentElement.lang.startsWith('ko');
   el('handle').setAttribute('aria-label',dock?(ko?'음악 플레이어 꺼내기':'Restore music player'):(ko?'드래그로 이동 · 누르면 가장자리에 숨기기':'Drag to move; click to tuck away'));
   el('handle').title=el('handle').getAttribute('aria-label');
 }
@@ -21,10 +21,11 @@ function labels(){
 function render(data=siteMusic.snapshot()){
   const ko=document.documentElement.lang.startsWith('ko'),playing=data.state==='playing';
   const inVillage=Boolean(document.getElementById('village-section'));
-  const wasHidden=root.hidden;root.hidden=!data.visible||inVillage;if(wasHidden&&!root.hidden)place();document.body.classList.toggle('has-site-music',!root.hidden);
+  const wasHidden=root.hidden;root.hidden=!data.visible||inVillage;if(wasHidden&&!root.hidden){place();requestAnimationFrame(()=>fitMarquee(el('work')));}document.body.classList.toggle('has-site-music',!root.hidden);
   root.setAttribute('aria-label',ko?'음악 플레이어':'Music player');
   if(!data.track)return;
-  el('work').textContent=data.track.title+' — '+musicArtist(data.track);el('work').href=musicWorkPath(data.track,ko?'ko':'en');
+  const title=data.track.title+' — '+musicArtist(data.track);el('work').href=musicWorkPath(data.track,ko?'ko':'en');
+  if(el('work').firstElementChild.textContent!==title){el('work').firstElementChild.textContent=title;if(!root.hidden)fitMarquee(el('work'));}
   el('toggle').dataset.loading=String(data.state==='loading');el('toggle').setAttribute('aria-label',playing?(ko?'일시정지':'Pause'):(ko?'재생':'Play'));el('toggle').setAttribute('aria-pressed',String(playing));
   labels();el('close').setAttribute('aria-label',ko?'음악 정지·닫기':'Stop and close music');
   el('seek').setAttribute('aria-label',ko?'재생 위치':'Playback position');el('seek').max=String(data.duration||1);el('seek').value=String(data.current);el('seek').disabled=!data.duration;
@@ -32,10 +33,21 @@ function render(data=siteMusic.snapshot()){
   const message=data.state==='error'?(ko?'음악을 재생하지 못했습니다. 다시 눌러 주세요.':'Could not play music. Please retry.'):data.state==='loading'?(ko?'음악을 불러오는 중':'Loading music'):'';
   if(el('status').textContent!==message)el('status').textContent=message;
 }
-siteMusic.subscribe(render);document.addEventListener('astro:page-load',()=>{render();place();});
+// Phones show this on the lock screen and media notification instead of guessing from the page.
+let sessionTrack;
+function syncMediaSession(data){
+  const session=navigator.mediaSession;if(!session||typeof MediaMetadata==='undefined')return;
+  session.playbackState=data.state==='playing'?'playing':data.visible?'paused':'none';
+  if(data.track===sessionTrack)return;sessionTrack=data.track;
+  session.metadata=data.track?new MediaMetadata({title:data.track.title,artist:musicArtist(data.track),album:data.track.project?data.track.project+' Soundtrack':'Induo Works',artwork:[{src:'/brand/dewy-icon-512.png',sizes:'512x512',type:'image/png'}]}):null;
+}
+if(navigator.mediaSession){
+  const actions={play:()=>{if(siteMusic.snapshot().state!=='playing')void siteMusic.toggle();},pause:()=>siteMusic.pause(),stop:()=>siteMusic.close(),seekto:details=>siteMusic.seek(details.seekTime)};
+  for(const [action,handler]of Object.entries(actions))try{navigator.mediaSession.setActionHandler(action,handler);}catch{/* Unsupported actions are optional. */}
+}
+siteMusic.subscribe(render);siteMusic.subscribe(syncMediaSession);document.addEventListener('astro:page-load',()=>{render();place();});
 el('toggle').addEventListener('click',()=>void siteMusic.toggle());el('close').addEventListener('click',()=>siteMusic.close());
 el('seek').addEventListener('input',()=>siteMusic.seek(Number(el('seek').value)));
-el('expand').addEventListener('click',()=>{const open=root.dataset.open!=='true';root.dataset.open=String(open);el('expand').setAttribute('aria-expanded',String(open));el('details').hidden=!open;place();labels();});
 window.addEventListener('resize',()=>place());
 el('handle').addEventListener('click',()=>{
   if(suppressClick){suppressClick=false;return;}

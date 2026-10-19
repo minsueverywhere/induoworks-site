@@ -5,23 +5,22 @@ import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import { pinchPoints, zoomCamera, panCamera, isDrag } from '../src/scripts/village-camera.mjs';
 
-test('jukebox clicks toggle playback while popup dismissal leaves playback alone',()=>{
+test('jukebox clicks toggle playback without opening a popup',()=>{
   const source=readFileSync(new URL('../src/scripts/village.js',import.meta.url),'utf8');
   const nodes=new Map(),node=id=>{if(!nodes.has(id))nodes.set(id,{hidden:false,replaceChildren(){},setAttribute(){}});return nodes.get(id);};
-  let playing=false,toggles=0;
+  let playing=false,toggles=0,played;
   const track={title:'Sunlit Circuit'},jukebox={id:'lp',shape:'jukebox',music:track},sign={id:'sign',shape:'sign'};
   const popup={hidden:true,dataset:{},focus(){}},context={
     places:[jukebox,sign],tutorialStep:null,popup,popupObject:null,clearExternal:null,
-    buttons:new Map(),$:node,root:{dataset:{music:JSON.stringify(track)}},text:{music:track.title},
-    selectMusic(){},music:{toggle(){playing=!playing;toggles++;}},positionPopup(){},matchMedia:()=>({matches:false})
+    buttons:new Map(),$:node,root:{dataset:{music:JSON.stringify(track)}},text:{},
+    siteMusic:{toggle(next){played=next;playing=!playing;toggles++;},pause(){}},positionPopup(){},matchMedia:()=>({matches:false})
   };
   runInNewContext(source.slice(source.indexOf('function closePopup('),source.indexOf("$('close').addEventListener")),context);
-  context.visit('lp');assert.equal(playing,true);assert.equal(popup.hidden,false);
-  context.visit('lp');assert.equal(playing,false);assert.equal(popup.hidden,false);
-  context.visit('lp');assert.equal(playing,true);assert.equal(popup.hidden,false);
-  context.closePopup();assert.equal(playing,true);assert.equal(popup.hidden,true);assert.equal(toggles,3);
-  context.visit('lp');assert.equal(playing,false);assert.equal(popup.hidden,false);
-  context.visit('sign');context.visit('sign');assert.equal(popup.hidden,true);assert.equal(toggles,4);
+  context.visit('lp');assert.equal(playing,true);assert.equal(popup.hidden,true);assert.equal(played,track);
+  context.visit('lp');assert.equal(playing,false);assert.equal(popup.hidden,true);
+  context.visit('sign');assert.equal(popup.hidden,false);
+  context.visit('lp');assert.equal(playing,true);assert.equal(popup.hidden,true,'playing music closes other popups');
+  context.visit('sign');context.visit('sign');assert.equal(popup.hidden,true);assert.equal(toggles,3);
 });
 
 test('tutorial restarts with the current place and only offers owned-room editing',()=>{
@@ -102,7 +101,7 @@ test('tutorial house step only enters the highlighted village hub', async () => 
   const source=readFileSync(new URL('../src/scripts/village.js',import.meta.url),'utf8');
   const visitSource=source.slice(source.indexOf('function visit('),source.indexOf("$('close').addEventListener"));
   const actions=[], hub={id:'induo-works',shape:'house'},studio={id:'frondward',shape:'house'};
-  const context={places:[hub,studio],workers:[hub,studio],tutorialHouse:hub,tutorialStep:'house',
+  const context={places:[hub,studio],workers:[hub,studio],tutorialHouse:hub,tutorialStep:'house',pendingHouse:null,area:'village',
     refreshPublicRoom:async()=>{},changeArea:area=>actions.push(area),tutorial:{complete:step=>actions.push(step)}};
   await runInNewContext(visitSource+"\nvisit('frondward');",context);
   assert.deepEqual(actions,[]);

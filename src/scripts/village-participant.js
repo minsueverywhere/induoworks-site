@@ -18,7 +18,7 @@ export async function createParticipantEditor(api){
   const body=node('div');body.className='participant-body';panel.append(body);
   const confirmation=node('dialog');confirmation.className='participant-confirm';confirmation.setAttribute('aria-label','층 삭제 확인');panel.append(confirmation);
   let identity,owner='',approved,payload,revision=0,stale=false,editing=false,tool='move',selected='',cursor=null,gesture=null,saved='',busy=false,sheet='';
-  const history=createHistory();let model,placementCache=null,closing,lastSavedAt=0,villageEditor;
+  const history=createHistory();let ownerIds=[],picker,model,placementCache=null,closing,lastSavedAt=0,villageEditor;
   const wantsVillage=()=>identity?.host&&api.state().area==='village';
   async function openVillage(){
     end();panel.hidden=true;editing=false;hideAccount();
@@ -43,7 +43,7 @@ export async function createParticipantEditor(api){
     const result=await response.json();if(!response.ok)throw Object.assign(new Error(result.error||'요청을 처리하지 못했습니다.'),{status:response.status});return result;
   }
   const preview=()=>{model=mergeStudio(approved,owner,payload);placementCache=null;api.apply(resolveMedia(model,CONTENT_ORIGIN),owner);};
-  function changed(){preview();history.record(payload);message('편집을 마치면 자동 저장됩니다.');}
+  function changed(){preview();history.record(payload);message('');}
   function travel(action){if(busy)return;const next=history[action](payload);if(next){payload=next;preview();if(state().level>=payload.room.floors.length)api.enter(owner,payload.room.floors.length-1);render();api.requestDraw();}}
   const dirty=()=>payload&&JSON.stringify(payload)!==saved;
   function resetSelection(){selected='';sheet='';cursor=null;suppressClick=false;tool='move';}
@@ -129,7 +129,7 @@ export async function createParticipantEditor(api){
       for(const [id,label] of [['move','선택·이동'],['exhibit','물건 놓기'],['floor','타일 놓기']]){
         const b=icon(tools,label,id,()=>{
           selected='';cursor=null;
-          if(id==='exhibit'){tool='exhibit';sheet=sheet==='objects'?'':'objects';}
+          if(id==='exhibit'){tool='exhibit';sheet=sheet==='objects'?'':'objects';if(!kindChoices(objectKind).length)objectKind=objectKinds.find(([kind])=>kindChoices(kind).length)?.[0]||objectKind;}
           else if(id==='floor'){if(!['floor','transparent','empty'].includes(tool))tool='floor';sheet=sheet==='tiles'?'':'tiles';}
           else{tool=id;sheet='';}render();api.requestDraw();
         });b.setAttribute('aria-pressed',String(id==='floor'?['floor','transparent','empty'].includes(tool):tool===id));
@@ -137,7 +137,7 @@ export async function createParticipantEditor(api){
       icon(tools,'실행 취소','undo',()=>{travel('undo');api.requestDraw();});
       const row=key=>{const el=node('div');el.className='participant-subtools participant-'+key;el.setAttribute('role','toolbar');el.setAttribute('aria-label',key==='objects'?'물건 종류':key==='tiles'?'타일 종류':'선택한 물건 도구');body.append(el);return el;};
       if(sheet==='objects'){
-        const palette=row('objects');for(const [kind,label,key]of objectKinds){const b=icon(palette,label,key,()=>{objectKind=kind;reference=kindChoices(kind)[0]?.[0]||'';sheet='';render();api.requestDraw();});b.disabled=!kindChoices(kind).length;b.setAttribute('aria-pressed',String(objectKind===kind));}
+        const palette=row('objects');for(const [kind,label,key]of objectKinds.filter(([kind])=>kindChoices(kind).length)){const b=icon(palette,label,key,()=>{objectKind=kind;reference=kindChoices(kind)[0]?.[0]||'';sheet='';render();api.requestDraw();});b.setAttribute('aria-pressed',String(objectKind===kind));}
       }
       if(sheet==='tiles'){
         const palette=row('tiles');for(const [id,label]of [['floor','실내 타일'],['transparent','투명 타일'],['empty','타일 제거']]){const b=icon(palette,label,id,()=>{tool=id;render();api.requestDraw();});b.setAttribute('aria-pressed',String(tool===id));}
@@ -165,7 +165,7 @@ export async function createParticipantEditor(api){
 
   }
   async function load(nextOwner){
-    owner=nextOwner;const data=await request('room');resetSelection();approved=data.catalog;payload=data.payload;revision=data.revision;stale=data.stale;saved=JSON.stringify(payload);history.reset(payload);preview();api.enter(owner);render();message(api.preview?'미리보기 · 저장되지 않음':'편집을 마치면 자동 저장됩니다.');
+    owner=nextOwner;const data=await request('room');resetSelection();approved=data.catalog;payload=data.payload;revision=data.revision;stale=data.stale;saved=JSON.stringify(payload);history.reset(payload);preview();api.enter(owner);render();message(api.preview?'미리보기 · 저장되지 않음':'');
   }
   const hit=event=>{
     const id=event.target.closest('[data-object]')?.dataset.object;
@@ -215,11 +215,11 @@ export async function createParticipantEditor(api){
       }
       body.append(node('p','변경안 JSON을 로컬 호스트 편집기의 ‘변경안 가져오기’로 열어 검토·저장·콘텐츠 배포한 뒤 발행 결과를 확인하세요.'));api.requestDraw();
     })).className='participant-review';
-    if(!owners.length){message('로그인했습니다. 호스트가 Discord 계정과 업체를 연결하면 꾸밀 수 있습니다.');body.append(node('small','Discord ID: '+identity.id));}
-    else{const picker=node('select');picker.setAttribute('aria-label','내 작업실 선택');for(const w of owners)picker.append(new Option(w.name,w.id));top.append(picker);picker.addEventListener('change',()=>void task(async()=>{const next=picker.value;picker.value=owner;await persist();if(panel.hidden){owner=next;payload=undefined;}else await load(next);picker.value=next;}));owner=owners[0].id;if(api.accountOnly)panel.hidden=true;else if(wantsVillage())await openVillage();else await load(owner);}
+    if(!owners.length){const note=node('small','호스트가 이 Discord 계정을 업체와 연결하면 꾸밀 수 있습니다. Discord ID: '+identity.id);note.className='participant-note';top.append(note);panel.hidden=true;}
+    else{ownerIds=owners.map(w=>w.id);picker=node('select');picker.setAttribute('aria-label','내 작업실 선택');for(const w of owners)picker.append(new Option(w.name,w.id));top.append(picker);picker.addEventListener('change',()=>void task(async()=>{const next=picker.value;picker.value=owner;await persist();if(panel.hidden){owner=next;payload=undefined;}else await load(next);picker.value=next;}));owner=owners[0].id;if(api.accountOnly)panel.hidden=true;else if(wantsVillage())await openVillage();else await load(owner);}
     button(top,'로그아웃',()=>void task(async()=>{if(villageEditor?.isOpen&&!await villageEditor.close())return;await persist();await request('logout',{});location.reload();}));
   }catch(error){message(error.message);if(error.status===401){panel.hidden=true;api.loginRequired?.();}}
-  return {toggleAccount,renderFloors,undo:()=>villageEditor?.isOpen?villageEditor.undo():travel('undo'),get isEditing(){return villageEditor?.isEditing||editing&&!panel.hidden&&inRoom();},get isOpen(){return villageEditor?.isOpen||!panel.hidden;},close:()=>villageEditor?.isOpen?villageEditor.close():closeStudio(),async home(){if(villageEditor?.isOpen&&!await villageEditor.close())return;if(owner&&!payload)await load(owner);if(owner&&payload){if(await closeStudio())api.enter(owner);}else{panel.hidden=false;render();}},async open(){if(wantsVillage()){await openVillage();return;}hideAccount();resetSelection();panel.hidden=false;if(owner&&(!payload||!api.preview&&!dirty()))await load(owner);else render();},areaChanged(){end();if(!inRoom())editing=false;cursor=null;render();api.requestDraw();},draw(level){
+  return {toggleAccount,renderFloors,undo:()=>villageEditor?.isOpen?villageEditor.undo():travel('undo'),get isEditing(){return villageEditor?.isEditing||editing&&!panel.hidden&&inRoom();},get isOpen(){return villageEditor?.isOpen||!panel.hidden;},get identity(){return identity;},close:()=>villageEditor?.isOpen?villageEditor.close():closeStudio(),async home(){if(villageEditor?.isOpen&&!await villageEditor.close())return;if(owner&&!payload)await load(owner);if(owner&&payload){if(await closeStudio())api.enter(owner);}else{panel.hidden=false;render();}},async open(target){if(wantsVillage()){await openVillage();return;}if(target&&target!==owner&&ownerIds.includes(target)){owner=target;payload=undefined;picker.value=target;}hideAccount();resetSelection();panel.hidden=false;if(owner&&(!payload||!api.preview&&!dirty()))await load(owner);else render();},areaChanged(){end();if(!inRoom())editing=false;cursor=null;render();api.requestDraw();},draw(level){
     if(villageEditor?.isEditing){villageEditor.draw();return;}
     if(!active()||level!==state().level)return;const c=api.ctx,scale=state().scale;c.save();c.translate(0,-roomElevation(state().worker,state().level));c.lineWidth=1/scale;
     const outline=(x,y,color)=>{const p=toScreen(x,y);c.beginPath();c.moveTo(p.x,p.y-12);c.lineTo(p.x+24,p.y);c.lineTo(p.x,p.y+12);c.lineTo(p.x-24,p.y);c.closePath();c.strokeStyle=color;c.stroke();};

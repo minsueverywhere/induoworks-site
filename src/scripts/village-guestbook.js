@@ -16,7 +16,7 @@ export function mountGuestbook(container,owner,{visit,notice,board='main'}={}){
     if(timer)globalThis.clearTimeout?.(timer);const seconds=Math.max(0,Math.ceil((cooldownUntil-Date.now())/1000));
     const text=Date.now()<noticeUntil?noticeMessage:seconds?(ko?'다음 작성까지 '+seconds+'초':'Write again in '+seconds+'s'):'';
     if(!notice)status.textContent=text;
-    if(sendButton)sendButton.disabled=posting||seconds>0;
+    if(sendButton)sendButton.disabled=posting;
     if(seconds||Date.now()<noticeUntil)timer=globalThis.setTimeout?.(paintNotice,1000);
   };
   const inform=message=>{notice?.message(message);noticeMessage=message;noticeUntil=Date.now()+5000;paintNotice();};
@@ -45,7 +45,7 @@ export function mountGuestbook(container,owner,{visit,notice,board='main'}={}){
   async function load(method='GET',body,before=pageBefore){
     if(method==='GET')pageBefore=before;
     const response=await fetch('/api/studio/guestbook?owner='+encodeURIComponent(owner)+'&board='+encodeURIComponent(board)+(before?'&before='+encodeURIComponent(before):''),{method,headers:body?{'Content-Type':'application/json'}:undefined,body:body?JSON.stringify(body):undefined,signal:life.signal});
-    const data=await response.json();if(Number.isInteger(data.retryAfter)){cooldownUntil=Date.now()+data.retryAfter*1000;notice?.cooldown(data.retryAfter);paintNotice();}if(!response.ok)throw Error(data.error);return data;
+    const data=await response.json();if(Number.isInteger(data.retryAfter)){cooldownUntil=Date.now()+data.retryAfter*1000;paintNotice();}if(!response.ok)throw Error(data.error);return data;
   }
   function contactLinks(nav,contact){
     if(contact?.email){const a=el('a');a.href='mailto:'+encodeURIComponent(contact.email);a.append(icon('mail'),el('span','Email'));nav.append(a);}
@@ -114,7 +114,7 @@ export function mountGuestbook(container,owner,{visit,notice,board='main'}={}){
       const update=()=>{const team=teams.find(t=>t.id===select.value);selectedLabel.textContent=team?.name||(ko?'소속 없음':'No team');hide.disabled=!team;if(!team)hide.checked=false;name.hidden=hide.checked;contacts.hidden=hide.checked;email.disabled=hide.checked;dm.disabled=hide.checked;};
       select.addEventListener('change',update);hide.addEventListener('change',update);update();
       form.append(preview,input,contacts);box.append(form);
-      form.addEventListener('submit',async event=>{event.preventDefault();if(cooldownUntil>Date.now()){paintNotice();return;}posting=true;send.disabled=true;try{const result=await load('POST',{message:input.value,team:select.value,hideName:!!hide.checked,email:hide.checked?'':email.value.trim(),shareDiscord:!hide.checked&&!!dm.checked,...(replying?{parent:replying.id}:{})},replying?pageBefore:null);if(!replying)pageBefore=undefined;show(result);}catch(error){inform(error.message);}finally{posting=false;paintNotice();}});
+      form.addEventListener('submit',async event=>{event.preventDefault();if(cooldownUntil>Date.now()){const seconds=Math.ceil((cooldownUntil-Date.now())/1000);inform(ko?'다음 작성까지 '+seconds+'초 남았습니다.':'You can write again in '+seconds+'s.');return;}posting=true;send.disabled=true;try{const result=await load('POST',{message:input.value,team:select.value,hideName:!!hide.checked,email:hide.checked?'':email.value.trim(),shareDiscord:!hide.checked&&!!dm.checked,...(replying?{parent:replying.id}:{})},replying?pageBefore:null);if(!replying)pageBefore=undefined;show(result);}catch(error){inform(error.message);}finally{posting=false;paintNotice();}});
     }else{const login=el('a',ko?'Discord로 로그인하고 남기기':'Sign in with Discord');login.href='/api/studio/login';box.append(login);}
     status.textContent='';status.setAttribute('role','status');(form||box).append(status);paintNotice();
   }

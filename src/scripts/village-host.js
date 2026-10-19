@@ -18,7 +18,7 @@ export function createVillageEditor(api){
   const dirty=()=>layout&&JSON.stringify(layout)!==saved;
   const objects=()=>placementObjects(model),current=()=>objects().find(o=>o.type+':'+o.id===selected);
   const preview=()=>{model=mergeVillage(approved,layout);api.applyLayout(layout);};
-  const changed=()=>{preview();history.record(layout);status.textContent='편집을 마치면 자동 저장됩니다.';};
+  const changed=()=>{preview();history.record(layout);status.textContent='';};
   async function request(data){
     if(api.preview){if(!data)return {catalog:api.catalog,payload:villageSlice(api.catalog),revision:0};throw Error('미리보기에서는 저장하지 않습니다.');}
     const response=await fetch('/api/studio/village',{signal:AbortSignal.timeout(15000),...(data?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}:{cache:'no-store'})}),result=await response.json();if(!response.ok)throw Error(result.error);return result;
@@ -75,7 +75,7 @@ export function createVillageEditor(api){
     if(closing)return closing;end();busy=true;
     closing=(async()=>{try{if(!api.preview&&dirty()){status.textContent='저장 중…';const remaining=5000-(Date.now()-lastSave);if(remaining>0)await new Promise(resolve=>setTimeout(resolve,remaining));const snapshot=JSON.stringify(layout),result=await request({layout,revision});revision=result.revision;saved=snapshot;lastSave=Date.now();}panel.hidden=true;selected='';api.scene.dataset.placing='false';api.scene.classList.toggle('is-decorating',false);api.editorUI?.('',false);api.onClose?.();api.requestDraw();return true;}catch(error){status.textContent=error.message;return false;}finally{busy=false;}})().finally(()=>closing=null);return closing;
   }
-  return {get isOpen(){return !panel.hidden;},get isEditing(){return active();},close,undo,async open(){if(!api.identity?.host)throw Error('호스트만 마을을 편집할 수 있습니다.');if(!layout||!dirty()){const data=await request();approved=data.catalog;layout=data.payload;revision=data.revision;saved=JSON.stringify(layout);history.reset(layout);preview();}selected='';tool='move';tiles=false;objectsOpen=false;workOpen=false;panel.hidden=false;api.scene.classList.toggle('is-decorating',true);status.textContent=api.preview?'미리보기 · 저장되지 않음':'편집을 마치면 자동 저장됩니다.';api.closePopup();api.onOpen?.();render();},draw(){
+  return {get isOpen(){return !panel.hidden;},get isEditing(){return active();},close,undo,async open(){if(!api.identity?.host)throw Error('호스트만 마을을 편집할 수 있습니다.');if(!layout||!dirty()){const data=await request();approved=data.catalog;layout=data.payload;revision=data.revision;saved=JSON.stringify(layout);history.reset(layout);preview();}selected='';tool='move';tiles=false;objectsOpen=false;workOpen=false;panel.hidden=false;api.scene.classList.toggle('is-decorating',true);status.textContent=api.preview?'미리보기 · 저장되지 않음':'';api.closePopup();api.onOpen?.();render();},draw(){
     if(!active())return;const c=api.ctx;c.save();c.lineWidth=1/api.state().scale;
     const outline=(x,y,color)=>{const p=toScreen(x,y);c.beginPath();c.moveTo(p.x,p.y-12);c.lineTo(p.x+24,p.y);c.lineTo(p.x,p.y+12);c.lineTo(p.x-24,p.y);c.closePath();c.strokeStyle=color;c.stroke();};
     const b=terrainBounds(layout.world,3);c.globalAlpha=.15;for(let x=b.minX;x<=b.maxX;x++)for(let y=b.minY;y<=b.maxY;y++)outline(x,y,'#203745');c.globalAlpha=1;

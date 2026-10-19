@@ -15,14 +15,14 @@ const views=[{id:'gallery',label:ko?'갤러리':'Gallery',path:'M3 3h7v7H3ZM14 3
   <section class="page-main" id="work-board" data-lang={lang} data-labels={JSON.stringify({kinds:Object.fromEntries(kinds.map(k=>[k.id,k.label])),statuses:Object.fromEntries(statuses.map(s=>[s.id,s.label])),placeholder:ko?'이미지 준비 중':'Image coming soon',info:ko?'작품 정보: ':'Work information: '})} data-entries={JSON.stringify(entries.map(({id,search,kind,status,workerIds,tags})=>({id,search,kind,status,workerIds,tags})))} data-count={ko?'{count}개의 작품':'{count} works'}>
     <div class="work-heading"><h1 class="page-title">{dict.work.title}</h1><a href={localizePath('/',lang)+'?studio=1'}>{ko?'내 작품 관리':'Manage my work'}</a></div>
     <p class="page-intro">{ko?'게임, 음악, 아트워크를 둘러보고 만드는 사람과 분야로 찾아보세요.':'Explore games, music and artwork. Find work by its maker, field or tags.'}</p>
-    <div class="work-browser"><nav id="work-categories" aria-label={ko?'작품 분류':'Work categories'}></nav><div class="work-results">
+    <div class="work-browser"><div class="work-results"><nav id="work-categories" aria-label={ko?'작품 분류':'Work categories'}></nav>
     <div class="work-filter-panel">
     <form id="work-filters" class="work-filters" role="search" aria-label={ko?'작품 검색':'Search works'}>
       <label class="search-field"><span class="sr-only">{ko?'검색':'Search'}</span><input type="search" name="q" placeholder={ko?'검색':'Search'} autocomplete="off" /></label>
-      <label hidden><span class="sr-only">{ko?'참여자':'Worker'}</span><select name="worker"><option value="">{ko?'- 참여자 -':'- Worker -'}</option><optgroup label={ko?'참여자':'Worker'}>{workers.map(w=><option value={w.id}>{w.name}</option>)}</optgroup></select></label>
-      <label hidden><span class="sr-only">{ko?'분야':'Field'}</span><select name="kind"><option value="">{ko?'- 분야 -':'- Field -'}</option><optgroup label={ko?'분야':'Field'}>{kinds.map(k=><option value={k.id}>{k.label}</option>)}</optgroup></select></label>
-      <label><span class="sr-only">{ko?'상태':'Status'}</span><select name="status"><option value="">{ko?'- 상태 -':'- Status -'}</option><optgroup label={ko?'상태':'Status'}>{statuses.map(s=><option value={s.id}>{s.label}</option>)}</optgroup></select></label>
-      <label><span class="sr-only">{ko?'태그':'Tag'}</span><select name="tag"><option value="">{ko?'- 태그 -':'- Tag -'}</option><optgroup label={ko?'태그':'Tag'}>{tags.map(tag=><option value={tag}>{tag}</option>)}</optgroup></select></label>
+      <label hidden><span class="sr-only">{ko?'참여자':'Worker'}</span><select name="worker"><option value="">{ko?'- 참여자 -':'- Worker -'}</option>{workers.map(w=><option value={w.id}>{w.name}</option>)}</select></label>
+      <label hidden><span class="sr-only">{ko?'분야':'Field'}</span><select name="kind"><option value="">{ko?'- 분야 -':'- Field -'}</option>{kinds.map(k=><option value={k.id}>{k.label}</option>)}</select></label>
+      <label><span class="sr-only">{ko?'상태':'Status'}</span><select name="status"><option value="">{ko?'- 상태 -':'- Status -'}</option>{statuses.map(s=><option value={s.id}>{s.label}</option>)}</select></label>
+      <label><span class="sr-only">{ko?'태그':'Tag'}</span><select name="tag"><option value="">{ko?'- 태그 -':'- Tag -'}</option>{tags.map(tag=><option value={tag}>{tag}</option>)}</select></label>
       <button class="work-reset" type="reset" aria-label={ko?'검색·필터 초기화':'Reset search and filters'} title={ko?'검색·필터 초기화':'Reset search and filters'}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10a9 9 0 1 1 2 8M3 4v6h6" /></svg></button>
     </form></div>
     <div class="work-toolbar"><p id="work-count" role="status" aria-live="polite">{ko?entries.length+'개의 작품':entries.length+' works'}</p><div class="work-views" role="group" aria-label={ko?'보기 방식':'View style'}>{views.map(v=><button type="button" data-view={v.id} aria-pressed={v.id==='posts'} aria-label={v.label} title={v.label}><svg viewBox="0 0 24 24" aria-hidden="true"><path d={v.path} /></svg></button>)}</div></div>
@@ -58,15 +58,18 @@ const views=[{id:'gallery',label:ko?'갤러리':'Gallery',path:'M3 3h7v7H3ZM14 3
   label { display: grid; gap: .4rem; font-size: .75rem; color: var(--color-text-muted); min-width: 0; }
   input,select,.work-filters button { width: 100%; min-width: 0; min-height: 44px; padding: .6rem .65rem; color: var(--color-text); background: transparent; border: 0; border-bottom: 1px solid var(--color-border); border-radius: 0; font-size: .8rem; }
   label[hidden]{display:none}
-  select option,select optgroup{color:var(--color-text);background:var(--color-bg)}
-  .work-browser{display:grid;grid-template-columns:160px minmax(0,1fr);gap:2rem}
-  #work-categories{margin-top:1.5rem;min-width:0}
-  #work-categories :global(button),#work-categories :global(summary){min-height:40px;padding:.5rem 0;font-size:.8rem;color:var(--color-text-muted);cursor:pointer;text-align:left}
-  #work-categories :global(button){display:block;width:100%}
-  #work-categories :global(details){border-top:1px solid var(--color-border)}
-  #work-categories :global(details button){padding-left:1rem}
-  #work-categories :global(button[aria-current=true]){color:var(--color-text);font-weight:600}
-  @media(max-width:760px){.work-browser{grid-template-columns:1fr;gap:0}#work-categories{display:flex;flex-wrap:wrap;gap:.5rem 1rem}#work-categories :global(details){border:0}#work-categories :global(>button){width:auto}}
+  select option{color:var(--color-text);background:var(--color-bg)}
+  #work-categories{display:grid;gap:.5rem;margin-top:1.5rem}
+  .work-all{justify-self:start;min-height:36px;padding:0;font-size:.8rem;color:var(--color-text-muted);cursor:pointer}
+  .work-all[aria-pressed=true]{color:var(--color-text);font-weight:600}
+  .work-chip-row{display:flex;align-items:center;flex-wrap:wrap;gap:.4rem}
+  .work-chip-label{min-width:4.5rem;font-size:.7rem;color:var(--color-text-muted)}
+  .work-chip{min-height:32px;padding:.25rem .75rem;border:1px solid var(--color-border);font-size:.75rem;color:var(--color-text-muted);background:transparent;cursor:pointer}
+  /* Worker badges take a team colour once one is set as --worker-color. */
+  .work-chip[data-name=worker]{border-radius:999px;border-color:var(--worker-color,var(--color-border))}
+  .work-chip[aria-pressed=true]{color:var(--color-bg);background:var(--worker-color,var(--color-text));border-color:var(--worker-color,var(--color-text))}
+  .work-chip:disabled{opacity:.35;cursor:default}
+  @media(max-width:639px){.work-chip-label{min-width:100%}}
   button { cursor: pointer; }
   input:focus-visible,select:focus-visible,button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }
   .work-toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem; padding: 1.25rem 0; font-size: .8rem; color: var(--color-text-muted); }

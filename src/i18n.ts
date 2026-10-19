@@ -52,8 +52,7 @@ export const ui = {
     },
     meta: {
       tagline: 'Independent, Together!',
-      description:
-        'Games, music, artwork, and other projects.',
+      description: 'Independent, Together! Create your way. Share it here — games, music and artwork from Induo Works and friends.',
     },
     home: {
       heading: 'Independent, Together!',
@@ -187,7 +186,7 @@ export const ui = {
     },
     meta: {
       tagline: 'Independent, Together!',
-      description: '게임, 음악, 아트워크와 그 외 작업물을 모읍니다.',
+      description: 'Independent, Together! 각자의 방식으로 만들고 여기서 나눠요. Induo Works와 친구들의 게임, 음악, 아트워크.',
     },
     home: {
       heading: 'Independent, Together!',

@@ -45,7 +45,7 @@ test('unsupported buffer decoding uses the native compressed player and forwards
 test('room entrance waits for live layout and delayed responses cannot overwrite a different room',async()=>{
   const source=await readFile(new URL('../src/scripts/village.js',import.meta.url),'utf8');
   const visits=source.slice(source.indexOf('function visit('),source.indexOf("$('close').addEventListener"));
-  let finish;const actions=[],context={places:[{id:'frondward',shape:'house'}],workers:[{id:'frondward'}],tutorialStep:null,refreshPublicRoom:()=>new Promise(resolve=>finish=resolve),changeArea:area=>actions.push(area),tutorial:{complete(){}}};
+  let finish;const actions=[],context={places:[{id:'frondward',shape:'house'}],workers:[{id:'frondward'}],tutorialStep:null,pendingHouse:null,area:'village',refreshPublicRoom:()=>new Promise(resolve=>finish=resolve),changeArea:area=>actions.push(area),tutorial:{complete(){}}};
   const pending=vm.runInNewContext(visits+"visit('frondward');",context);assert.deepEqual(actions,[]);finish();await pending;assert.deepEqual(actions,['room']);
-  const second=vm.runInNewContext(visits+"visit('frondward');",context);context.activeWorker={id:'other'};finish();await second;assert.equal(actions.length,1);
+  const second=vm.runInNewContext(visits+"visit('frondward');",context);context.pendingHouse='other';finish();await second;assert.equal(actions.length,1);
 });
