@@ -23,6 +23,11 @@ export async function recordVisit(request:Request,env:VisitEnv,time=Date.now()){
   if(request.headers.get('Origin')!=='https://induo.works')throw new StudioError('허용되지 않은 요청입니다.',403);
   if(BOT.test(request.headers.get('User-Agent')||''))return new Response(null,{status:204});
   if(env.VISIT_RATE_LIMITER&&!(await env.VISIT_RATE_LIMITER.limit({key:request.headers.get('CF-Connecting-IP')||'unknown'})).success)return new Response(null,{status:204});
+  // A signed-in host is never counted, and the browser is told to stop sending visits for good.
+  if(request.headers.get('Cookie')?.includes('__Host-induo-session=')){
+    const user=await session(request,env).catch(()=>null);
+    if(user?.host)return new Response(null,{status:204,headers:{'Cache-Control':'no-store','X-Visit-Excluded':'host'}});
+  }
   const body=await request.json().catch(()=>null) as {device?:unknown;visit?:unknown}|null;
   if(typeof body?.device!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(body.device))throw new StudioError('잘못된 방문 기록입니다.',400);
   const db=studioDB(env);await tables(db);

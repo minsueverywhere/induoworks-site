@@ -46,7 +46,7 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
 <button id="village-studio" type="button" data-ui aria-expanded="false" aria-controls="village-account-menu" aria-label={ko?'설정':'Settings'} title={ko?'설정':'Settings'}><svg class="settings-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-.6 3-2 .9-2.7-.9-2 3.5 2.2 2v2.3l-2.2 2 2 3.5 2.7-.9 2 .9.6 3h4l.6-3 2-.9 2.7.9 2-3.5-2.2-2v-2.3l2.2-2-2-3.5-2.7.9-2-.9-.6-3Z"/><circle cx="11" cy="12" r="3" /></svg><svg class="login-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3h7v18h-7M3 12h13m-5-5 5 5-5 5" /></svg><svg class="close-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg><span class="login-copy">Discord로 로그인</span></button>
     <div id="village-now" class="village-now" data-ui role="group" aria-label={ko?'지금 재생 중':'Now playing'} hidden>
       <button id="village-music" class="music-toggle" type="button" aria-pressed="false" aria-label={text.play}></button>
-      <div id="village-now-track" role="slider" tabindex="0" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0"><span id="village-now-title" class="village-marquee"><span></span></span><span id="village-time" aria-hidden="true">0:00 / 0:00</span></div>
+      <div id="village-now-track" role="slider" tabindex="0" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0"><span id="village-now-title" class="marquee"><span></span></span><span id="village-time" aria-hidden="true">0:00 / 0:00</span></div>
     </div>
     <button id="village-edit" type="button" data-ui aria-pressed="false" hidden><svg class="edit-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 20 4-1 11-11-3-3L5 16Zm10-13 3 3" /></svg><svg class="done-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg><span>{ko?'편집':'Edit'}</span></button>
     <nav id="village-floors" data-ui aria-label={ko?'층 이동':'Floors'} hidden></nav>
@@ -173,17 +173,12 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
   /* While the title is dragged, it shows the position being chosen instead of the track name. */
   #village-time { display:none; margin-left:auto; font-variant-numeric:tabular-nums; white-space:nowrap; }
   .village-now[data-seeking] #village-time { display:block; }
-  .village-now[data-seeking] .village-marquee { display:none; }
+  .village-now[data-seeking] .marquee { display:none; }
   /* The title doubles as the progress bar: it fills softly as the track plays and seeks when dragged. */
   #village-now-track { flex:1; min-width:0; display:flex; align-items:center; padding:0 6px; cursor:pointer; touch-action:none; --fill:7%; background:linear-gradient(to right,color-mix(in srgb,currentColor var(--fill),transparent) var(--progress,0%),transparent var(--progress,0%)); }
   .village-now[data-seeking] #village-now-track { --fill:14%; }
   #village-now-track:focus-visible { outline:1px solid currentColor; outline-offset:-2px; }
-  .village-marquee { flex:1; min-width:0; display:block; overflow:hidden; white-space:nowrap; pointer-events:none; }
-  .village-marquee span { display:inline-block; }
-  .village-marquee[data-overflow=true] span { animation:village-marquee var(--marquee-time) linear infinite; }
-  /* Scrolls one way only (leftward), pausing at each end before starting over. */
-  @keyframes village-marquee { 0%,12% { transform:none; } 88%,100% { transform:translateX(var(--marquee-shift)); } }
-  @media(prefers-reduced-motion:reduce) { .village-marquee[data-overflow=true] span { animation:none; } }
+
 </style>
 
 <style>

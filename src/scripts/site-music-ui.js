@@ -3,6 +3,7 @@ import {siteMusic} from './site-music.mjs';
 import {musicTime} from './village-music.mjs';
 import {musicArtist} from './village-tracks.mjs';
 import {fitMarquee} from './marquee.mjs';
+import {bindSeekBar} from './seek-bar.mjs';
 const root=document.getElementById('site-music'),el=id=>document.getElementById('site-music-'+id);
 let position=null,dock='',drag=null,suppressClick=false;
 const size=()=>({width:root.offsetWidth,height:root.offsetHeight});
@@ -49,15 +50,7 @@ if(navigator.mediaSession){
   for(const [action,handler]of Object.entries(actions))try{navigator.mediaSession.setActionHandler(action,handler);}catch{/* Unsupported actions are optional. */}
 }
 siteMusic.subscribe(render);siteMusic.subscribe(syncMediaSession);document.addEventListener('astro:page-load',()=>{render();place();});
-let seeking=null;
-function seekAt(event){const {duration}=siteMusic.snapshot();if(!duration)return;const r=el('track').getBoundingClientRect();siteMusic.seek(Math.max(0,Math.min(1,(event.clientX-r.left)/r.width))*duration);}
-el('track').addEventListener('pointerdown',event=>{if(event.button!==0)return;seeking=event.pointerId;root.dataset.seeking='';seekAt(event);try{el('track').setPointerCapture(event.pointerId);}catch{/* Seeking still follows moves over the bar. */}});
-el('track').addEventListener('pointermove',event=>{if(seeking===event.pointerId)seekAt(event);});
-for(const type of ['pointerup','pointercancel','lostpointercapture'])el('track').addEventListener(type,()=>{seeking=null;delete root.dataset.seeking;});
-el('track').addEventListener('keydown',event=>{
-  const {current,duration}=siteMusic.snapshot(),next={ArrowLeft:current-5,ArrowRight:current+5,Home:0,End:duration-1}[event.key];
-  if(next===undefined||!duration)return;event.preventDefault();siteMusic.seek(Math.max(0,Math.min(duration,next)));
-});
+bindSeekBar(el('track'),root,siteMusic);
 window.addEventListener('resize',()=>place());
 el('handle').addEventListener('click',()=>{
   if(suppressClick){suppressClick=false;return;}

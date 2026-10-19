@@ -12,6 +12,8 @@ export function placementCells(catalog,type,id,proposed){
   const objects=placementObjects(catalog),point={...objects.find(o=>o.type===type&&o.id===id)?.point,...proposed};
   const lot=objectFootprint(point,type),world=villageWorld(catalog);
   if(!['width','depth'].every(k=>Number.isInteger(lot[k])&&lot[k]>=1&&lot[k]<=64)||!['x','y'].every(k=>Number.isFinite(lot[k])))return [];
+  // Saved catalogs may still hold legacy grass entries; save-time validation checks them too,
+  // and grass may overlap anything except a house.
   const others=objects.filter(o=>!(o.type===type&&o.id===id)&&
     (type==='house'||o.type==='house'||(type!=='grass'&&o.type!=='grass')));
   const cells=[];
