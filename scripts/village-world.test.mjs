@@ -110,9 +110,9 @@ test('scenery tools reject unsafe coordinates, overlaps, occupied paint and exce
 test('jukebox links reach the corresponding music Work including the original loop',()=>{
   const data=structuredClone(original),scene=villageContent(data,'ko','Induohood');
   const jukebox=scene.places.find(p=>p.shape==='jukebox'),url=new URL(jukebox.links[0].href,'https://induo.works');
-  const work=contentWorks(data,'ko').find(w=>w.id==='music:legacy');
-  assert.equal(url.pathname,'/ko/work/');assert.equal(url.searchParams.get('q'),work.title);
-  assert.equal(url.hash,'#work-info-'+work.id);assert.equal(jukebox.description,'');
+  const work=contentWorks(data,'ko').find(w=>w.kind==='music'&&w.summary.includes('Sunlit Circuit'));
+  assert.equal(url.pathname,'/ko/work/soundtrack/');assert.equal(new URL(work.href,'https://induo.works').searchParams.get('id'),url.searchParams.get('id'));
+  assert.equal(url.hash,'#track-legacy');assert.equal(jukebox.description,'');
 });
 test('an empty noticeboard stays draggable even though it has no public interaction button',async()=>{
   const source=await readFile(new URL('./editor/bridge.js',import.meta.url),'utf8');

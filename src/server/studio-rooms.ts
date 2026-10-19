@@ -12,7 +12,7 @@ export async function studioRooms(request:Request,env:StudioEnv,action:string,ca
     const key=new Request('https://induo.works/api/studio/room-view?owner='+owner);
     const cached=await cache?.match(key);if(cached)return cached;
     const row=await db.prepare('SELECT room,revision FROM studio_rooms WHERE worker_id=?').bind(owner).first<RoomRow>();
-    const response=Response.json(row?{room:JSON.parse(row.room),revision:row.revision}:{room:null,revision:0},{headers:{'Cache-Control':'public, max-age=60','X-Content-Type-Options':'nosniff'}});
+    const response=Response.json(row?{room:JSON.parse(row.room),revision:row.revision}:{room:null,revision:0},{headers:{'Cache-Control':'public, max-age=0, s-maxage=15','X-Content-Type-Options':'nosniff'}});
     await cache?.put(key,response.clone());return response;
   }
   if(request.method==='POST')sameOrigin(request);

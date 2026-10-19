@@ -32,6 +32,8 @@
 .participant-subtools input{width:190px;max-width:calc(100vw - 100px);font-size:16px!important}
 .participant-work-picker{position:absolute;left:50%;bottom:150px;transform:translateX(-50%);width:240px;max-width:calc(100% - 24px);max-height:35%;overflow:auto;background:#f1eedf;border:1px solid #52634730;padding:4px;pointer-events:auto}
 .participant-work-picker button{display:block;width:100%;text-align:left;min-height:40px}
+.participant-work-picker summary{padding:8px;font-size:12px;cursor:pointer}
+.participant-work-picker details button{padding-left:20px;font-size:11px}
 .floor-row .floor-height{font-size:10px;opacity:.7;min-width:36px;text-align:left}
 @media(max-width:600px){.participant-subtools{left:auto;right:12px;transform:none}.participant-work-picker{left:auto;right:12px;transform:none}}
 

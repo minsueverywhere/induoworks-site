@@ -63,10 +63,18 @@ export async function discordCallback(request:Request,env:StudioEnv,fetcher:type
   if(!member.ok&&member.status!==404)throw new StudioError('서버 닉네임을 확인하지 못했습니다. 다시 로그인해 주세요.',502);
   const nick=member.ok?(await member.json() as {nick?:string|null}).nick:null;
   const name=(nick||user.global_name||user.username||'Participant').slice(0,100);
+  await db.prepare('UPDATE studio_worker_profiles SET display_name=?, updated=? WHERE user_id=? AND EXISTS (SELECT 1 FROM studio_members WHERE worker_id=studio_worker_profiles.worker_id AND user_id=?) AND (SELECT COUNT(*) FROM studio_members WHERE worker_id=studio_worker_profiles.worker_id)=1').bind(name,Date.now(),user.id,user.id).run();
   const value=nonce();await db.batch([db.prepare('DELETE FROM studio_sessions WHERE expires<?').bind(now()),db.prepare('INSERT INTO studio_sessions(hash,user_id,name,expires) VALUES(?,?,?,?)').bind(await hash(value),user.id,name,now()+604800)]);
   const headers=new Headers({Location:'/ko/?studio=1','Cache-Control':'no-store','Referrer-Policy':'no-referrer'});
   headers.append('Set-Cookie',cookie('__Host-induo-session',value,604800));headers.append('Set-Cookie',cookie('__Host-induo-oauth','',0));
   return new Response(null,{status:303,headers});
+}
+export async function workerProfiles(request:Request,env:StudioEnv,cache?:Cache){
+  if(request.method!=='GET')throw new StudioError('GET 요청만 가능합니다.',405);
+  const key=new Request('https://induo.works/api/studio/worker-profiles'),cached=await cache?.match(key);if(cached)return cached;
+  const rows=await studioDB(env).prepare('SELECT p.worker_id AS id,p.display_name AS name FROM studio_worker_profiles p WHERE EXISTS (SELECT 1 FROM studio_members m WHERE m.worker_id=p.worker_id AND m.user_id=p.user_id) AND (SELECT COUNT(*) FROM studio_members m WHERE m.worker_id=p.worker_id)=1 LIMIT 1000').bind().all<{id:string;name:string}>();
+  const response=Response.json(rows.results,{headers:{'Cache-Control':'public, max-age=0, s-maxage=60','X-Content-Type-Options':'nosniff'}});
+  await cache?.put(key,response.clone());return response;
 }
 export async function logout(request:Request,env:StudioEnv){
   sameOrigin(request);await studioDB(env).prepare('DELETE FROM studio_sessions WHERE hash=?').bind(await hash(readCookie(request,'__Host-induo-session'))).run();

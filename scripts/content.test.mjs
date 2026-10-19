@@ -5,7 +5,7 @@ import { validateCatalog, resolveMedia, CONTENT_ORIGIN, MAX_FILE_BYTES } from '.
 import { validateMediaFile } from './content-files.mjs';
 import { villageContent } from '../src/scripts/village-content.mjs';
 import { contentWorks, projectPath } from '../src/scripts/content-catalog.mjs';
-import { fetchContent } from '../src/scripts/content-loader.mjs';
+import { fetchContent, applyWorkerNames } from '../src/scripts/content-loader.mjs';
 const original=JSON.parse(await readFile(new URL('../content/catalog.json',import.meta.url),'utf8'));
 
 test('content outage, invalid JSON and incompatible data preserve the embedded view',async()=>{
@@ -48,4 +48,13 @@ test('upload gate rejects oversized, WAV, disguised files and accepts the actual
   assert.throws(()=>validateMediaFile('loop.mp3',Buffer.alloc(MAX_FILE_BYTES+1)));
   const mp3=await readFile(new URL('../public/village/music/sunlit-circuit-930fee2b274e.mp3',import.meta.url));
   assert.doesNotThrow(()=>validateMediaFile('loop.mp3',mp3));
+});
+
+
+test('Discord names replace only opted-in workers, keep stable IDs and ignore malformed public profiles',()=>{
+  const data=structuredClone(original),worker=data.workers.find(w=>w.id==='root-zzang');
+  assert.ok(worker.followDiscordName);applyWorkerNames(data,[{id:worker.id,name:'New server nickname'},{id:'frondward',name:'Wrong team name'}]);
+  assert.equal(worker.name,'New server nickname');assert.equal(data.workers.find(w=>w.id==='frondward').name,'Frondward');
+  for(const profiles of [null,{},[{id:worker.id,name:''}],[{id:worker.id,name:'x'.repeat(101)}]])applyWorkerNames(data,profiles);
+  assert.equal(worker.name,'New server nickname');assert.equal(worker.id,'root-zzang');
 });

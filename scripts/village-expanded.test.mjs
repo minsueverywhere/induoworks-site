@@ -12,10 +12,10 @@ const original=JSON.parse(await readFile(new URL('../content/catalog.json',impor
 
 test('compact default preserves both studios and nine trees, reserves visible footprints and has only decorative letters',()=>{
   validateCatalog(original);
-  assert.equal(original.world.tiles.length,144);
-  assert.deepEqual(terrainBounds(original.world),{minX:0,maxX:11,minY:0,maxY:11});
+  assert.equal(original.world.tiles.length,168);
+  assert.deepEqual(terrainBounds(original.world),{minX:0,maxX:13,minY:0,maxY:11});
   assert.equal(original.world.decorations.filter(d=>d.type==='tree').length,9);
-  assert.deepEqual(original.workers.filter(w=>w.house).map(w=>[w.house.width,w.house.depth]),[[2,2]]);
+  assert.ok(original.workers.filter(w=>w.house).every(w=>w.house.width===2&&w.house.depth===2));
   assert.deepEqual([original.world.noticeboard.width,original.world.noticeboard.depth],[1,3]);
   for(const o of placementObjects(original))assert.equal(objectPlacementError(original,o.type,o.id,o.point),'',o.id);
   const letters=original.world.decorations.filter(d=>d.type==='letter');
@@ -26,10 +26,10 @@ test('compact default preserves both studios and nine trees, reserves visible fo
 
 test('empty terrain expands in all directions, respects occupied cells and undoes a whole stroke',()=>{
   let data=structuredClone(original);const history=createHistory();history.reset(data);history.begin();
-  for(const point of [{x:-1,y:0},{x:-2,y:0},{x:-3,y:0},{x:12,y:11}]){
+  for(const point of [{x:-1,y:0},{x:-2,y:0},{x:-3,y:0},{x:terrainBounds(original.world).maxX+1,y:11}]){
     assert.equal(paintError(data,point,'grass'),'');setTerrain(data.world,point.x,point.y,'grass');history.record(data);
   }
-  history.end(data);assert.equal(data.world.tiles.length,148);validateCatalog(data);
+  history.end(data);assert.equal(data.world.tiles.length,original.world.tiles.length+4);validateCatalog(data);
   assert.equal(terrainAt(data.world,-3,0),'grass');
   data=history.undo(data);assert.deepEqual(data.world,original.world);
   data=history.redo(data);assert.equal(terrainAt(data.world,-2,0),'grass');

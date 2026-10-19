@@ -1,4 +1,4 @@
-import { musicSummary } from './scripts/village-tracks.mjs';
+import { soundtrackWorks } from './scripts/village-tracks.mjs';
 import {externalPreview} from './external-work.mjs';
 import { projects, labs, workers } from './config';
 import { villageMedia } from './village-media';
@@ -29,11 +29,7 @@ export function workCatalog(lang: Locale) {
       kind: 'artwork', workerIds: m.workerIds, tags: m.tags, status: 'shipped', year: '',
       href: m.original, image: m.preview, imageWidth: m.width, imageHeight: m.height, imageAlt: m.title[lang], imageCaption: '', file: true,
     })),
-    ...([{...catalog.music,id:'legacy'},...catalog.tracks] as Array<typeof catalog.music & {id:string;workerIds:string[]}>).map(track=>({
-      id:'music:'+track.id,title:track.title,summary:musicSummary(track),kind:'music',workerIds:track.workerIds||[],
-      tags:['Music'],status:'shipped',year:'',href:track.sources.ogg||track.sources.mp3,image:'',imageWidth:600,imageHeight:400,
-      imageAlt:track.title,imageCaption:'',file:true,
-    })),
+    ...soundtrackWorks(catalog,lang),
   ];
   return entries.map(entry => {
     const creators = workers.filter(w=>entry.workerIds.includes(w.id)).map(w=>({id:w.id,name:w.name}));

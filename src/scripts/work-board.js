@@ -1,6 +1,6 @@
 import { matchesWork } from './work-filter.mjs';
 import { loadContent } from './content-loader.mjs';
-import { renderWorks } from './content-render.mjs';
+import { elements, renderWorks } from './content-render.mjs';
 import {onPage} from './page-lifecycle.mjs';
 onPage('work-board',async(root,life)=>{
 
@@ -19,6 +19,17 @@ if(content) {
   select('tag',[...new Set(entries.flatMap(e=>e.tags))].sort().map(tag=>[tag,tag]));
 }
 root.dataset.contentSource=content?'remote':'embedded';
+const categories=document.getElementById('work-categories'),el=elements(root),ko=root.dataset.lang==='ko',labels=JSON.parse(root.dataset.labels),categoryButtons=[];
+function categoryButton(parent,label,worker='',kind=''){
+  const b=el('button',{type:'button'},label);b.addEventListener('click',()=>{form.elements.namedItem('worker').value=worker;form.elements.namedItem('kind').value=kind;update();});parent.append(b);categoryButtons.push({b,worker,kind});
+}
+categoryButton(categories,ko?'모든 작품':'All work');
+for(const worker of [...form.elements.namedItem('worker').options].filter(o=>o.value)){
+  const works=entries.filter(e=>e.workerIds.includes(worker.value));if(!works.length)continue;
+  const group=el('details',{},el('summary',{},worker.textContent+' · '+works.length));categories.append(group);
+  categoryButton(group,ko?'전체':'All',worker.value);
+  for(const [id,label]of Object.entries(labels.kinds)){const count=works.filter(e=>e.kind===id).length;if(count)categoryButton(group,label+' · '+count,worker.value,id);}
+}
 const cards=[...grid.querySelectorAll('[data-entry]')],viewButtons=[...root.querySelectorAll('button[data-view]')];
 const defaultView=grid.dataset.view;
 let view=defaultView;
@@ -38,6 +49,7 @@ function restore() {
 function update(writeUrl=true) {
   closeInfo();
   const filters=Object.fromEntries(new FormData(form));
+  for(const {b,worker,kind}of categoryButtons){b.setAttribute('aria-current',String(filters.worker===worker&&filters.kind===kind));if(worker===filters.worker&&worker)b.parentElement.open=true;}
   let count=0;
   for(let i=0;i<entries.length;i++){const visible=matchesWork(entries[i],filters);cards[i].hidden=!visible;if(visible)count++;}
   grid.dataset.view=view;viewButtons.forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===view)));

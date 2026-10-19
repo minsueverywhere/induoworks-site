@@ -63,7 +63,7 @@ test('the removed hub stays in Workers, with its work and lazy jukebox displayed
   assert.equal(scene.places.some(p=>p.shape==='house'&&p.id==='induo-works'),false);
   const music=scene.places.find(p=>p.id==='display:outdoor-jukebox');
   assert.equal(music.area,'village');assert.equal(music.music.title,original.music.title);
-  assert.ok(music.links[0].href.includes('kind=music'));
+  assert.ok(music.links[0].href.includes('/work/soundtrack/'));
   assert.equal(scene.places.find(p=>p.id==='display:site-display').title,original.projects.find(p=>p.slug==='induoworks-site').title.ko);
   const bad=structuredClone(original);bad.world.exhibits[0].ref='missing';assert.throws(()=>validateCatalog(bad),/reference/);
 });

@@ -1,4 +1,4 @@
-import {musicTracks,musicSummary} from './village-tracks.mjs';
+import {soundtrackWorks} from './village-tracks.mjs';
 import {externalPreview} from '../external-work.mjs';
 export const localizedPath=(path,lang)=>lang==='ko'?'/ko'+path:path;
 export const projectPath=(slug,lang)=>localizedPath('/work/detail/?id='+encodeURIComponent(slug),lang);
@@ -18,7 +18,7 @@ export function contentWorks(data, lang, staticLinks=false) {
       kind:'artwork',workerIds:m.workerIds,tags:m.tags,status:'shipped',year:'',href:m.original,
       image:m.preview,imageWidth:m.width,imageHeight:m.height,imageAlt:m.title[lang],imageCaption:'',file:true,
     })),
-    ...musicTracks(data).map(track=>({id:'music:'+track.id,title:track.title,summary:musicSummary(track),kind:'music',workerIds:track.workerIds||[],tags:['Music'],status:'shipped',year:'',href:track.sources.ogg||track.sources.mp3,image:'',imageWidth:600,imageHeight:400,imageAlt:track.title,imageCaption:'',file:true})),
+    ...soundtrackWorks(data,lang),
   ].map(entry=>{
     const creators=data.workers.filter(w=>entry.workerIds.includes(w.id)).map(w=>({id:w.id,name:w.name}));
     return {...entry,creators,search:[entry.title,entry.summary,entry.year,...entry.tags,...creators.map(w=>w.name)].join(' ')};

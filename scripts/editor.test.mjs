@@ -133,7 +133,7 @@ test('new music is shared by Works and the assigned house while legacy content s
   const room=villageContent(resolveMedia(data,CONTENT_ORIGIN),'ko','Induohood');
   assert.equal(room.places.find(p=>p.id==='frondward-jukebox').music.title,'New track');
   assert.equal(room.places.find(p=>p.id==='induo-works-jukebox').music.title,original.music.title);
-  assert.equal(contentWorks(data,'ko').find(p=>p.id==='music:new-track').creators[0].id,'frondward');
+  assert.equal(contentWorks(data,'ko').find(p=>p.kind==='music'&&p.summary.includes('New track')).creators[0].id,'frondward');
   data.musicId='new-track';assert.equal(villageContent(data,'ko','Induohood').music.title,'New track');
   data.workers[0].musicId='missing';assert.throws(()=>validateCatalog(data),/Unknown workshop music/);
 });

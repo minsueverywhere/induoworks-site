@@ -100,6 +100,6 @@ test('host approval imports, saves and publishes content once; rejection and unc
 test('single-format music keeps native lazy playback and Works links without an invented alternate format',async()=>{
   const sha='a'.repeat(64),row={id:'160000000000000001',worker_id:'frondward',title:'Song',description:'Album',kind:'music',filename:'work.mp3',sha256:sha,size:123};
   const next=importedWork(catalog,row,{original:'/uploads/'+sha.slice(0,20)+'.mp3'},42),resolved=resolveMedia(next,CONTENT_ORIGIN),track=resolved.tracks.at(-1);
-  assert.equal(track.sources.ogg,undefined);assert.ok(contentWorks(resolved,'ko').find(w=>w.id==='music:discord-'+row.id).href.endsWith('.mp3'));assert.ok(publishedWork(next,row));
+  assert.equal(track.sources.ogg,undefined);assert.ok(contentWorks(resolved,'ko').find(w=>w.kind==='music'&&w.summary.includes('Song')).href.includes('/work/soundtrack/'));assert.ok(publishedWork(next,row));
   let audio;const player=createVillageMusic({sources:track.sources,onState(){},createAudio:()=>audio={canPlayType:()=>true,addEventListener(){},play:async()=>{},pause(){}}});assert.equal(audio,undefined);await player.toggle();assert.equal(audio.preload,'none');assert.ok(audio.src.endsWith('.mp3'));validateCatalog(next);
 });

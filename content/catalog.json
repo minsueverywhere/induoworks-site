@@ -211,6 +211,215 @@
         "width": 2,
         "depth": 2
       }
+    },
+    {
+      "id": "root-zzang",
+      "name": "도돈독",
+      "followDiscordName": true,
+      "description": {
+        "ko": "Induo Works의 개인 작업실입니다.",
+        "en": "A personal studio in Induo Works."
+      },
+      "house": {
+        "x": 13,
+        "y": 8,
+        "width": 2,
+        "depth": 2,
+        "style": "tent"
+      },
+      "room": {
+        "hiddenItems": [
+          "root-zzang-jukebox"
+        ],
+        "floors": [
+          {
+            "wallHeight": 60,
+            "tiles": [
+              {
+                "x": 0,
+                "y": 0,
+                "type": "floor"
+              },
+              {
+                "x": 1,
+                "y": 0,
+                "type": "floor"
+              },
+              {
+                "x": 2,
+                "y": 0,
+                "type": "floor"
+              },
+              {
+                "x": 3,
+                "y": 0,
+                "type": "floor"
+              },
+              {
+                "x": 4,
+                "y": 0,
+                "type": "floor"
+              },
+              {
+                "x": 5,
+                "y": 0,
+                "type": "floor"
+              },
+              {
+                "x": 0,
+                "y": 1,
+                "type": "floor"
+              },
+              {
+                "x": 1,
+                "y": 1,
+                "type": "floor"
+              },
+              {
+                "x": 2,
+                "y": 1,
+                "type": "floor"
+              },
+              {
+                "x": 3,
+                "y": 1,
+                "type": "floor"
+              },
+              {
+                "x": 4,
+                "y": 1,
+                "type": "floor"
+              },
+              {
+                "x": 5,
+                "y": 1,
+                "type": "floor"
+              },
+              {
+                "x": 0,
+                "y": 2,
+                "type": "floor"
+              },
+              {
+                "x": 1,
+                "y": 2,
+                "type": "floor"
+              },
+              {
+                "x": 2,
+                "y": 2,
+                "type": "floor"
+              },
+              {
+                "x": 3,
+                "y": 2,
+                "type": "floor"
+              },
+              {
+                "x": 4,
+                "y": 2,
+                "type": "floor"
+              },
+              {
+                "x": 5,
+                "y": 2,
+                "type": "floor"
+              },
+              {
+                "x": 0,
+                "y": 3,
+                "type": "floor"
+              },
+              {
+                "x": 1,
+                "y": 3,
+                "type": "floor"
+              },
+              {
+                "x": 2,
+                "y": 3,
+                "type": "floor"
+              },
+              {
+                "x": 3,
+                "y": 3,
+                "type": "floor"
+              },
+              {
+                "x": 4,
+                "y": 3,
+                "type": "floor"
+              },
+              {
+                "x": 5,
+                "y": 3,
+                "type": "floor"
+              },
+              {
+                "x": 0,
+                "y": 4,
+                "type": "floor"
+              },
+              {
+                "x": 1,
+                "y": 4,
+                "type": "floor"
+              },
+              {
+                "x": 2,
+                "y": 4,
+                "type": "floor"
+              },
+              {
+                "x": 3,
+                "y": 4,
+                "type": "floor"
+              },
+              {
+                "x": 4,
+                "y": 4,
+                "type": "floor"
+              },
+              {
+                "x": 5,
+                "y": 4,
+                "type": "floor"
+              },
+              {
+                "x": 0,
+                "y": 5,
+                "type": "floor"
+              },
+              {
+                "x": 1,
+                "y": 5,
+                "type": "floor"
+              },
+              {
+                "x": 2,
+                "y": 5,
+                "type": "floor"
+              },
+              {
+                "x": 3,
+                "y": 5,
+                "type": "floor"
+              },
+              {
+                "x": 4,
+                "y": 5,
+                "type": "floor"
+              },
+              {
+                "x": 5,
+                "y": 5,
+                "type": "floor"
+              }
+            ],
+            "exhibits": []
+          }
+        ]
+      }
     }
   ],
   "notices": [
@@ -270,7 +479,7 @@
     {
       "id": "evening-return",
       "title": "Evening Return",
-      "duration": 64.0,
+      "duration": 64,
       "sourceSha256": "9edde1f359c4e56000b323387ff44619d9a757ed37b1f032d70084be47d89380",
       "sources": {
         "ogg": "/village/music/evening-return-9edde1f359c4.ogg",
@@ -285,7 +494,7 @@
     {
       "id": "main-menu-theme",
       "title": "Main Menu Theme",
-      "duration": 72.0,
+      "duration": 72,
       "sourceSha256": "a544c8bc1bfbacd5b529e29c9da3b2ebe8759d809987dc5513fe6f3464b550d8",
       "sources": {
         "ogg": "/village/music/main-menu-theme-a544c8bc1bfb.ogg",
@@ -315,7 +524,7 @@
     {
       "id": "quiet-harbor",
       "title": "Quiet Harbor",
-      "duration": 64.0,
+      "duration": 64,
       "sourceSha256": "b3875d0505c20acc426ce264382e342f43dcd1c781d32117562ff7813053f5b1",
       "sources": {
         "ogg": "/village/music/quiet-harbor-b3875d0505c2.ogg",
@@ -330,7 +539,7 @@
     {
       "id": "veiled-garden",
       "title": "Veiled Garden",
-      "duration": 64.0,
+      "duration": 64,
       "sourceSha256": "2e0582ffbb7b3fcf1e9cf654dd4ba3f0742794b9944b84f5c61175633765ca33",
       "sources": {
         "ogg": "/village/music/veiled-garden-2e0582ffbb7b.ogg",
@@ -1074,6 +1283,126 @@
       },
       {
         "x": 11,
+        "y": 11,
+        "type": "grass"
+      },
+      {
+        "x": 12,
+        "y": 0,
+        "type": "grass"
+      },
+      {
+        "x": 12,
+        "y": 1,
+        "type": "grass"
+      },
+      {
+        "x": 12,
+        "y": 2,
+        "type": "grass"
+      },
+      {
+        "x": 12,
+        "y": 3,
+        "type": "grass"
+      },
+      {
+        "x": 12,
+        "y": 4,
+        "type": "grass"
+      },
+      {
+        "x": 12,
+        "y": 5,
+        "type": "grass"
+      },
+      {
+        "x": 12,
+        "y": 6,
+        "type": "grass"
+      },
+      {
+        "x": 12,
+        "y": 7,
+        "type": "grass"
+      },
+      {
+        "x": 12,
+        "y": 8,
+        "type": "grass"
+      },
+      {
+        "x": 12,
+        "y": 9,
+        "type": "grass"
+      },
+      {
+        "x": 12,
+        "y": 10,
+        "type": "grass"
+      },
+      {
+        "x": 12,
+        "y": 11,
+        "type": "grass"
+      },
+      {
+        "x": 13,
+        "y": 0,
+        "type": "grass"
+      },
+      {
+        "x": 13,
+        "y": 1,
+        "type": "grass"
+      },
+      {
+        "x": 13,
+        "y": 2,
+        "type": "grass"
+      },
+      {
+        "x": 13,
+        "y": 3,
+        "type": "grass"
+      },
+      {
+        "x": 13,
+        "y": 4,
+        "type": "grass"
+      },
+      {
+        "x": 13,
+        "y": 5,
+        "type": "grass"
+      },
+      {
+        "x": 13,
+        "y": 6,
+        "type": "grass"
+      },
+      {
+        "x": 13,
+        "y": 7,
+        "type": "grass"
+      },
+      {
+        "x": 13,
+        "y": 8,
+        "type": "grass"
+      },
+      {
+        "x": 13,
+        "y": 9,
+        "type": "grass"
+      },
+      {
+        "x": 13,
+        "y": 10,
+        "type": "grass"
+      },
+      {
+        "x": 13,
         "y": 11,
         "type": "grass"
       }
