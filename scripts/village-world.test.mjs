@@ -65,7 +65,8 @@ test('house lots protect every tile when moving, resizing, planting or painting'
   assert.ok(objectPlacementError(data,'house','b',{x:10,y:10,width:7,depth:6}),'resizing into another lot');
   data.world.tiles[5*24+4].type='path';assert.ok(objectPlacementError(data,'house','a',{x:6,y:6}));
   data.world.tiles[5*24+4].type='grass';
-  for(const type of ['tree','grass']){data.world.decorations=[{id:'new',type,x:4.2,y:5.1,size:1}];assert.ok(objectPlacementError(data,'house','a',{x:6,y:6}));}
+  data.world.decorations=[{id:'new',type:'tree',x:4.2,y:5.1,size:1}];assert.ok(objectPlacementError(data,'house','a',{x:6,y:6}));
+  data.world.decorations=[{id:'old-grass',type:'grass',x:4.2,y:5.1,size:1}];assert.equal(objectPlacementError(data,'house','a',{x:6,y:6}),'','legacy grass never blocks placement');
 });
 
 test('house dimensions survive catalog roundtrips and reject invalid sizes or edge overflow',()=>{

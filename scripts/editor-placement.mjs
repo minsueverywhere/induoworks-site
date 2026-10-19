@@ -6,7 +6,7 @@ export function placementObjects(catalog){
   const world=villageWorld(catalog);
   return [...catalog.workers.filter(w=>w.house).map(w=>({id:w.id,type:'house',point:w.house})),
     ...(world.sign?[{id:'welcome',type:'sign',point:world.sign}]:[]),...(world.noticeboard?[{id:'noticeboard',type:'board',point:world.noticeboard}]:[]),...(world.mascot?[{id:'mascot',type:'character',point:world.mascot}]:[]),
-    ...world.decorations.map(d=>({id:d.id,type:d.type,point:d})),...(world.exhibits||[]).map(e=>({id:e.id,type:'exhibit',point:e}))];
+    ...world.decorations.filter(d=>d.type!=='grass').map(d=>({id:d.id,type:d.type,point:d})),...(world.exhibits||[]).map(e=>({id:e.id,type:'exhibit',point:e}))];
 }
 export function placementCells(catalog,type,id,proposed){
   const objects=placementObjects(catalog),point={...objects.find(o=>o.type===type&&o.id===id)?.point,...proposed};

@@ -304,7 +304,7 @@ test('host scene editor moves a house, rejects collision and groups terrain stro
  let point;for(const t of catalog.world.tiles)if(!objectPlacementError(catalog,'house',house.id,t)&&(t.x!==house.house.x||t.y!==house.house.y)){point=t;break;}assert.ok(point);
  scene.events.pointerdown(first);scene.events.pointermove(event(point.x,point.y,house.id));scene.events.pointerup(event(point.x,point.y,house.id));assert.equal(rendered.workers.find(w=>w.id===house.id).house.x,point.x);assert.equal(saved,undefined);editor.undo();assert.deepEqual(rendered.workers.find(w=>w.id===house.id).house,house.house);
  press('타일');scene.events.pointerdown(event(-1,0));scene.events.pointermove(event(-2,0));scene.events.pointerup(event(-2,0));assert.ok(rendered.world.tiles.some(t=>t.x===-2));editor.undo();assert.equal(rendered.world.tiles.some(t=>t.x<0),false);
- for(const [kind,label]of [['tree','나무'],['grass','풀'],['sign','간판'],['project','전시대'],['music','음악']]){
+ for(const [kind,label]of [['tree','나무'],['sign','간판'],['project','전시대'],['music','음악']]){
   press('물건');press(label);const type=['project','music'].includes(kind)?'exhibit':kind,point=rendered.world.tiles.find(t=>!objectPlacementError(rendered,type,'',t));assert.ok(point,kind);
   scene.events.pointerdown(event(point.x,point.y));scene.events.pointerup(event(point.x,point.y));
   const items=type==='exhibit'?rendered.world.exhibits:rendered.world.decorations,item=items.at(-1);assert.equal(item.kind||item.type,kind);

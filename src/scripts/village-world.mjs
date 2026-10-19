@@ -55,8 +55,6 @@ export function villageWorld(catalog){
     trees.push({id:'tree-'+trees.length,type:'tree',x,y,size:.8+noise(tx,ty,12)*.35});
   }
   world.decorations.push(...trees);
-  for(let x=0;x<24;x++)for(let y=0;y<24;y++)if(terrainAt(world,x,y)==='grass'&&noise(Math.floor(x/3),Math.floor(y/3),4)<.55&&noise(x,y,1)<.28)
-    world.decorations.push({id:'grass-'+x+'-'+y,type:'grass',x:Math.max(0,Math.min(23,x+(noise(x,y,2)-.5)*.7)),y:Math.max(0,Math.min(23,y+(noise(x,y,3)-.5)*.7)),size:1,flower:noise(x,y,5)<.35});
   return world;
 }
 export function validateWorld(world){
