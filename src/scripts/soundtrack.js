@@ -24,8 +24,12 @@ onPage('soundtrack',async(root,life)=>{
     button.addEventListener('click',()=>void play(index));
     const seek=el('input',{type:'range',min:0,max:track.duration||0,step:.1,value:0,'aria-label':track.title+(ko?' 재생 위치':' playback position'),disabled:''}),time=el('span',{},'0:00 / '+musicTime(track.duration));
     seek.addEventListener('input',()=>player.seek(Number(seek.value)));
+    // Hands the track to the site-wide floating player, which keeps playing across pages.
+    const floatLabel=ko?'플로팅 플레이어로 듣기':'Play in floating player',floating=el('button',{type:'button',class:'soundtrack-float','aria-label':floatLabel,title:floatLabel}),floatSvg=document.createElementNS('http://www.w3.org/2000/svg','svg'),floatPath=document.createElementNS('http://www.w3.org/2000/svg','path');
+    floatSvg.setAttribute('viewBox','0 0 24 24');floatSvg.setAttribute('aria-hidden','true');floatPath.setAttribute('d','M3 5h18v14H3ZM12 12h7v5h-7Z');floatSvg.append(floatPath);floating.append(floatSvg);
+    floating.addEventListener('click',()=>{player.pause();const state=siteMusic.snapshot();if(!(sameMusic(state.track,track)&&state.state==='playing'))void siteMusic.toggle(track);});
     const description=typeof track.description==='string'?track.description:track.description?.[lang];
-    const row=el('section',{class:'soundtrack-track',id:'track-'+track.id},el('h2',{},String(index+1).padStart(2,'0')+' · '+track.title),el('p',{},musicArtist(track)),...(description?[el('p',{},description)]:[]),el('div',{class:'soundtrack-controls'},button,seek,time));
+    const row=el('section',{class:'soundtrack-track',id:'track-'+track.id},el('h2',{},String(index+1).padStart(2,'0')+' · '+track.title),el('p',{},musicArtist(track)),...(description?[el('p',{},description)]:[]),el('div',{class:'soundtrack-controls'},button,seek,time,floating));
     return {row,track,button,path,seek,time};
   });
   document.getElementById('soundtrack-tracks').replaceChildren(...controls.map(c=>c.row));
