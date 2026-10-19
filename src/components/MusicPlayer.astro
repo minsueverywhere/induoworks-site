@@ -27,8 +27,8 @@ const {lang}=Astro.props;
   /* The title scrolls when it is too long instead of widening the player. */
   .site-music-marquee{flex:1;min-width:0;display:block;overflow:hidden;white-space:nowrap;pointer-events:none}
   .site-music-marquee span{display:inline-block}
-  .site-music-marquee[data-overflow=true] span{animation:site-music-marquee var(--marquee-time) ease-in-out infinite alternate}
-  @keyframes site-music-marquee{0%,15%{transform:none}85%,100%{transform:translateX(var(--marquee-shift))}}
+  .site-music-marquee[data-overflow=true] span{animation:site-music-marquee var(--marquee-time) linear infinite}
+  @keyframes site-music-marquee{0%,12%{transform:none}88%,100%{transform:translateX(var(--marquee-shift))}}
   @media(prefers-reduced-motion:reduce){.site-music-marquee[data-overflow=true] span{animation:none}}
   /* The title doubles as the progress bar: it fills as the track plays and seeks where pressed. */
   #site-music-track{flex:1;min-width:0;align-self:stretch;display:flex;align-items:center;padding:0 8px;cursor:pointer;touch-action:none;--fill:11%;background:linear-gradient(to right,color-mix(in srgb,var(--color-accent) var(--fill),transparent) var(--progress,0%),transparent var(--progress,0%))}
