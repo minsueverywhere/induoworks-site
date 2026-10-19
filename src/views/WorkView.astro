@@ -13,7 +13,7 @@ const views=[{id:'gallery',label:ko?'갤러리':'Gallery',path:'M3 3h7v7H3ZM14 3
 ---
 <Layout lang={lang} title={dict.work.title} description={dict.work.description}>
   <section class="page-main" id="work-board" data-lang={lang} data-labels={JSON.stringify({kinds:Object.fromEntries(kinds.map(k=>[k.id,k.label])),statuses:Object.fromEntries(statuses.map(s=>[s.id,s.label])),placeholder:ko?'이미지 준비 중':'Image coming soon',info:ko?'작품 정보: ':'Work information: '})} data-entries={JSON.stringify(entries.map(({id,search,kind,status,workerIds,tags})=>({id,search,kind,status,workerIds,tags})))} data-count={ko?'{count}개의 작품':'{count} works'}>
-    <div class="work-heading"><h1 class="page-title">{dict.work.title}</h1><a href={localizePath('/',lang)+'?studio=1'}>{ko?'내 작품 관리':'Manage my work'}</a></div>
+    <div class="work-heading"><h1 class="page-title">{dict.work.title}</h1></div>
     <div class="work-browser"><div class="work-results"><nav id="work-categories" aria-label={ko?'작품 분류':'Work categories'}></nav>
     <div class="work-filter-panel">
     <form id="work-filters" class="work-filters" role="search" aria-label={ko?'작품 검색':'Search works'}>
@@ -24,7 +24,7 @@ const views=[{id:'gallery',label:ko?'갤러리':'Gallery',path:'M3 3h7v7H3ZM14 3
       <label hidden><span class="sr-only">{ko?'상태':'Status'}</span><select name="status"><option value=""></option>{statuses.map(s=><option value={s.id}>{s.label}</option>)}</select></label>
       <button class="work-reset" type="reset" form="work-filters" aria-label={ko?'검색·필터 초기화':'Reset search and filters'} title={ko?'검색·필터 초기화':'Reset search and filters'}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10a9 9 0 1 1 2 8M3 4v6h6" /></svg></button>
     </form></div>
-    <div class="work-toolbar"><p id="work-count" role="status" aria-live="polite">{ko?entries.length+'개의 작품':entries.length+' works'}</p><div class="work-views" role="group" aria-label={ko?'보기 방식':'View style'}>{views.map(v=><button type="button" data-view={v.id} aria-pressed={v.id==='posts'} aria-label={v.label} title={v.label}><svg viewBox="0 0 24 24" aria-hidden="true"><path d={v.path} /></svg></button>)}</div></div>
+    <div class="work-toolbar"><p id="work-count" role="status" aria-live="polite">{ko?entries.length+'개의 작품':entries.length+' works'}</p><div class="work-toolbar-end"><a class="work-manage" href={localizePath('/',lang)+'?studio=1'}>{ko?'내 작품 관리':'Manage my work'}</a><div class="work-views" role="group" aria-label={ko?'보기 방식':'View style'}>{views.map(v=><button type="button" data-view={v.id} aria-pressed={v.id==='posts'} aria-label={v.label} title={v.label}><svg viewBox="0 0 24 24" aria-hidden="true"><path d={v.path} /></svg></button>)}</div></div></div>
     <div id="work-grid" data-view="posts">
       {entries.map(entry=><article class="work-card" data-entry={entry.id}>
         <a class="work-preview focus-ring" href={entry.href} aria-label={entry.title} target={entry.file?'_blank':undefined} rel={entry.file?'noopener noreferrer':undefined}>
@@ -49,7 +49,8 @@ const views=[{id:'gallery',label:ko?'갤러리':'Gallery',path:'M3 3h7v7H3ZM14 3
 </Layout>
 <script>import '../scripts/work-board.js';</script>
 <style>
-  .work-heading{display:flex;align-items:center;flex-wrap:wrap;gap:.5rem 1rem}.work-heading a{white-space:nowrap}.work-heading a{font-size:.75rem;color:var(--color-text-muted);text-decoration:underline;text-underline-offset:3px}
+  .work-heading{display:flex;align-items:center;flex-wrap:wrap;gap:.5rem 1rem}
+  .work-toolbar-end{display:flex;align-items:center;gap:.75rem}.work-manage{white-space:nowrap;font-size:.75rem;color:var(--color-text-muted);text-decoration:underline;text-underline-offset:3px}
   /* The script moves the search form onto the summary line; this panel only holds it until then. */
   .work-filter-panel { display: none; }
   .work-filters { display: none; grid-template-columns: 1fr; margin-top: 0; }
@@ -61,7 +62,7 @@ const views=[{id:'gallery',label:ko?'갤러리':'Gallery',path:'M3 3h7v7H3ZM14 3
   #work-categories{display:grid;gap:.5rem;margin-top:1.5rem}
   .work-summary-line{flex:0 1 320px;margin-left:auto;display:flex;align-items:center;gap:.25rem}
   .work-summary-line .work-filters{flex:1;min-width:0}
-  @media(max-width:639px){.work-summary-line{order:3;flex-basis:100%}.work-heading a{margin-left:auto}}
+  @media(max-width:639px){.work-summary-line{flex-basis:100%}}
   .work-summary-line input{min-height:36px;padding:.3rem .25rem}
   .work-chip-row{display:flex;align-items:center;flex-wrap:wrap;column-gap:.5rem}
   .work-chip-label{min-width:4.5rem;font-size:.7rem;color:var(--color-text-muted)}
