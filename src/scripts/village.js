@@ -130,7 +130,7 @@ function syncMusic(data){
   const title=$('now-title'),label=data.track.title+' — '+musicArtist(data.track),track=$('now-track');
   if(title.firstElementChild.textContent!==label){title.firstElementChild.textContent=label;fitMarquee(title);}
   track.setAttribute('aria-label',(document.documentElement.lang.startsWith('ko')?'재생 위치 · ':'Playback position · ')+label);track.setAttribute('aria-valuemax',String(data.duration||1));track.setAttribute('aria-valuenow',String(data.current));
-  track.setAttribute('aria-valuetext',musicTime(data.current)+' / '+musicTime(data.duration));track.style.setProperty('--progress',(data.duration?Math.min(100,data.current/data.duration*100):0)+'%');$('time').textContent=musicTime(data.current);
+  track.setAttribute('aria-valuetext',musicTime(data.current)+' / '+musicTime(data.duration));track.style.setProperty('--progress',(data.duration?Math.min(100,data.current/data.duration*100):0)+'%');$('time').textContent=musicTime(data.current)+' / '+musicTime(data.duration);
   $('music').dataset.loading=String(data.state==='loading');$('music').setAttribute('aria-label',playing?text.pause:text.play);$('music').setAttribute('aria-pressed',String(playing));
   if(playing)tutorial.complete('music');
 }

@@ -32,7 +32,7 @@ function render(data=siteMusic.snapshot()){
   el('handle').dataset.loading=String(data.state==='loading');el('handle').setAttribute('aria-pressed',String(playing));
   labels();
   const track=el('track');track.setAttribute('aria-label',(ko?'재생 위치 · ':'Playback position · ')+title);track.setAttribute('aria-valuemax',String(data.duration||1));track.setAttribute('aria-valuenow',String(data.current));
-  track.setAttribute('aria-valuetext',musicTime(data.current)+' / '+musicTime(data.duration));track.style.setProperty('--progress',(data.duration?Math.min(100,data.current/data.duration*100):0)+'%');
+  track.setAttribute('aria-valuetext',musicTime(data.current)+' / '+musicTime(data.duration));track.style.setProperty('--progress',(data.duration?Math.min(100,data.current/data.duration*100):0)+'%');el('time').textContent=musicTime(data.current)+' / '+musicTime(data.duration);
   const message=data.state==='error'?(ko?'음악을 재생하지 못했습니다. 다시 눌러 주세요.':'Could not play music. Please retry.'):data.state==='loading'?(ko?'음악을 불러오는 중':'Loading music'):'';
   if(el('status').textContent!==message)el('status').textContent=message;
 }
@@ -51,9 +51,9 @@ if(navigator.mediaSession){
 siteMusic.subscribe(render);siteMusic.subscribe(syncMediaSession);document.addEventListener('astro:page-load',()=>{render();place();});
 let seeking=null;
 function seekAt(event){const {duration}=siteMusic.snapshot();if(!duration)return;const r=el('track').getBoundingClientRect();siteMusic.seek(Math.max(0,Math.min(1,(event.clientX-r.left)/r.width))*duration);}
-el('track').addEventListener('pointerdown',event=>{if(event.button!==0)return;seeking=event.pointerId;el('track').setPointerCapture(event.pointerId);seekAt(event);});
+el('track').addEventListener('pointerdown',event=>{if(event.button!==0)return;seeking=event.pointerId;root.dataset.seeking='';seekAt(event);try{el('track').setPointerCapture(event.pointerId);}catch{/* Seeking still follows moves over the bar. */}});
 el('track').addEventListener('pointermove',event=>{if(seeking===event.pointerId)seekAt(event);});
-for(const type of ['pointerup','pointercancel','lostpointercapture'])el('track').addEventListener(type,()=>{seeking=null;});
+for(const type of ['pointerup','pointercancel','lostpointercapture'])el('track').addEventListener(type,()=>{seeking=null;delete root.dataset.seeking;});
 el('track').addEventListener('keydown',event=>{
   const {current,duration}=siteMusic.snapshot(),next={ArrowLeft:current-5,ArrowRight:current+5,Home:0,End:duration-1}[event.key];
   if(next===undefined||!duration)return;event.preventDefault();siteMusic.seek(Math.max(0,Math.min(duration,next)));
