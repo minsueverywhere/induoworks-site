@@ -57,5 +57,5 @@ export async function studioGuestbook(request:Request,env:StudioEnv){
     const target=entry.reply_to_id?replies.find(r=>r.id===entry.reply_to_id&&!r.deleted):null;
     return {...entry,contact:entry.name&&!entry.deleted?{email:contact_email,discordUserId:contact_discord}:null,replyTo:entry.reply_to_id?{id:entry.reply_to_id,name:target?(target.name||target.author_team_name||'Participant'):null}:null,deleted:!!entry.deleted,team:team?{id:team.id,hasHouse:!!team.house,contact:team.contact||null}:null,canDelete:!entry.deleted&&!!user&&(user.id===user_id||user.host||user.owners.includes(owner))};
   };
-  return json({canWrite:!!user,retryAfter:await retryAfter(),identity:user?{name:user.name,teams}:null,entries:page.map(row=>({...publicEntry(row),replies:replies.filter(reply=>reply.parent_id===row.id).map(publicEntry)})),next:rows.length>20?rows[19].created+':'+rows[19].id:null});
+  return json({canWrite:!!user,retryAfter:await retryAfter(),identity:user?{id:user.id,name:user.name,teams}:null,entries:page.map(row=>({...publicEntry(row),replies:replies.filter(reply=>reply.parent_id===row.id).map(publicEntry)})),next:rows.length>20?rows[19].created+':'+rows[19].id:null});
 }

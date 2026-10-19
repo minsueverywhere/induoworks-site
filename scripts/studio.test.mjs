@@ -175,7 +175,7 @@ test('guestbook badges are server-owned and hiding names requires a linked Worke
  sql.prepare('INSERT INTO studio_rooms(worker_id,room,previous_room,revision,updated) VALUES(?,?,?,1,0)').run('frondward',JSON.stringify({floors:[{exhibits:[{kind:'guestbook'}]}]}),'{}');
  const call=input=>studioGuestbook(new Request('https://induo.works/api/studio/guestbook?owner=frondward',{method:input?'POST':'GET',headers:{Cookie:cookie,Origin:'https://induo.works','Content-Type':'application/json'},body:input?JSON.stringify(input):undefined}),env);
  try{
-  assert.deepEqual((await(await call()).json()).identity,{name:'Server nickname',teams:[]});
+  assert.deepEqual((await(await call()).json()).identity,{id:'visitor',name:'Server nickname',teams:[]},'the signed-in user sees only their own ID');
   sql.prepare('INSERT INTO studio_hosts(user_id) VALUES(?)').run('visitor');
   for(const input of [{message:'hi',team:'frondward'},{message:'hi',hideName:true}])await assert.rejects(call(input),e=>e.status===403);
   await assert.rejects(call({message:'hi',name:'forged'}),e=>e.status===400);
