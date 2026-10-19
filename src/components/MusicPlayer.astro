@@ -6,7 +6,7 @@ const {lang}=Astro.props;
 <aside id="site-music" transition:persist="site-music" aria-label={lang==='ko'?'음악 플레이어':'Music player'} hidden>
   <div class="site-music-row">
     <button id="site-music-handle" class="music-toggle" type="button" aria-label="Play"></button>
-    <div id="site-music-track" role="slider" tabindex="0" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0"><span id="site-music-work" class="site-music-marquee"><span></span></span><span id="site-music-time" aria-hidden="true"></span></div>
+    <div id="site-music-track" role="slider" tabindex="0" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0"><span id="site-music-work" class="marquee"><span></span></span><span id="site-music-time" aria-hidden="true"></span></div>
   </div>
   <span id="site-music-status" class="sr-only" role="status"></span>
 </aside>
@@ -24,18 +24,12 @@ const {lang}=Astro.props;
   #site-music[data-dock] #site-music-handle{box-sizing:border-box;border:1px solid var(--color-border);background:var(--color-bg-elevated)}
   #site-music[data-dock="left"] #site-music-handle{order:4}
   #site-music[data-dock] #site-music-track{visibility:hidden;pointer-events:none}
-  /* The title scrolls when it is too long instead of widening the player. */
-  .site-music-marquee{flex:1;min-width:0;display:block;overflow:hidden;white-space:nowrap;pointer-events:none}
-  .site-music-marquee span{display:inline-block}
-  .site-music-marquee[data-overflow=true] span{animation:site-music-marquee var(--marquee-time) linear infinite}
-  @keyframes site-music-marquee{0%,12%{transform:none}88%,100%{transform:translateX(var(--marquee-shift))}}
-  @media(prefers-reduced-motion:reduce){.site-music-marquee[data-overflow=true] span{animation:none}}
   /* The title doubles as the progress bar: it fills as the track plays and seeks where pressed. */
   #site-music-track{flex:1;min-width:0;align-self:stretch;display:flex;align-items:center;padding:0 8px;cursor:pointer;touch-action:none;--fill:11%;background:linear-gradient(to right,color-mix(in srgb,var(--color-accent) var(--fill),transparent) var(--progress,0%),transparent var(--progress,0%))}
   /* Pressing deepens the fill and swaps the title for the chosen position. */
   #site-music[data-seeking] #site-music-track{--fill:22%}
   #site-music-time{display:none;margin-left:auto;font-variant-numeric:tabular-nums;white-space:nowrap}
-  #site-music[data-seeking] #site-music-time{display:block}#site-music[data-seeking] .site-music-marquee{display:none}
+  #site-music[data-seeking] #site-music-time{display:block}#site-music[data-seeking] .marquee{display:none}
   #site-music-handle::before{border-top-width:6px;border-bottom-width:6px;border-left-width:10px}
   #site-music-handle[aria-pressed="true"]::before{width:10px;height:12px;border-top:0;border-bottom:0;border-left-width:3px;border-right-width:3px}
   #site-music-handle[data-loading="true"]::before{border:0}

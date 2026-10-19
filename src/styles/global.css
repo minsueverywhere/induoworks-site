@@ -149,3 +149,10 @@ body.has-site-music { padding-bottom:80px; }
 .village-guestbook .guestbook-contact-options label{display:flex;align-items:center;gap:4px;font-size:11px}
 .village-guestbook .guestbook-contact-options small{display:block;font-size:10px;margin-top:4px}
 .village-guestbook .guestbook-hide[hidden]{display:none}
+
+/* One-line labels that scroll leftward when too long; fitMarquee() in src/scripts/marquee.mjs sets the overflow and distance. */
+.marquee{flex:1;min-width:0;display:block;overflow:hidden;white-space:nowrap;pointer-events:none}
+.marquee>span{display:inline-block}
+.marquee[data-overflow=true]>span{animation:marquee var(--marquee-time) linear infinite}
+@keyframes marquee{0%,12%{transform:none}88%,100%{transform:translateX(var(--marquee-shift))}}
+@media(prefers-reduced-motion:reduce){.marquee[data-overflow=true]>span{animation:none}}

@@ -46,3 +46,16 @@ test('days follow Korean time and stats are host-only',async()=>{
   const data=await (await visitStats(request(),env)).json();
   assert.deepEqual(data.total,{views:1,visits:1,devices:1});assert.equal(data.days.length,1);
 });
+
+test('a signed-in host is not counted and the browser is told to stop sending',async()=>{
+  const {sql,env}=database(),token='b'.repeat(72);
+  sql.prepare('INSERT INTO studio_sessions(hash,user_id,name,expires) VALUES(?,?,?,?)').run(await hash(token),'7','Host',Math.floor(Date.now()/1000)+600);
+  sql.prepare('INSERT INTO studio_hosts(user_id) VALUES(?)').run('7');
+  const response=await recordVisit(visit({device,visit:true},{Cookie:'__Host-induo-session='+token}),env);
+  assert.equal(response.status,204);assert.equal(response.headers.get('X-Visit-Excluded'),'host');
+  assert.equal(sql.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE name='site_visit_days'").get().n,0,'nothing was counted');
+  sql.prepare('DELETE FROM studio_hosts').run();
+  const member=await recordVisit(visit({device,visit:true},{Cookie:'__Host-induo-session='+token}),env);
+  assert.equal(member.headers.get('X-Visit-Excluded'),null,'signed-in non-hosts are still counted');
+  assert.equal(sql.prepare('SELECT views FROM site_visit_days').get().views,1);
+});
