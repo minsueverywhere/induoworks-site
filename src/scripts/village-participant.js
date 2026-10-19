@@ -157,6 +157,17 @@ export async function createParticipantEditor(api){
             }
           }
         }
+        if(kind==='media'){
+          // Picture frames cycle 1→2→3 tiles wide and three height steps; a wider frame must still fit.
+          for(const [key,label] of [['width','가로'],['frameHeight','높이']]){
+            // Auto-placed items are scene places whose width is a pixel size; their frame size lives in frameWidth/frameHeight.
+            const current=(item.shape?item[key==='width'?'frameWidth':'frameHeight']:item[key])||1;
+            const b=button(controls,label+' '+current,()=>{const next=editableItem(item),before=next[key];preview();next[key]=current%3+1;
+              // Height never changes the footprint; width is checked against the refreshed layout so the item never collides with itself.
+              const error=key==='width'&&objectPlacementError(placement(),'exhibit',next.id,next);if(error){next[key]=before;preview();message(error);render();return;}changed();render();api.requestDraw();});
+            b.className='participant-size';b.title=label+(key==='width'?' 칸 수 바꾸기':' 바꾸기');b.setAttribute('aria-label',b.title+' (현재 '+current+')');
+          }
+        }
         const flip=icon(controls,'좌우 반전','flip',()=>{const next=editableItem(item);next.flip=!next.flip;changed();render();api.requestDraw();});flip.setAttribute('aria-pressed',String(!!item.flip));
         icon(controls,'삭제','trash',()=>{if(item.shape)payload.room.hiddenItems=[...new Set([...(payload.room.hiddenItems||[]),item.id])];else floor().exhibits=floor().exhibits.filter(e=>e.id!==item.id);selected='';sheet='';changed();render();api.requestDraw();});
       }

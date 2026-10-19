@@ -1,4 +1,4 @@
-import {terrainBounds,validFootprint} from './village-world.mjs';
+import {terrainBounds,validFootprint,exhibitSizeValid} from './village-world.mjs';
 import {toScreen,toTile} from './village-camera.mjs';
 const defaultFloor={wallHeight:90,tiles:Array.from({length:100},(_,i)=>({x:i%10,y:Math.floor(i/10),type:'floor'})),exhibits:[]};
 export const roomFloors=worker=>worker?.room?.floors||[defaultFloor];
@@ -17,7 +17,7 @@ export function validateRoom(room){
       !floor.tiles.every(t=>Number.isInteger(t.x)&&Number.isInteger(t.y)&&Math.abs(t.x)<=64&&Math.abs(t.y)<=64&&['floor','transparent'].includes(t.type))||new Set(floor.tiles.map(t=>t.x+','+t.y)).size!==floor.tiles.length)throw new Error('작업실 바닥·벽 높이를 확인해 주세요.');
     const b=terrainBounds(floor);
     if(b.maxX-b.minX>=24||b.maxY-b.minY>=24)throw new Error('층별 바닥은 최대 24×24 범위입니다.');
-    if(!Array.isArray(floor.exhibits)||floor.exhibits.length>100||!floor.exhibits.every(e=>/^[a-z0-9-]+$/.test(e.id)&&e.id.length<=80&&['project','media','music','guestbook'].includes(e.kind)&&typeof e.ref==='string'&&e.ref.length<=80&&validFootprint(e,'exhibit',{layoutVersion:2}))||new Set(floor.exhibits.map(e=>e.id)).size!==floor.exhibits.length)throw new Error('작업실 전시물을 확인해 주세요.');
+    if(!Array.isArray(floor.exhibits)||floor.exhibits.length>100||!floor.exhibits.every(e=>/^[a-z0-9-]+$/.test(e.id)&&e.id.length<=80&&['project','media','music','guestbook'].includes(e.kind)&&typeof e.ref==='string'&&e.ref.length<=80&&validFootprint(e,'exhibit',{layoutVersion:2})&&exhibitSizeValid(e))||new Set(floor.exhibits.map(e=>e.id)).size!==floor.exhibits.length)throw new Error('작업실 전시물을 확인해 주세요.');
   }
   const boards=room.floors.flatMap(f=>f.exhibits).filter(e=>e.kind==='guestbook');
   for(const e of boards)if(e.title!==undefined&&(typeof e.title!=='string'||e.title.length>60)||e.boardId!==undefined&&(typeof e.boardId!=='string'||!/^[a-z0-9-]{1,80}$/.test(e.boardId)))throw new Error('노트 제목·식별자를 확인해 주세요.');

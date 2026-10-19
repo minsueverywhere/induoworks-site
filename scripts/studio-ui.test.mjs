@@ -223,7 +223,7 @@ test('guestbook previews a distinct team badge and toggles name hiding without a
  hide.checked=true;hide.events.change();assert.equal(elements(preview).find(e=>e.tag==='strong').hidden,true);assert.equal(stored.get('induo-guestbook-hide:42'),'1','the choice is remembered for this account');
  const form=elements(container).find(e=>e.tag==='form');elements(form).find(e=>e.tag==='textarea').value='Hello';await form.events.submit({preventDefault(){}});
  assert.deepEqual(JSON.parse(calls[1].body),{message:'Hello',team:'frondward',hideName:true,email:'',shareDiscord:false});
- const currentSelect=elements(container).find(e=>e.tag==='select'),currentHide=elements(container).find(e=>e.tag==='input');currentSelect.value='';currentSelect.events.change();assert.equal(elements(container).find(e=>e.className==='guestbook-hide').hidden,true,'no team, no hide option');assert.equal(elements(elements(container).find(e=>e.className==='guestbook-identity')).find(e=>e.tag==='strong').hidden,false);dispose();
+ const currentSelect=elements(container).find(e=>e.tag==='select');currentSelect.value='';currentSelect.events.change();assert.equal(elements(container).find(e=>e.className==='guestbook-hide').hidden,true,'no team, no hide option');assert.equal(elements(elements(container).find(e=>e.className==='guestbook-identity')).find(e=>e.tag==='strong').hidden,false);dispose();
 });
 
 test('guestbook team menu links to filtered Works and Worker, visits inside the scene and replies target the parent',async()=>{

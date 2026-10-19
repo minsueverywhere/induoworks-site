@@ -83,3 +83,8 @@
 .participant-tools button>span,.participant-subtools button:not(.participant-reference)>span{position:static;transform:none;display:block}
 .participant-tools button[aria-pressed=true],.participant-subtools button[aria-pressed=true]{color:#203e36;font-weight:600}
 @media(max-width:600px){.participant-tools,.participant-subtools{gap:4px;margin-right:2px}.participant-tools button,.participant-subtools button:not(.participant-reference){min-width:34px;padding:2px 1px}.participant-tools button>span,.participant-subtools button:not(.participant-reference)>span{font-size:8px;letter-spacing:-.02em}}
+
+/* The chosen Work reads as a shaded row with a dot, instead of an underline. */
+.participant-work-picker button[aria-pressed=true]{box-shadow:none;background:#5263471f;color:#203e36;font-weight:600;display:flex;align-items:center;justify-content:space-between}
+.participant-work-picker button[aria-pressed=true]::after{content:'';flex:none;width:6px;height:6px;margin-left:8px;border-radius:50%;background:currentColor}
+.participant-subtools button.participant-size{width:auto;min-width:44px;flex-direction:row;padding:0 6px;font-size:11px;color:#526347}
