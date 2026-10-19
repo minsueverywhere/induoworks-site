@@ -652,13 +652,14 @@ life.on(window,'keydown',event=>{if(event.key==='Escape')view.close();});
 const studioButton=$('studio'),editButton=$('edit'),previewMode=import.meta.env.DEV&&new URLSearchParams(location.search).get('studio')==='preview';
 let identity,editorLoading;
 function setIdentity(value){identity=value;studioButton.dataset.session=value?'member':'guest';studioButton.setAttribute('aria-label',value?'설정':'Discord로 로그인');studioButton.title=studioButton.getAttribute('aria-label');return value;}
-const identityReady=previewMode?Promise.resolve(null):fetch('/api/studio/session',{cache:'no-store',signal:life.signal}).then(async r=>{if(r.status===401)return setIdentity(null);if(!r.ok)throw Error('Session unavailable');return setIdentity(await r.json());}).catch(()=>undefined);
+const identityReady=previewMode?Promise.resolve(null):fetch('/api/studio/session',{cache:'no-store',signal:life.signal}).then(async r=>{if(r.status===401)return setIdentity(null);if(!r.ok)throw Error('Session unavailable');return setIdentity(await r.json());}).catch(()=>{if(life.alive())setIdentity(null);return undefined;});
 if(previewMode)studioButton.dataset.session='member';
 // One editor per page: concurrent clicks share the same load instead of building duplicate menus.
 function ensureEditor(){
   return editorLoading||=(async()=>{
     const who=await identityReady;
-    if(!previewMode&&who===null){location.assign('/api/studio/login');return null;}
+    // A failed session check (network, rate limit) is handled like signed out: offer login instead of a half-built editor.
+    if(!previewMode&&!who){editorLoading=null;location.assign('/api/studio/login');return null;}
     const {createParticipantEditor}=await import('./village-participant.js');
     if(!life.alive())return null;
     participantEditor=await createParticipantEditor({root,scene,canvas,ctx,requestDraw,identity:who,accountOnly:true,accountPanel:$('account-menu'),accountButton:studioButton,onOpen:requestDraw,
@@ -682,8 +683,7 @@ function syncEditButton(){
   const who=participantEditor?.identity||identity,open=Boolean(participantEditor?.isOpen);
   const canEdit=Boolean(who)&&(area==='room'?who.host||who.owners?.includes(activeWorker?.id):who.host);
   editButton.hidden=!open&&!canEdit;
-  if(open)scene.style.setProperty('--edit-width',editButton.offsetWidth+'px');
-  const ko=document.documentElement.lang.startsWith('ko'),label=open?(ko?'완료':'Done'):(ko?'편집':'Edit');if(editButton.lastChild.textContent!==label){editButton.lastChild.textContent=label;editButton.setAttribute('aria-pressed',String(open));}
+  const ko=document.documentElement.lang.startsWith('ko'),label=open?(ko?'완료':'Done'):(ko?'편집':'Edit');if(editButton.lastChild.textContent!==label){editButton.lastChild.textContent=label;editButton.setAttribute('aria-pressed',String(open));if(open)scene.style.setProperty('--edit-width',editButton.offsetWidth+'px');}
 }
 editButton.addEventListener('click',async()=>{
   const editor=await ensureEditor();if(!editor)return;
