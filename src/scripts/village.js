@@ -139,7 +139,7 @@ function objectPoint(o){return o.area==='village'||o.editType==='exhibit'?(o.gro
 function objectDepth(o){const p=objectPoint(o);return p.x+p.y;}
 function objectScreen(o){const p=objectPoint(o);return o.area==='room'?roomScreen(p,activeWorker,o.floor||0):toScreen(p.x,p.y);}
 const decorationObject=d=>({...d,ground:groundPosition(d,d.type),worldId:d.legacy?undefined:d.id,id:undefined,interactive:false,area:'village',draw:d.type==='tree'?tree:d.type==='letter'?letter:d.type==='sign'?smallSign:grass});
-const objects = [...[...sceneWorld.decorations,...(sceneWorld.layoutVersion===2?[]:worldLetters(sceneWorld))].map(decorationObject), ...places.map(p => ({...p, draw: {house, board, game, jukebox, artwork, guestbook}[p.shape]})), {...sceneWorld.mascot,worldId:'mascot',type:'character',draw:character,area:'village'}].sort((a,b)=>objectDepth(a)-objectDepth(b));
+const objects = [...[...sceneWorld.decorations.filter(d=>d.type!=='grass'),...(sceneWorld.layoutVersion===2?[]:worldLetters(sceneWorld))].map(decorationObject), ...places.map(p => ({...p, draw: {house, board, game, jukebox, artwork, guestbook}[p.shape]})), {...sceneWorld.mascot,worldId:'mascot',type:'character',draw:character,area:'village'}].sort((a,b)=>objectDepth(a)-objectDepth(b));
 function polygon(c, points, fill) { c.fillStyle = fill; c.beginPath(); points.forEach(([x,y],i) => i ? c.lineTo(x,y) : c.moveTo(x,y)); c.closePath(); c.fill(); }
 function tile(c, x, y, color) { const p = toScreen(x,y); polygon(c, [[p.x,p.y-12],[p.x+24,p.y],[p.x,p.y+12],[p.x-24,p.y]], color); }
 function box(c,x,y,w,d,h,colors) { polygon(c,[[x,y-h],[x+w,y+d-h],[x,y+2*d-h],[x-w,y+d-h]],colors[0]); polygon(c,[[x-w,y+d-h],[x,y+2*d-h],[x,y+2*d],[x-w,y+d]],colors[1]); polygon(c,[[x,y+2*d-h],[x+w,y+d-h],[x+w,y+d],[x,y+2*d]],colors[2]); }
@@ -158,6 +158,12 @@ function makeGround() {
       ground.strokeStyle='#aa8454';ground.lineWidth=1.5;ground.beginPath();neighbors.forEach(([nx,ny],i)=>{if(!isPath(nx,ny)){ground.moveTo(...corners[i]);ground.lineTo(...corners[(i+1)%4]);}});ground.stroke();
     }
     if(water){ground.fillStyle='#b7d2bf';ground.fillRect(p.x-8,p.y,14,1);}
+  }
+  // Grass tufts and flowers are painted into the ground in a fixed pattern, so they never block placement.
+  for(const {x,y,type} of [...sceneWorld.tiles].sort((a,b)=>a.x+a.y-b.x-b.y)){
+    if(type!=='grass'||noise(Math.floor(x/3),Math.floor(y/3),4)>=.55||noise(x,y,1)>=.28)continue;
+    const p=toScreen(x+(noise(x,y,2)-.5)*.7,y+(noise(x,y,3)-.5)*.7);
+    ground.save();ground.translate(p.x,p.y);grass(ground,{size:1,flower:noise(x,y,5)<.35});ground.restore();
   }
 }
 function house(c, object){
