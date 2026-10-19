@@ -17,6 +17,9 @@ export const site = {
   // form as the only channel (see src/pages/contact/index.astro).
   email: 'contact@induo.works',
   github: 'https://github.com/minsueverywhere',
+  // Cloudflare Web Analytics beacon token. It is public by design (it ships in every page);
+  // Worker responses are not auto-injected, so the beacon is added by the layout.
+  webAnalyticsToken: '41d3a7b26ba84d9b9a5d60834cae3883',
 } as const;
 
 export const socialLinks = [
