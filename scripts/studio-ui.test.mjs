@@ -213,17 +213,17 @@ test('guestbook loads on opening, renders text safely, posts then disposes reque
 
 test('guestbook previews a distinct team badge and toggles name hiding without accepting a typed identity',async()=>{
  const source=await readFile(new URL('../src/scripts/village-guestbook.js',import.meta.url),'utf8'),container=new Element('div'),calls=[];
- const identity={name:'Server nickname',teams:[{id:'frondward',name:'Frondward'}]};
- const context={document:{documentElement:{lang:'ko'},createElement:tag=>new Element(tag),createElementNS:(_,tag)=>new Element(tag)},AbortController,encodeURIComponent,Date,fetch:async(_url,options)=>{calls.push(options);return Response.json({canWrite:true,identity,entries:[],next:null});}};
+ const identity={id:'42',name:'Server nickname',teams:[{id:'frondward',name:'Frondward'}]},stored=new Map();
+ const context={localStorage:{getItem:k=>stored.get(k)??null,setItem:(k,v)=>stored.set(k,v)},document:{documentElement:{lang:'ko'},createElement:tag=>new Element(tag),createElementNS:(_,tag)=>new Element(tag)},AbortController,encodeURIComponent,Date,fetch:async(_url,options)=>{calls.push(options);return Response.json({canWrite:true,identity,entries:[],next:null});}};
  const dispose=vm.runInNewContext(source.replace('export function','function')+';mountGuestbook;',context)(container,'frondward');
  await new Promise(resolve=>setImmediate(resolve));
  const select=elements(container).find(e=>e.tag==='select'),hide=elements(container).find(e=>e.tag==='input'),preview=elements(container).find(e=>e.className==='guestbook-identity');
  assert.equal(select.attributes['aria-label'],'표시할 소속');assert.ok(elements(preview).some(e=>e.className==='guestbook-send'));const nameGroup=elements(preview).find(e=>e.className==='guestbook-name-group');assert.ok(nameGroup.children.some(e=>e.tag==='strong'));assert.ok(nameGroup.children.some(e=>e.className==='guestbook-hide'));
  assert.equal(elements(preview).filter(e=>e.tag==='select').length,1);assert.equal(elements(preview).filter(e=>e.tag==='strong').length,1);assert.ok(elements(preview).some(e=>e.textContent==='Server nickname'));assert.equal(elements(preview).some(e=>e.tag==='span'&&e.className==='guestbook-team'),false);
- hide.checked=true;hide.events.change();assert.equal(elements(preview).find(e=>e.tag==='strong').hidden,true);
+ hide.checked=true;hide.events.change();assert.equal(elements(preview).find(e=>e.tag==='strong').hidden,true);assert.equal(stored.get('induo-guestbook-hide:42'),'1','the choice is remembered for this account');
  const form=elements(container).find(e=>e.tag==='form');elements(form).find(e=>e.tag==='textarea').value='Hello';await form.events.submit({preventDefault(){}});
  assert.deepEqual(JSON.parse(calls[1].body),{message:'Hello',team:'frondward',hideName:true,email:'',shareDiscord:false});
- const currentSelect=elements(container).find(e=>e.tag==='select'),currentHide=elements(container).find(e=>e.tag==='input');currentSelect.value='';currentSelect.events.change();assert.equal(currentHide.disabled,true);assert.equal(currentHide.checked,false);dispose();
+ const currentSelect=elements(container).find(e=>e.tag==='select'),currentHide=elements(container).find(e=>e.tag==='input');currentSelect.value='';currentSelect.events.change();assert.equal(elements(container).find(e=>e.className==='guestbook-hide').hidden,true,'no team, no hide option');assert.equal(elements(elements(container).find(e=>e.className==='guestbook-identity')).find(e=>e.tag==='strong').hidden,false);dispose();
 });
 
 test('guestbook team menu links to filtered Works and Worker, visits inside the scene and replies target the parent',async()=>{
