@@ -6,6 +6,7 @@ import SEO from '../components/SEO.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import { t, type Locale } from '../i18n';
+import { site } from '../config';
 
 interface Props {
   lang: Locale;
@@ -33,8 +34,8 @@ const dict = t(lang);
     <meta name="generator" content={Astro.generator} />
 
     <SEO lang={lang} title={title} description={description} noindex={noindex} image={image} imageAlt={imageAlt} />
-    {/* Cloudflare Web Analytics: set PUBLIC_CF_ANALYTICS_TOKEN at build time, or enable automatic setup in the dashboard. */}
-    {import.meta.env.PUBLIC_CF_ANALYTICS_TOKEN && <script is:inline defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon={JSON.stringify({token:import.meta.env.PUBLIC_CF_ANALYTICS_TOKEN})}></script>}
+    {/* Cloudflare Web Analytics; PUBLIC_CF_ANALYTICS_TOKEN can override the token at build time. */}
+    <script is:inline defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon={JSON.stringify({token:import.meta.env.PUBLIC_CF_ANALYTICS_TOKEN||site.webAnalyticsToken,spa:true})}></script>
 
     <!--
       Blocking, inline, and tiny on purpose: sets the theme before first paint
