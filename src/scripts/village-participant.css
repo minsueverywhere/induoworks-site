@@ -74,12 +74,12 @@
 
 /* Editor tools open on the done button's row, just to its left; option rows stack above the tools. */
 .participant-tools,.participant-subtools,.participant-work-picker{left:auto;transform:none;right:calc(max(var(--scene-control-inset),env(safe-area-inset-right)) + var(--edit-width,72px))}
-.participant-tools{bottom:calc(max(var(--scene-control-inset),env(safe-area-inset-bottom)) + 41px);width:auto;max-width:none;flex-wrap:nowrap}
-.participant-subtools{bottom:calc(max(var(--scene-control-inset),env(safe-area-inset-bottom)) + 92px)}
+.participant-tools{bottom:calc(max(var(--scene-control-inset),env(safe-area-inset-bottom)) + 44px);width:auto;max-width:none;flex-wrap:nowrap;align-items:flex-end;gap:10px;margin-right:8px}
+.participant-subtools{bottom:calc(max(var(--scene-control-inset),env(safe-area-inset-bottom)) + 94px);gap:10px;margin-right:8px}
 .participant-work-picker{bottom:calc(max(var(--scene-control-inset),env(safe-area-inset-bottom)) + 140px)}
 
 /* Tool names stay visible under each icon; the selected tool reads darker than the rest. */
 .participant-tools button,.participant-subtools button:not(.participant-reference){width:auto;min-width:38px;height:auto;min-height:42px;padding:2px 3px;color:#52634799}
 .participant-tools button>span,.participant-subtools button:not(.participant-reference)>span{position:static;transform:none;display:block}
 .participant-tools button[aria-pressed=true],.participant-subtools button[aria-pressed=true]{color:#203e36;font-weight:600}
-@media(max-width:600px){.participant-tools,.participant-subtools{gap:0}.participant-tools button,.participant-subtools button:not(.participant-reference){min-width:34px;padding:2px 1px}.participant-tools button>span,.participant-subtools button:not(.participant-reference)>span{font-size:8px;letter-spacing:-.02em}}
+@media(max-width:600px){.participant-tools,.participant-subtools{gap:4px;margin-right:2px}.participant-tools button,.participant-subtools button:not(.participant-reference){min-width:34px;padding:2px 1px}.participant-tools button>span,.participant-subtools button:not(.participant-reference)>span{font-size:8px;letter-spacing:-.02em}}

@@ -166,6 +166,8 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
   .village-now { position:absolute; z-index:12; right:max(var(--scene-control-inset),env(safe-area-inset-right)); top:calc(max(var(--scene-control-inset),env(safe-area-inset-top)) + 44px); display:flex; align-items:stretch; width:min(200px,calc(100% - 24px)); height:28px; color:#526347; font:10px system-ui; letter-spacing:.04em; cursor:auto; }
   .village-now[hidden] { display:none; }
   .village-scene[data-area="village"] .village-now { color:var(--sky-ink,#526347); }
+  /* The button sits on the right, under the settings gear, so the bar balances against the scene edge. */
+  #village-music { order:2; }
   .village-now button { flex:none; min-width:28px; width:28px; min-height:28px; padding:0; border:0; background:transparent; color:inherit; cursor:pointer; }
   /* While the title is dragged, it shows the position being chosen instead of the track name. */
   #village-time { display:none; font-variant-numeric:tabular-nums; white-space:nowrap; }
