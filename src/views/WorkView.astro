@@ -60,11 +60,9 @@ const views=[{id:'gallery',label:ko?'갤러리':'Gallery',path:'M3 3h7v7H3ZM14 3
   label[hidden]{display:none}
   select option{color:var(--color-text);background:var(--color-bg)}
   #work-categories{display:grid;gap:.5rem;margin-top:1.5rem}
-  .work-summary-line{display:flex;align-items:center;gap:.5rem}
-  .work-summary-line .work-filters{flex:0 1 240px;margin-left:auto}
+  .work-summary-line{display:flex;align-items:center;justify-content:flex-end;gap:.5rem}
+  .work-summary-line .work-filters{flex:1;max-width:320px}
   .work-summary-line input{min-height:36px;padding:.3rem .25rem}
-  .work-all{min-height:36px;padding:0;font-size:.8rem;color:var(--color-text-muted);cursor:pointer}
-  .work-all[aria-pressed=true]{color:var(--color-text);font-weight:600}
   .work-chip-row{display:flex;align-items:center;flex-wrap:wrap;column-gap:.5rem}
   .work-chip-label{min-width:4.5rem;font-size:.7rem;color:var(--color-text-muted)}
   .work-sep{font-size:.75rem;color:var(--color-text-muted);opacity:.6}

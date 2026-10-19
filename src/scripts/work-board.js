@@ -30,9 +30,8 @@ function chipRow(title,name,items){
   }
   categories.append(row);
 }
-const all=el('button',{type:'button',class:'work-all'});all.addEventListener('click',()=>{for(const name of ['worker','kind','status'])form.elements.namedItem(name).value='';update();});
 // The reset button lives on the summary line but still resets the form through its form attribute.
-categories.append(el('div',{class:'work-summary-line'},all,form,form.querySelector('.work-reset')));
+categories.append(el('div',{class:'work-summary-line'},form,form.querySelector('.work-reset')));
 chipRow('Worker','worker',[...form.elements.namedItem('worker').options].filter(o=>o.value&&entries.some(e=>e.workerIds.includes(o.value))).map(o=>[o.value,o.textContent]));
 chipRow(ko?'분류':'Field','kind',Object.entries(labels.kinds).filter(([id])=>entries.some(e=>e.kind===id)));
 chipRow(ko?'상태':'Status','status',Object.entries(labels.statuses).filter(([id])=>entries.some(e=>e.status===id)));
@@ -61,7 +60,6 @@ function update(writeUrl=true) {
   for(let i=0;i<entries.length;i++){const visible=matchesWork(entries[i],filters);cards[i].hidden=!visible;if(visible)count++;}
   grid.dataset.view=view;viewButtons.forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===view)));
   document.getElementById('work-count').textContent=root.dataset.count.replace('{count}',count);
-  all.textContent=(ko?'전체 보기 · ':'Show all · ')+entries.filter(e=>matchesWork(e,{...filters,worker:'',kind:'',status:''})).length;all.setAttribute('aria-pressed',String(!filters.worker&&!filters.kind&&!filters.status));
   document.getElementById('work-empty').hidden=count!==0;
   if(writeUrl){const params=new URLSearchParams();for(const name of names)if(filters[name])params.set(name,filters[name]);if(view!==defaultView)params.set('view',view);history.replaceState(history.state,'',location.pathname+(params.size?'?'+params:''));}
 }
