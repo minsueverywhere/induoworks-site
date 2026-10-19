@@ -62,8 +62,8 @@ test('participant settings preserve independent full-screen state and collapse t
   assert.equal(elements(ui.scene).some(e=>e.tag==='details'),false);
   const add=elements(ui.scene).find(e=>e.attributes['aria-label']==='물건 놓기');add.events.click();
   assert.ok(elements(ui.scene).some(e=>e.attributes['aria-label']==='물건 종류'));
-  elements(ui.scene).find(e=>e.attributes['aria-label']==='주크박스').events.click();
-  assert.equal(elements(ui.scene).some(e=>e.attributes['aria-label']==='물건 종류'),false);
+  elements(ui.scene).find(e=>e.attributes['aria-label']==='음악').events.click();
+  assert.ok(elements(ui.scene).some(e=>e.attributes['aria-label']==='물건 종류'),'choosing a kind keeps the palette open');
   assert.equal(ui.writes.length,0);
 });
 
@@ -182,7 +182,7 @@ test('reopening clears the selected exhibit panel and tile/erase tools work afte
 
 
 test('plain HTTP preview can place a registered exhibit without secure-context randomUUID',async()=>{
- const ui=await setup(undefined,true);elements(ui.scene).find(e=>e.attributes['aria-label']==='물건 놓기').events.click();elements(ui.scene).find(e=>e.attributes['aria-label']==='주크박스').events.click();
+ const ui=await setup(undefined,true);elements(ui.scene).find(e=>e.attributes['aria-label']==='물건 놓기').events.click();elements(ui.scene).find(e=>e.attributes['aria-label']==='음악').events.click();
  const event={button:0,pointerId:1,clientX:0,clientY:0,point:{x:0,y:0},target:{closest:()=>null},preventDefault(){},stopImmediatePropagation(){}};
  ui.scene.events.pointerdown(event);ui.scene.events.pointerup(event);
  const item=ui.preview().workers.find(w=>w.id==='frondward').room.floors[0].exhibits.at(-1);assert.match(item.id,/^display-[0-9a-f]{8}$/);assert.equal(item.kind,'music');assert.equal(ui.writes.length,0);
@@ -304,7 +304,7 @@ test('host scene editor moves a house, rejects collision and groups terrain stro
  let point;for(const t of catalog.world.tiles)if(!objectPlacementError(catalog,'house',house.id,t)&&(t.x!==house.house.x||t.y!==house.house.y)){point=t;break;}assert.ok(point);
  scene.events.pointerdown(first);scene.events.pointermove(event(point.x,point.y,house.id));scene.events.pointerup(event(point.x,point.y,house.id));assert.equal(rendered.workers.find(w=>w.id===house.id).house.x,point.x);assert.equal(saved,undefined);editor.undo();assert.deepEqual(rendered.workers.find(w=>w.id===house.id).house,house.house);
  press('마을 타일');scene.events.pointerdown(event(-1,0));scene.events.pointermove(event(-2,0));scene.events.pointerup(event(-2,0));assert.ok(rendered.world.tiles.some(t=>t.x===-2));editor.undo();assert.equal(rendered.world.tiles.some(t=>t.x<0),false);
- for(const [kind,label]of [['tree','나무'],['grass','풀'],['sign','간판'],['project','전시대'],['music','주크박스']]){
+ for(const [kind,label]of [['tree','나무'],['grass','풀'],['sign','간판'],['project','전시대'],['music','음악']]){
   press('물건 놓기');press(label);const type=['project','music'].includes(kind)?'exhibit':kind,point=rendered.world.tiles.find(t=>!objectPlacementError(rendered,type,'',t));assert.ok(point,kind);
   scene.events.pointerdown(event(point.x,point.y));scene.events.pointerup(event(point.x,point.y));
   const items=type==='exhibit'?rendered.world.exhibits:rendered.world.decorations,item=items.at(-1);assert.equal(item.kind||item.type,kind);
@@ -335,7 +335,7 @@ test('a selected jukebox names its current song directly and its song picker upd
 
 test('placement follows a preview until release and cancellation leaves no exhibit behind',async()=>{
  const ui=await setup(undefined,true),press=label=>elements(ui.scene).find(e=>e.attributes['aria-label']===label).events.click();
- press('물건 놓기');press('주크박스');const event=x=>({button:0,pointerId:1,clientX:x*10,clientY:0,point:{x,y:0},target:{closest:()=>null},preventDefault(){},stopImmediatePropagation(){}}),items=()=>ui.preview().workers.find(w=>w.id==='frondward').room.floors[0].exhibits;
+ press('물건 놓기');press('음악');const event=x=>({button:0,pointerId:1,clientX:x*10,clientY:0,point:{x,y:0},target:{closest:()=>null},preventDefault(){},stopImmediatePropagation(){}}),items=()=>ui.preview().workers.find(w=>w.id==='frondward').room.floors[0].exhibits;
  const count=items().length;ui.scene.events.pointerdown(event(0));assert.equal(items().length,count);ui.scene.events.pointermove(event(1));ui.editor.draw(0);assert.equal(ui.ghosts.at(-1)[0],'music');assert.equal(ui.ghosts.at(-1)[1].x,1);assert.equal(ui.ghosts.at(-1)[3],true);
  ui.scene.events.pointercancel(event(1));assert.equal(items().length,count);
  ui.scene.events.pointerdown(event(0));ui.scene.events.pointermove(event(1));ui.scene.events.pointerup(event(1));assert.equal(items().length,count+1);assert.equal(items().at(-1).x,1);assert.ok(ui.button('Veiled Garden'));
