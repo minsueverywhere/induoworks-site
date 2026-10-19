@@ -135,6 +135,8 @@ Induohood 제목 옆 물음표는 호버·초점에서 짧은 소개, 클릭에�
 
 2026-10-19: GRENCH BOSS 현재 WAV에서 Evening Return(64초), Main Menu Theme(72초), Merchant Theme(약 68.57초), Quiet Harbor(64초)를 Opus 64k·MP3 96k로 등록했다. 제작자는 Frondward이며 Works와 실내·마을 Work 선택 목록에서 사용한다. Veiled Garden은 이후 반영된 현재 v03 WAV(SHA-256 2e0582ffbb7b…, 64초)로 추가했다. 원본의 길이·앞뒤 쉼표를 자르거나 페이드하지 않았다. 현재는 압축 Blob 재생을 사용하며 초기 페이지 로드에는 요청하지 않는다.
 
+2026-10-19 음량 재조정: music-projects의 Grench Boss 납품 마스터(Merchant Theme 기준 -17.5 LUFS, true peak ≤ -1.17 dBTP)로 6곡을 다시 인코딩했다(Opus 80k/48kHz, MP3 96k/44.1kHz, 메타데이터 제거). 파일명 해시는 원본 WAV SHA-256 앞 12자리다. 인코딩 결과는 Opus 약 -17.5, MP3 약 -17.95 LUFS로 곡 간 차이가 없다. 이전 해시 파일은 열린 페이지·캐시를 위해 남겨 두었다.
+
 ## 사운드트랙과 음악 탐색
 
 Works와 Workers는 같은 project와 workerIds를 가진 곡을 사운드트랙 글 하나로 묶는다. 원본 트랙 ID·주크박스 참조는 유지한다. `/work/soundtrack/?id=…`는 공개 카탈로그를 읽어 작품 소개·제작자·곡별 재생기와 기존 트랙 설명을 표시한다. 곡별 설명이 없으면 새 설명을 추측해 쓰지 않는다. 글의 이어서 듣기는 현재 곡 종료 후 다음 곡을 요청하므로 곡 사이 무공백 연결을 보장하지 않는다. 재생을 누르면 기존 siteMusic을 일시정지하고, siteMusic을 다시 재생하면 글의 플레이어를 멈춘다. 글에서 나가면 글의 재생기는 정리하고 기존 플로팅 음악을 자동 재개하지 않는다.
