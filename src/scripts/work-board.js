@@ -32,7 +32,7 @@ function chipRow(title,name,items){
 }
 const all=el('button',{type:'button',class:'work-all'});all.addEventListener('click',()=>{for(const name of ['worker','kind','status'])form.elements.namedItem(name).value='';update();});
 // The reset button lives on the summary line but still resets the form through its form attribute.
-categories.append(el('div',{class:'work-summary-line'},all,form.querySelector('.work-reset')));
+categories.append(el('div',{class:'work-summary-line'},all,form,form.querySelector('.work-reset')));
 chipRow('Worker','worker',[...form.elements.namedItem('worker').options].filter(o=>o.value&&entries.some(e=>e.workerIds.includes(o.value))).map(o=>[o.value,o.textContent]));
 chipRow(ko?'분류':'Field','kind',Object.entries(labels.kinds).filter(([id])=>entries.some(e=>e.kind===id)));
 chipRow(ko?'상태':'Status','status',Object.entries(labels.statuses).filter(([id])=>entries.some(e=>e.status===id)));
