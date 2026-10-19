@@ -245,11 +245,13 @@ function jukebox(c,object) {
 }
 
 function artwork(c,object) {
+  // A wider frame runs along the same tile edge as the one-tile stand, one base block per tile.
+  const tiles=object.frameWidth||1,pw=36+24*(tiles-1),ph=42*(1+.5*((object.frameHeight||1)-1));
   c.translate(0,-10);
-  box(c,0,-1,21,11,4,['#b58f62','#8a684c','#71543d']);
-  c.save();c.transform(1,.5,0,1,-18,-3);
-  c.fillStyle='#856747';c.fillRect(0,-42,36,42);c.fillStyle='#f8edcc';c.fillRect(3,-39,30,35);
-  const badge=badges.get(object.badge);if(badge?.complete&&badge.naturalWidth){const fit=Math.min(28/badge.naturalWidth,28/badge.naturalHeight),w=badge.naturalWidth*fit,h=badge.naturalHeight*fit;c.drawImage(badge,4+(28-w)/2,-36+(28-h)/2,w,h);}c.restore();
+  for(let i=0;i<tiles;i++){const o=i-(tiles-1)/2;box(c,24*o,-1+12*o,21,11,4,['#b58f62','#8a684c','#71543d']);}
+  c.save();c.transform(1,.5,0,1,-pw/2,-3);
+  c.fillStyle='#856747';c.fillRect(0,-ph,pw,ph);c.fillStyle='#f8edcc';c.fillRect(3,-ph+3,pw-6,ph-7);
+  const badge=badges.get(object.badge),aw=pw-8,ah=ph-14;if(badge?.complete&&badge.naturalWidth){const fit=Math.min(aw/badge.naturalWidth,ah/badge.naturalHeight),w=badge.naturalWidth*fit,h=badge.naturalHeight*fit;c.drawImage(badge,4+(aw-w)/2,-ph+6+(ah-h)/2,w,h);}c.restore();
 }
 function makeRoom() {
   roomLayers=roomStack(activeWorker,roomLevel).map(layer=>{
@@ -286,7 +288,11 @@ function guestbook(c){
   c.strokeStyle='#b5a58a';c.lineWidth=.7;c.beginPath();c.moveTo(-8,-22);c.lineTo(2,-18);c.moveTo(-4,-24);c.lineTo(6,-20);c.moveTo(0,-26);c.lineTo(10,-22);c.stroke();
   c.strokeStyle='#526347';c.lineWidth=1.5;c.beginPath();c.moveTo(5,-15);c.lineTo(14,-19);c.stroke();
 }
-function spriteBounds() {return [-64,-112,128,144];}
+function spriteBounds(object) {
+  if(object?.shape!=='artwork'||((object.frameWidth||1)===1&&(object.frameHeight||1)===1))return [-64,-112,128,144];
+  const half=Math.ceil((36+24*((object.frameWidth||1)-1))/2)+24,top=Math.ceil(42*(1+.5*((object.frameHeight||1)-1))+12*(object.frameWidth||1)+40);
+  return [-half,-top,half*2,top+44];
+}
 function sprite(object, hover) {
   const key = object.id+':'+hover;
   if (sprites.has(key)) return sprites.get(key);

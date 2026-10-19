@@ -18,6 +18,8 @@ export function setTerrain(world,x,y,type){
   tileIndexes.delete(world.tiles);
 }
 // X/Y is the front corner tile; larger lots extend backwards along both grid axes.
+// Exhibits are one tile deep; picture frames may span up to three tiles and three height steps.
+export const exhibitSizeValid=e=>(e.width===undefined||[1,2,3].includes(e.width))&&(e.depth===undefined||e.depth===1)&&(e.frameHeight===undefined||[1,2,3].includes(e.frameHeight));
 export function objectFootprint(point,type='house'){
   let width=point.width===undefined?(type==='house'?2:1):point.width;
   let depth=point.depth===undefined?(type==='house'?2:1):point.depth;
@@ -68,7 +70,7 @@ export function validateWorld(world){
     !Array.isArray(world.decorations)||world.decorations.length>MAX_DECORATIONS||
     !world.decorations.every(d=>/^[a-z0-9-]+$/.test(d.id)&&d.id.length<=80&&(expanded?['tree','grass','letter','sign']:['tree','grass','sign']).includes(d.type)&&point(d,d.type)&&Number.isFinite(d.size)&&d.size>=.5&&d.size<=1.6&&(!('flower'in d)||typeof d.flower==='boolean')&&(d.type!=='sign'||(typeof d.title==='string'&&d.title.length<=40))&&(d.type!=='letter'||(/^[A-Z0-9]$/.test(d.char)&&/^#[0-9a-fA-F]{6}$/.test(d.color))))||
     new Set(world.decorations.map(d=>d.id)).size!==world.decorations.length)throw new Error('Invalid village terrain or decorations');
-  if(world.exhibits!==undefined&&(!Array.isArray(world.exhibits)||world.exhibits.length>100||!world.exhibits.every(e=>/^[a-z0-9-]+$/.test(e.id)&&e.id.length<=80&&['project','media','music'].includes(e.kind)&&typeof e.ref==='string'&&e.ref.length<=80&&point(e,'exhibit'))||new Set(world.exhibits.map(e=>e.id)).size!==world.exhibits.length||world.exhibits.some(e=>world.decorations.some(d=>d.id===e.id)||['noticeboard','mascot','welcome'].includes(e.id))))throw new Error('Invalid outdoor exhibits');
+  if(world.exhibits!==undefined&&(!Array.isArray(world.exhibits)||world.exhibits.length>100||!world.exhibits.every(e=>/^[a-z0-9-]+$/.test(e.id)&&e.id.length<=80&&['project','media','music'].includes(e.kind)&&typeof e.ref==='string'&&e.ref.length<=80&&point(e,'exhibit')&&exhibitSizeValid(e))||new Set(world.exhibits.map(e=>e.id)).size!==world.exhibits.length||world.exhibits.some(e=>world.decorations.some(d=>d.id===e.id)||['noticeboard','mascot','welcome'].includes(e.id))))throw new Error('Invalid outdoor exhibits');
   const bounds=terrainBounds(world);
   if(bounds.maxX-bounds.minX>=MAX_WORLD_SIZE||bounds.maxY-bounds.minY>=MAX_WORLD_SIZE)throw new Error('Village terrain exceeds 64 by 64');
   return world;

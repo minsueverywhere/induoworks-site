@@ -30,8 +30,10 @@ function display(e,area,owner,floor=0){
   const item=(e.kind==='project'?projects:e.kind==='media'?villageMedia:musicTracks(catalog)).find(i=>(i.id||i.slug)===e.ref);
   if(!item)return null;
   const title=typeof item.title==='string'?item.title:item.title[lang];
-  return {...e,id:'display:'+(owner?owner+':'+floor+':':'')+e.id,worldId:e.id,editType:'exhibit',area,owner,floor,ground:groundPosition(e,'exhibit'),shape:e.kind==='project'?'game':e.kind==='media'?'artwork':'jukebox',width:56,height:e.kind==='music'?48:72,label:title,title,description:e.kind==='project'?item.summary[lang]:item.description?.[lang]||'',...(e.kind==='music'?{music:item,links:[{title:ko?'음악 Work 보기':'View music work',href:musicWorkPath(item,lang)}]}:e.kind==='project'?{externalUrl:item.externalUrl,links:[{title:ko?'작품 소개':'About this work',href:projectPath(item.slug,lang)}]}:{media:[item.id],badge:item.badge})};
+  return {...e,id:'display:'+(owner?owner+':'+floor+':':'')+e.id,worldId:e.id,editType:'exhibit',area,owner,floor,ground:groundPosition(e,'exhibit'),shape:e.kind==='project'?'game':e.kind==='media'?'artwork':'jukebox',...(e.kind==='media'?frame(e):{width:56,height:e.kind==='music'?48:72}),label:title,title,description:e.kind==='project'?item.summary[lang]:item.description?.[lang]||'',...(e.kind==='music'?{music:item,links:[{title:ko?'음악 Work 보기':'View music work',href:musicWorkPath(item,lang)}]}:e.kind==='project'?{externalUrl:item.externalUrl,links:[{title:ko?'작품 소개':'About this work',href:projectPath(item.slug,lang)}]}:{media:[item.id],badge:(e.width||1)>1||(e.frameHeight||1)>1?item.preview:item.badge})};
 }
+// Frame size in tiles and height steps; the click target grows with the drawn frame.
+function frame(e){const frameWidth=e.width||1,frameHeight=e.frameHeight||1;return {frameWidth,frameHeight,width:56+48*(frameWidth-1),height:Math.round(72*(1+.5*(frameHeight-1)))};}
 const allPlaces = [...places,...roomPlaces.filter(p=>!catalog.workers.find(w=>w.id===p.owner)?.room?.hiddenItems?.includes(p.id)).map(p=>({...p,floor:0})),...(world.exhibits||[]).map(e=>display(e,'village')),
  ...workers.filter(w=>w.house).flatMap(w=>roomFloors(w).flatMap((f,i)=>f.exhibits.map(e=>display(e,'room',w.id,i))))].filter(Boolean);
 
