@@ -45,8 +45,8 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
     <div id="village-account-menu" data-ui hidden></div>
 <button id="village-studio" type="button" data-ui aria-expanded="false" aria-controls="village-account-menu" aria-label={ko?'설정':'Settings'} title={ko?'설정':'Settings'}><svg class="settings-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-.6 3-2 .9-2.7-.9-2 3.5 2.2 2v2.3l-2.2 2 2 3.5 2.7-.9 2 .9.6 3h4l.6-3 2-.9 2.7.9 2-3.5-2.2-2v-2.3l2.2-2-2-3.5-2.7.9-2-.9-.6-3Z"/><circle cx="11" cy="12" r="3" /></svg><svg class="login-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3h7v18h-7M3 12h13m-5-5 5 5-5 5" /></svg><svg class="close-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg><span class="login-copy">Discord로 로그인</span></button>
     <div id="village-now" class="village-now" data-ui role="group" aria-label={ko?'지금 재생 중':'Now playing'} hidden>
-      <a id="village-now-title" class="village-marquee"><span></span></a>
-      <div class="music-controls"><button id="village-music" class="music-toggle" type="button" aria-pressed="false" aria-label={text.play}></button><input id="village-seek" type="range" min="0" max="1" step=".1" value="0" aria-label={ko?'재생 위치':'Playback position'} disabled /><span id="village-time">0:00 / 0:00</span><button id="village-now-close" type="button" aria-label={ko?'음악 정지·닫기':'Stop and close music'} title={ko?'음악 정지·닫기':'Stop and close music'}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" /></svg></button></div>
+      <button id="village-music" class="music-toggle" type="button" aria-pressed="false" aria-label={text.play}></button><span id="village-time" aria-hidden="true">0:00</span>
+      <div id="village-now-track" role="slider" tabindex="0" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0"><span id="village-now-title" class="village-marquee"><span></span></span></div>
     </div>
     <button id="village-edit" type="button" data-ui aria-pressed="false" hidden><svg class="edit-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 20 4-1 11-11-3-3L5 16Zm10-13 3 3" /></svg><svg class="done-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg><span>{ko?'편집':'Edit'}</span></button>
     <nav id="village-floors" data-ui aria-label={ko?'층 이동':'Floors'} hidden></nav>
@@ -163,17 +163,19 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
   #village-gallery :global(figcaption) { font-size: .7rem; margin-top: .25rem; }
   #village-gallery :global(a) { display: inline-flex; align-items: center; min-height: 44px; font-size: .75rem; text-decoration: underline; }
   @media(max-width: 639px) { .village-scene { min-height: 280px; } }
-  .village-now { position:absolute; z-index:12; right:max(var(--scene-control-inset),env(safe-area-inset-right)); top:calc(max(var(--scene-control-inset),env(safe-area-inset-top)) + 44px); width:min(230px,calc(100% - 24px)); color:#526347; font:10px system-ui; letter-spacing:.04em; cursor:auto; }
+  .village-now { position:absolute; z-index:12; right:max(var(--scene-control-inset),env(safe-area-inset-right)); top:calc(max(var(--scene-control-inset),env(safe-area-inset-top)) + 44px); display:flex; align-items:stretch; width:min(200px,calc(100% - 24px)); height:28px; color:#526347; font:10px system-ui; letter-spacing:.04em; cursor:auto; }
   .village-now[hidden] { display:none; }
   .village-scene[data-area="village"] .village-now { color:var(--sky-ink,#526347); }
-  .village-now .music-controls { display:flex; align-items:center; gap:2px; }
-  .village-now button { flex:none; min-width:28px; width:28px; min-height:32px; padding:0; border:0; background:transparent; color:inherit; cursor:pointer; }
-  #village-seek { flex:1; width:0; min-width:0; min-height:32px; accent-color:currentColor; cursor:pointer; }
-  #village-time { flex:none; white-space:nowrap; font-variant-numeric:tabular-nums; }
-  .village-marquee { display:block; overflow:hidden; white-space:nowrap; text-align:right; color:inherit; text-decoration:none; }
-  .village-marquee:hover { text-decoration:underline; }
+  .village-now button { flex:none; min-width:28px; width:28px; min-height:28px; padding:0; border:0; background:transparent; color:inherit; cursor:pointer; }
+  /* While the title is dragged, the play button's slot shows the position being chosen. */
+  #village-time { display:none; flex:none; min-width:28px; align-self:center; text-align:center; font-variant-numeric:tabular-nums; }
+  .village-now[data-seeking] #village-music { display:none; }
+  .village-now[data-seeking] #village-time { display:block; }
+  /* The title doubles as the progress bar: it fills softly as the track plays and seeks when dragged. */
+  #village-now-track { flex:1; min-width:0; display:flex; align-items:center; padding:0 6px; cursor:pointer; touch-action:none; background:linear-gradient(to right,color-mix(in srgb,currentColor 14%,transparent) var(--progress,0%),transparent var(--progress,0%)); }
+  #village-now-track:focus-visible { outline:1px solid currentColor; outline-offset:-2px; }
+  .village-marquee { flex:1; min-width:0; display:block; overflow:hidden; white-space:nowrap; pointer-events:none; }
   .village-marquee span { display:inline-block; }
-  .village-marquee[data-overflow=true] { text-align:left; }
   .village-marquee[data-overflow=true] span { animation:village-marquee var(--marquee-time) ease-in-out infinite alternate; }
   @keyframes village-marquee { 0%,15% { transform:none; } 85%,100% { transform:translateX(var(--marquee-shift)); } }
   @media(prefers-reduced-motion:reduce) { .village-marquee[data-overflow=true] span { animation:none; } }
@@ -204,12 +206,11 @@ const interactivePlaces = allPlaces.filter(p=>!('interactive' in p)||p.interacti
   .is-decorating .village-undo-icon { display:block; }
   #village-fullscreen svg{display:block;flex:none;pointer-events:none}
   #village-account-menu[hidden],#village-edit[hidden] { display:none; }
-  #village-edit { position:absolute;left:50%;bottom:max(var(--scene-control-inset),env(safe-area-inset-bottom));z-index:12;transform:translateX(-50%);display:flex;align-items:center;gap:6px;height:44px;padding:0 10px;border:0;background:transparent;color:#526347;font:10px system-ui;letter-spacing:.08em;cursor:pointer; }
+  /* Sits right above the full-screen button, its icon on the same vertical line. */
+  #village-edit { position:absolute;right:max(var(--scene-control-inset),env(safe-area-inset-right));bottom:calc(max(var(--scene-control-inset),env(safe-area-inset-bottom)) + 40px);z-index:12;display:flex;flex-direction:row-reverse;align-items:center;gap:6px;height:36px;padding:0 14.5px 0 6px;border:0;background:transparent;color:#526347;font:10px system-ui;letter-spacing:.08em;cursor:pointer; }
   #village-edit[aria-pressed=true] { font-weight:600; }
   #village-edit .done-icon,#village-edit[aria-pressed=true] .edit-icon { display:none; }
   #village-edit[aria-pressed=true] .done-icon { display:block; }
-  /* The bottom row is full on phones, so the edit button moves to the right edge. */
-  @media(max-width:639px) { #village-edit { left:auto;right:max(var(--scene-control-inset),env(safe-area-inset-right));bottom:auto;top:50%;transform:translateY(-50%);flex-direction:column;gap:2px;height:auto;padding:6px 4px; } }
   #village-account-menu { position:absolute;right:max(var(--scene-control-inset),env(safe-area-inset-right));top:calc(max(var(--scene-control-inset),env(safe-area-inset-top)) + 52px);z-index:14; }
   #village-studio { position:absolute;right:max(var(--scene-control-inset),env(safe-area-inset-right));top:max(var(--scene-control-inset),env(safe-area-inset-top));z-index:12;display:flex;align-items:center;justify-content:center;width:44px;min-width:44px;height:44px;min-height:44px;padding:0;border:0;background:transparent;color:#526347;cursor:pointer; }
   #village-fullscreen .fullscreen-exit,#village-fullscreen[aria-pressed=true] .fullscreen-enter { display:none; }
