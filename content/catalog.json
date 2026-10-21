@@ -53,8 +53,8 @@
           "ko": "대포와 석궁 옆에서 렌치를 든 고블린과 몰려오는 쥐 무리"
         },
         "caption": {
-          "en": "Key art (in-game render)",
-          "ko": "키 아트 (게임 화면 렌더)"
+          "en": "Key art",
+          "ko": "키 아트"
         }
       },
       "workerIds": [
@@ -75,16 +75,16 @@
         "ko": "GRENCH BOSS"
       },
       "summary": {
-        "en": "A defense game about a goblin boss, a crash landing and far too many rats.",
-        "ko": "고블린 보스와 불시착, 그리고 지나치게 많은 쥐에 관한 디펜스 게임입니다."
+        "en": "A defense game about a goblin stranded on an island of pirate rats.",
+        "ko": "해적 쥐들의 섬에 불시착한 고블린이 주인공인 디펜스 게임입니다."
       },
       "role": {
         "en": "Developed by Frondward, published by Induo Works",
         "ko": "개발 Frondward, 배급 Induo Works"
       },
       "challenge": {
-        "en": "The rats want your airship. It's mostly scrap, but it's yours. Build walls, dig the ground out from under them, and jump in yourself when the walls don't hold. (They rarely hold.)",
-        "ko": "쥐들이 당신의 비행선을 노립니다. 거의 고철이지만, 그래도 당신 것입니다. 벽을 세우고, 그 밑의 땅을 파내고, 벽이 버티지 못하면 직접 뛰어듭니다. (대체로 뚫립니다.)"
+        "en": "Place turrets on the enemy route and upgrade them. When the line breaks, take the wrench and fight yourself. Kkomu workers gather resources, and the terrain manipulator cuts through walls and hills. You can also drive a kart and fly the airship.",
+        "ko": "적이 오는 길목에 포탑을 세우고 업그레이드합니다. 방어선이 뚫리면 렌치를 들고 직접 싸웁니다. 일꾼 꼬무가 자원을 모으고, 지형조작기로 벽과 언덕을 뚫을 수 있습니다. 카트와 비행선도 직접 몰 수 있습니다."
       },
       "approach": {
         "en": "Built in Godot with GDScript and C++ (GDExtension).",

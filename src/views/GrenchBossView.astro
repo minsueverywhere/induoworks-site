@@ -17,17 +17,17 @@ const steamUrl = 'https://store.steampowered.com/app/5154660/';
 
 // Store screenshots are real in-game renders; UI shots have one capture per language.
 const shots = [
-  { src: ko ? battleKo : battleEn, alt: ko ? '울타리 뒤에서 렌치를 휘두르는 고블린과 몰려오는 쥐 무리, 오우거' : 'The goblin swings a wrench behind the palisade as rats and an ogre reach the wall', caption: ko ? '아홉 번째 웨이브가 울타리에 닿았습니다.' : 'Wave nine reaches the palisade.' },
-  { src: ko ? towerKo : towerEn, alt: ko ? '전투 중 열린 석궁 관리 창과 발리스타 업그레이드' : 'A crossbow management board open mid-battle, with the Ballista upgrade highlighted', caption: ko ? '발리스타까지 한 단계 남은 석궁입니다.' : 'A crossbow, one upgrade away from a ballista.' },
-  { src: airship, alt: ko ? '구름 위에서 섬으로 향하는 비행선' : 'The airship above the clouds, heading for the island', caption: ko ? '섬으로 돌아가는 비행선입니다.' : 'The airship, heading for the island.' },
-  { src: kart, alt: ko ? '섬의 높은 능선 끝에서 공중으로 뛰어오른 카트' : 'The kart in mid-air off the end of the island ridge', caption: ko ? '능선을 벗어나는 카트입니다. 일부러입니다.' : 'The kart leaving the ridge. On purpose.' },
+  { src: ko ? battleKo : battleEn, alt: ko ? '울타리 뒤에서 렌치를 휘두르는 고블린과 몰려오는 쥐 무리, 오우거' : 'The goblin swings a wrench behind the palisade as rats and an ogre reach the wall', caption: ko ? '울타리 방어선 전투' : 'Holding the palisade' },
+  { src: ko ? towerKo : towerEn, alt: ko ? '전투 중 열린 석궁 관리 창과 발리스타 업그레이드' : 'A crossbow management board open mid-battle, with the Ballista upgrade highlighted', caption: ko ? '석궁 업그레이드' : 'Crossbow upgrades' },
+  { src: airship, alt: ko ? '구름 위에서 섬으로 향하는 비행선' : 'The airship above the clouds, heading for the island', caption: ko ? '비행선' : 'Airship' },
+  { src: kart, alt: ko ? '섬의 높은 능선 끝에서 공중으로 뛰어오른 카트' : 'The kart in mid-air off the end of the island ridge', caption: ko ? '카트' : 'Kart' },
 ];
 ---
 
 <Layout
   lang={lang}
   title="GRENCH BOSS"
-  description={ko ? '고블린 보스와 불시착, 그리고 지나치게 많은 쥐에 관한 디펜스 게임입니다.' : 'A defense game about a goblin boss, a crash landing and far too many rats.'}
+  description={ko ? '해적 쥐들의 섬에 불시착한 고블린이 주인공인 디펜스 게임입니다.' : 'A defense game about a goblin stranded on an island of pirate rats.'}
   image={keyArt.src}
   imageAlt="GRENCH BOSS"
 >
@@ -39,14 +39,14 @@ const shots = [
     <div class="mt-10 grid gap-10 lg:grid-cols-[1fr_16rem]">
       <div>
         <h1 class="text-3xl font-semibold tracking-tight sm:text-5xl">GRENCH BOSS</h1>
-        <p class="mt-5 max-w-2xl text-xl leading-relaxed">{ko ? '쥐들이 당신의 비행선을 노립니다. 거의 고철이지만, 그래도 당신 것입니다.' : "The rats want your airship. It's mostly scrap, but it's yours."}</p>
+        <p class="mt-5 max-w-2xl text-xl leading-relaxed">{ko ? '해적 쥐들의 섬에 불시착한 고블린이 주인공인 디펜스 게임입니다.' : 'A defense game about a goblin stranded on an island of pirate rats.'}</p>
         <p class="mt-4 max-w-2xl leading-relaxed text-[var(--color-text-muted)]">{ko
-          ? 'Grench Boss는 고블린 보스와 불시착, 그리고 지나치게 많은 쥐에 관한 디펜스 게임입니다. 벽을 세우고, 그 밑의 땅을 파내고, 벽이 버티지 못하면 직접 뛰어듭니다. (대체로 뚫립니다.)'
-          : "Grench Boss is a defense game about a goblin boss, a crash landing and far too many rats. Build walls, dig the ground out from under them, and jump in yourself when the walls don't hold. (They rarely hold.)"}</p>
+          ? '적이 오는 길목에 포탑을 세우고 업그레이드합니다. 방어선이 뚫리면 렌치를 들고 직접 싸웁니다. 일꾼 꼬무가 자원을 모으고, 지형조작기로 벽과 언덕을 뚫을 수 있습니다. 카트와 비행선도 직접 몰 수 있습니다.'
+          : 'Place turrets on the enemy route and upgrade them. When the line breaks, take the wrench and fight yourself. Kkomu workers gather resources, and the terrain manipulator cuts through walls and hills. You can also drive a kart and fly the airship.'}</p>
       </div>
       <aside class="workshop-panel self-start rounded-xl border border-[var(--color-border)] p-6 text-sm">
         <a href={steamUrl} target="_blank" rel="noopener noreferrer" class="focus-ring block rounded-full bg-[var(--color-text)] px-5 py-2.5 text-center font-medium text-[var(--color-bg)] hover:opacity-90">{ko ? 'Steam 찜 목록에 추가 →' : 'Wishlist on Steam →'}</a>
-        <p class="mt-3 text-[var(--color-text-muted)]">{ko ? '무료 데모도 Steam에서 받을 수 있습니다.' : 'The free demo is on Steam too.'}</p>
+        <p class="mt-3 text-[var(--color-text-muted)]">{ko ? 'Steam에서 무료 데모를 받을 수 있습니다.' : 'A free demo is available on Steam.'}</p>
         <dl class="mt-6 grid gap-3">
           <div><dt class="text-[var(--color-text-muted)]">{ko ? '개발' : 'Developer'}</dt><dd class="mt-0.5 font-medium"><a class="focus-ring underline underline-offset-4" href={localizePath('/workers/#frondward', lang)}>Frondward</a></dd></div>
           <div><dt class="text-[var(--color-text-muted)]">{ko ? '배급' : 'Publisher'}</dt><dd class="mt-0.5 font-medium">Induo Works</dd></div>
