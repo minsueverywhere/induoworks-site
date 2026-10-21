@@ -1,0 +1,75 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { Image } from 'astro:assets';
+import { localizePath, type Locale } from '../i18n';
+import keyArt from '../assets/grench-boss/key-art.webp';
+import battleEn from '../assets/grench-boss/battle-en.webp';
+import battleKo from '../assets/grench-boss/battle-ko.webp';
+import towerEn from '../assets/grench-boss/tower-upgrade-en.webp';
+import towerKo from '../assets/grench-boss/tower-upgrade-ko.webp';
+import airship from '../assets/grench-boss/airship.webp';
+import kart from '../assets/grench-boss/kart.webp';
+
+interface Props { lang: Locale; }
+const { lang } = Astro.props;
+const ko = lang === 'ko';
+const steamUrl = 'https://store.steampowered.com/app/5154660/';
+
+// Store screenshots are real in-game renders; UI shots have one capture per language.
+const shots = [
+  { src: ko ? battleKo : battleEn, alt: ko ? '울타리 뒤에서 렌치를 휘두르는 고블린과 몰려오는 쥐 무리, 오우거' : 'The goblin swings a wrench behind the palisade as rats and an ogre reach the wall', caption: ko ? '울타리 방어선 전투' : 'Holding the palisade' },
+  { src: ko ? towerKo : towerEn, alt: ko ? '전투 중 열린 석궁 관리 창과 발리스타 업그레이드' : 'A crossbow management board open mid-battle, with the Ballista upgrade highlighted', caption: ko ? '석궁 업그레이드' : 'Crossbow upgrades' },
+  { src: airship, alt: ko ? '구름 위에서 섬으로 향하는 비행선' : 'The airship above the clouds, heading for the island', caption: ko ? '비행선' : 'Airship' },
+  { src: kart, alt: ko ? '섬의 높은 능선 끝에서 공중으로 뛰어오른 카트' : 'The kart in mid-air off the end of the island ridge', caption: ko ? '카트' : 'Kart' },
+];
+---
+
+<Layout
+  lang={lang}
+  title="GRENCH BOSS"
+  description={ko ? '해적 쥐들의 섬에 불시착한 고블린이 주인공인 디펜스 게임입니다.' : 'A defense game about a goblin stranded on an island of pirate rats.'}
+  image={keyArt.src}
+  imageAlt="GRENCH BOSS"
+>
+  <article class="mx-auto max-w-5xl px-6 pb-24 pt-16 sm:pt-20">
+    <a href={localizePath('/work/', lang)} class="focus-ring rounded text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)]">{ko ? '← 작업물 목록' : '← Works'}</a>
+
+    <Image src={keyArt} alt={ko ? '대포와 석궁 옆에서 렌치를 든 고블린과 몰려오는 쥐 무리, GRENCH BOSS 로고' : 'The goblin with a wrench beside a cannon and a crossbow as the rats close in, with the GRENCH BOSS logo'} widths={[640, 960, 1232]} sizes="(min-width: 1024px) 976px, 100vw" loading="eager" class="mt-6 aspect-[1232/706] w-full rounded-xl border border-[var(--color-border)] object-cover" />
+
+    <div class="mt-10 grid gap-10 lg:grid-cols-[1fr_16rem]">
+      <div>
+        <h1 class="text-3xl font-semibold tracking-tight sm:text-5xl">GRENCH BOSS</h1>
+        <p class="mt-5 max-w-2xl text-xl leading-relaxed">{ko ? '해적 쥐들의 섬에 불시착한 고블린이 주인공인 디펜스 게임입니다.' : 'A defense game about a goblin stranded on an island of pirate rats.'}</p>
+        <p class="mt-4 max-w-2xl leading-relaxed text-[var(--color-text-muted)]">{ko
+          ? '적이 오는 길목에 포탑을 세우고 업그레이드합니다. 방어선이 뚫리면 렌치를 들고 직접 싸웁니다. 일꾼 꼬무가 자원을 모으고, 지형조작기로 벽과 언덕을 뚫을 수 있습니다. 카트와 비행선도 직접 몰 수 있습니다.'
+          : 'Place turrets on the enemy route and upgrade them. When the line breaks, take the wrench and fight yourself. Kkomu workers gather resources, and the terrain manipulator cuts through walls and hills. You can also drive a kart and fly the airship.'}</p>
+      </div>
+      <aside class="workshop-panel self-start rounded-xl border border-[var(--color-border)] p-6 text-sm">
+        <a href={steamUrl} target="_blank" rel="noopener noreferrer" class="focus-ring block rounded-full bg-[var(--color-text)] px-5 py-2.5 text-center font-medium text-[var(--color-bg)] hover:opacity-90">{ko ? 'Steam 찜 목록에 추가 →' : 'Wishlist on Steam →'}</a>
+        <p class="mt-3 text-[var(--color-text-muted)]">{ko ? 'Steam에서 무료 데모를 받을 수 있습니다.' : 'A free demo is available on Steam.'}</p>
+        <dl class="mt-6 grid gap-3">
+          <div><dt class="text-[var(--color-text-muted)]">{ko ? '개발' : 'Developer'}</dt><dd class="mt-0.5 font-medium"><a class="focus-ring underline underline-offset-4" href={localizePath('/workers/#frondward', lang)}>Frondward</a></dd></div>
+          <div><dt class="text-[var(--color-text-muted)]">{ko ? '배급' : 'Publisher'}</dt><dd class="mt-0.5 font-medium">Induo Works</dd></div>
+          <div><dt class="text-[var(--color-text-muted)]">{ko ? '플랫폼' : 'Platform'}</dt><dd class="mt-0.5 font-medium">Steam (Windows)</dd></div>
+        </dl>
+      </aside>
+    </div>
+
+    <section class="mt-20" aria-labelledby="grench-shots">
+      <h2 id="grench-shots" class="technical-label mb-6 text-[var(--color-wood)]">{ko ? '스크린샷' : 'Screenshots'}</h2>
+      <div class="grid gap-6 sm:grid-cols-2">
+        {shots.map(shot => (
+          <figure>
+            <a href={shot.src.src} class="focus-ring block rounded-xl"><Image src={shot.src} alt={shot.alt} widths={[480, 960]} sizes="(min-width: 640px) 50vw, 100vw" class="aspect-video w-full rounded-xl border border-[var(--color-border)] object-cover" /></a>
+            <figcaption class="mt-2 text-sm text-[var(--color-text-muted)]">{shot.caption}</figcaption>
+          </figure>
+        ))}
+      </div>
+    </section>
+
+    <p class="mt-16 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+      <a class="focus-ring underline underline-offset-4" href={localizePath('/work/soundtrack/', lang)}>{ko ? '사운드트랙' : 'Soundtrack'}</a>
+      <a class="focus-ring underline underline-offset-4" href={localizePath('/grench-boss/privacy/', lang)}>{ko ? '개인정보 처리방침' : 'Privacy policy'}</a>
+    </p>
+  </article>
+</Layout>
