@@ -20,7 +20,7 @@ if(!project) {
   for(const [key,value] of Object.entries(fields))root.querySelector('[data-field="'+key+'"]').textContent=value;
   const el=elements(root),owners=content?.workers||JSON.parse(root.dataset.workers);
   document.getElementById('detail-creators').replaceChildren(...owners.filter(w=>project.workerIds?.includes(w.id)).map(w=>el('a',{class:'focus-ring underline underline-offset-4',href:localizedPath('/workers/#'+w.id,lang)},w.name)));
-  document.getElementById('detail-links').replaceChildren(...[['href',labels.visitProject],['steamUrl',labels.viewOnSteam],['repo',labels.viewSource]].filter(([key])=>project[key]).map(([key,label])=>el('a',{href:project[key],target:'_blank',rel:'noopener noreferrer',class:'focus-ring rounded-full border border-[var(--color-border)] px-5 py-2.5 text-sm hover:border-[var(--color-accent)]'},label)));
+  document.getElementById('detail-links').replaceChildren(...[['href',labels.visitProject],['steamUrl',labels.viewOnSteam],['repo',labels.viewSource]].filter(([key])=>project[key]).map(([key,label])=>el('a',{...(project[key].startsWith('/')?{href:localizedPath(project[key],lang)}:{href:project[key],target:'_blank',rel:'noopener noreferrer'}),class:'focus-ring rounded-full border border-[var(--color-border)] px-5 py-2.5 text-sm hover:border-[var(--color-accent)]'},label)));
   document.title=project.title[lang]+' | Induo Works';
   root.hidden=false;message.hidden=true;
 }

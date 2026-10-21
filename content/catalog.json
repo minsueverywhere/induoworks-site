@@ -45,20 +45,21 @@
     {
       "slug": "grench-boss",
       "thumbnail": {
-        "src": "/work/media/grench-boss-concept-f042c0ca4feb.webp",
+        "src": "/uploads/b2945d801486f238473a.webp",
         "width": 640,
         "height": 360,
         "alt": {
-          "en": "GRENCH BOSS concept art with a goblin, a grounded airship and a jungle coast",
-          "ko": "고블린과 좌초된 비행선, 정글 해안이 있는 GRENCH BOSS 콘셉트 아트"
+          "en": "The goblin with a wrench beside a cannon and a crossbow as a horde of rats closes in",
+          "ko": "대포와 석궁 옆에서 렌치를 든 고블린과 몰려오는 쥐 무리"
         },
         "caption": {
-          "en": "Concept art",
-          "ko": "콘셉트 아트"
+          "en": "Key art (in-game render)",
+          "ko": "키 아트 (게임 화면 렌더)"
         }
       },
       "workerIds": [
-        "frondward"
+        "frondward",
+        "induo-works"
       ],
       "year": "2026",
       "stack": [
@@ -74,25 +75,27 @@
         "ko": "GRENCH BOSS"
       },
       "summary": {
-        "en": "A co-op base-defense game with building, enemy waves, and a pilotable airship. In development.",
-        "ko": "기지를 짓고 적을 막아내는 협동 게임입니다. 직접 조종하는 비행선이 있습니다. 개발 중입니다."
+        "en": "A defense game about a goblin boss, a crash landing and far too many rats.",
+        "ko": "고블린 보스와 불시착, 그리고 지나치게 많은 쥐에 관한 디펜스 게임입니다."
       },
       "role": {
-        "en": "Design & engineering",
-        "ko": "기획 및 개발"
+        "en": "Developed by Frondward, published by Induo Works",
+        "ko": "개발 Frondward, 배급 Induo Works"
       },
       "challenge": {
-        "en": "Players build and defend a base together. An airship lets them travel to other combat areas.",
-        "ko": "여러 플레이어가 함께 기지를 짓고 방어합니다. 비행선으로 다른 전투 구역을 오갈 수 있습니다."
+        "en": "The rats want your airship. It's mostly scrap, but it's yours. Build walls, dig the ground out from under them, and jump in yourself when the walls don't hold. (They rarely hold.)",
+        "ko": "쥐들이 당신의 비행선을 노립니다. 거의 고철이지만, 그래도 당신 것입니다. 벽을 세우고, 그 밑의 땅을 파내고, 벽이 버티지 못하면 직접 뛰어듭니다. (대체로 뚫립니다.)"
       },
       "approach": {
-        "en": "Built in Godot. Current work includes enemy movement, modular base building, and airship controls.",
-        "ko": "Godot로 개발합니다. 적 이동, 모듈형 기지 건설, 비행선 조작을 작업하고 있습니다."
+        "en": "Built in Godot with GDScript and C++ (GDExtension).",
+        "ko": "Godot에서 GDScript와 C++(GDExtension)로 개발합니다."
       },
       "outcome": {
-        "en": "In development. Work on the airship and a Steam demo is ongoing.",
-        "ko": "비행선 기능과 Steam 데모를 작업 중입니다."
-      }
+        "en": "A free demo is available on Steam. The full game is in development.",
+        "ko": "Steam에서 무료 데모를 받을 수 있습니다. 정식판을 개발하고 있습니다."
+      },
+      "href": "/grench-boss/",
+      "steamUrl": "https://store.steampowered.com/app/5154660/"
     },
     {
       "slug": "yggbound",

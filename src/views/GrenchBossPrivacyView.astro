@@ -1,0 +1,34 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { localizePath, type Locale } from '../i18n';
+import * as en from '../legal/grench-boss-privacy.en.md';
+import * as ko from '../legal/grench-boss-privacy.ko.md';
+
+interface Props { lang: Locale; }
+const { lang } = Astro.props;
+// The policy text is kept as written in src/legal; only the page frame lives here.
+const policy = lang === 'ko' ? ko : en;
+const Content = policy.Content;
+---
+
+<Layout
+  lang={lang}
+  title={lang === 'ko' ? 'Grench Boss 개인정보 처리방침' : 'Grench Boss Privacy Policy'}
+  description={lang === 'ko' ? 'Grench Boss와 데모가 다루는 정보를 설명합니다.' : 'What information Grench Boss and its demo handle.'}
+>
+  <article class="mx-auto max-w-3xl px-6 pb-24 pt-16 sm:pt-20">
+    <a href={localizePath('/grench-boss/', lang)} class="focus-ring rounded text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)]">← GRENCH BOSS</a>
+    <div class="policy mt-3"><Content /></div>
+  </article>
+</Layout>
+
+<style>
+  .policy :global(h1) { font-size:1.875rem;line-height:1.2;font-weight:600;letter-spacing:-.025em; }
+  .policy :global(h1 + p) { margin-top:.75rem;color:var(--color-text-muted);font-size:.875rem; }
+  .policy :global(h2) { margin-top:2.5rem;font-size:1.125rem;font-weight:600; }
+  .policy :global(p),.policy :global(ul) { margin-top:.75rem;line-height:1.75; }
+  .policy :global(ul) { padding-left:1.25rem;list-style:disc; }
+  .policy :global(li + li) { margin-top:.35rem; }
+  .policy :global(a) { text-decoration:underline;text-underline-offset:4px; }
+  .policy :global(code) { font-size:.875em;overflow-wrap:anywhere;padding:.1em .3em;border:1px solid var(--color-border);border-radius:.25rem; }
+</style>

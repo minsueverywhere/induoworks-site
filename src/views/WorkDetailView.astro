@@ -13,6 +13,7 @@ interface Props {
 
 const { lang, project, generic=false } = Astro.props;
 const dict = t(lang);
+const internalHref = project.href?.startsWith('/');
 ---
 
 <Layout
@@ -53,7 +54,7 @@ const dict = t(lang);
     </dl>
 
     <div id="detail-links" class="mt-8 flex flex-wrap gap-3">
-      {project.href && <a href={project.href} target="_blank" rel="noopener noreferrer" class="focus-ring rounded-full bg-[var(--color-text)] px-5 py-2.5 text-sm font-medium text-[var(--color-bg)] hover:opacity-90">{dict.workDetail.visitProject}</a>}
+      {project.href && <a href={internalHref ? localizePath(project.href, lang) : project.href} target={internalHref ? undefined : '_blank'} rel={internalHref ? undefined : 'noopener noreferrer'} class="focus-ring rounded-full bg-[var(--color-text)] px-5 py-2.5 text-sm font-medium text-[var(--color-bg)] hover:opacity-90">{dict.workDetail.visitProject}</a>}
       {project.steamUrl && <a href={project.steamUrl} target="_blank" rel="noopener noreferrer" class="focus-ring rounded-full border border-[var(--color-border)] px-5 py-2.5 text-sm hover:border-[var(--color-accent)]">{dict.workDetail.viewOnSteam}</a>}
       {project.repo && <a href={project.repo} target="_blank" rel="noopener noreferrer" class="focus-ring rounded-full border border-[var(--color-border)] px-5 py-2.5 text-sm hover:border-[var(--color-accent)]">{dict.workDetail.viewSource}</a>}
     </div>
