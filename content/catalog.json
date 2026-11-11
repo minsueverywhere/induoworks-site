@@ -71,8 +71,8 @@
       "status": "in-progress",
       "featured": true,
       "title": {
-        "en": "GRENCH BOSS",
-        "ko": "GRENCH BOSS"
+        "en": "Grench It!",
+        "ko": "Grench It!"
       },
       "summary": {
         "en": "A defense game about a goblin stranded on an island of pirate rats.",
@@ -126,8 +126,8 @@
         "ko": "Yggbound"
       },
       "summary": {
-        "en": "An early Godot game project. Paused while we work on GRENCH BOSS.",
-        "ko": "초기에 만들던 Godot 게임입니다. GRENCH BOSS 개발 중에는 보류합니다."
+        "en": "An early Godot game project. Paused while we work on Grench It!.",
+        "ko": "초기에 만들던 Godot 게임입니다. Grench It! 개발 중에는 보류합니다."
       },
       "role": {
         "en": "Design & engineering",
@@ -466,7 +466,7 @@
   ],
   "music": {
     "title": "Sunlit Circuit",
-    "project": "GRENCH BOSS",
+    "project": "Grench It!",
     "duration": 64,
     "sourceSha256": "930fee2b274ed2475f15068165e8a2062d3344b9463924b5330cd9df37b5be36",
     "sources": {
@@ -488,7 +488,7 @@
         "ogg": "/village/music/evening-return-e0400f0a1715.ogg",
         "mp3": "/village/music/evening-return-e0400f0a1715.mp3"
       },
-      "project": "GRENCH BOSS",
+      "project": "Grench It!",
       "artist": "Frondward",
       "workerIds": [
         "frondward"
@@ -503,7 +503,7 @@
         "ogg": "/village/music/main-menu-theme-0ffb9e82829c.ogg",
         "mp3": "/village/music/main-menu-theme-0ffb9e82829c.mp3"
       },
-      "project": "GRENCH BOSS",
+      "project": "Grench It!",
       "artist": "Frondward",
       "workerIds": [
         "frondward"
@@ -518,7 +518,7 @@
         "ogg": "/village/music/merchant-theme-0c691b674572.ogg",
         "mp3": "/village/music/merchant-theme-0c691b674572.mp3"
       },
-      "project": "GRENCH BOSS",
+      "project": "Grench It!",
       "artist": "Frondward",
       "workerIds": [
         "frondward"
@@ -533,7 +533,7 @@
         "ogg": "/village/music/quiet-harbor-61ba7311fba4.ogg",
         "mp3": "/village/music/quiet-harbor-61ba7311fba4.mp3"
       },
-      "project": "GRENCH BOSS",
+      "project": "Grench It!",
       "artist": "Frondward",
       "workerIds": [
         "frondward"
@@ -548,7 +548,7 @@
         "ogg": "/village/music/veiled-garden-f0f3c2ca18b6.ogg",
         "mp3": "/village/music/veiled-garden-f0f3c2ca18b6.mp3"
       },
-      "project": "GRENCH BOSS",
+      "project": "Grench It!",
       "artist": "Frondward",
       "workerIds": [
         "frondward"

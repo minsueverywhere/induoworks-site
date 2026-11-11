@@ -1,8 +1,8 @@
-# Grench Boss 개인정보 처리방침
+# Grench It! 개인정보 처리방침
 
 시행일: 2026년 10월 21일
 
-Grench Boss(데모 포함, 이하 "게임")는 Frondward가 개발하고 Induo Works가 배급합니다. 이 문서는 게임이 어떤 정보를 다루는지 설명합니다.
+Grench It!(데모 포함, 이하 "게임")는 Frondward가 개발하고 Induo Works가 배급합니다. 이 문서는 게임이 어떤 정보를 다루는지 설명합니다.
 
 ## 1. 개발사가 직접 수집하는 정보
 
