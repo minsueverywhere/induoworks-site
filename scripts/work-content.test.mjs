@@ -41,7 +41,7 @@ test('content IDs and ownership references stay valid across pages', () => {
 });
 
 test('search combines normalized words and all selected properties', () => {
-  const entry={search:'Grench It! Frondward Godot 개발 중',kind:'game',status:'in-progress',workerIds:['frondward'],tags:['Godot']};
+  const entry={search:'GRENCH BOSS Frondward Godot 개발 중',kind:'game',status:'in-progress',workerIds:['frondward'],tags:['Godot']};
   assert.equal(matchesWork(entry,{}),true);
   assert.equal(matchesWork(entry,{q:'ｇｒｅｎｃｈ  개발',worker:'frondward',kind:'game',status:'in-progress',tag:'Godot'}),true);
   for (const filters of [{q:'grench missing'},{worker:'unknown'},{kind:'artwork'},{status:'paused'},{tag:'Logo'}]) {
