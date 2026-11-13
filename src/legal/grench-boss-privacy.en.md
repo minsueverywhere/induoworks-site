@@ -1,8 +1,8 @@
-# Grench Boss Privacy Policy
+# Grench It! Privacy Policy
 
 Effective date: October 21, 2026
 
-Grench Boss (including its demo, "the game") is developed by Frondward and published by Induo Works. This page explains what information the game handles.
+Grench It! (including its demo, "the game") is developed by Frondward and published by Induo Works. This page explains what information the game handles.
 
 ## 1. Information the developer collects directly
 

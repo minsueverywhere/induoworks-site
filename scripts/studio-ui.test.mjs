@@ -42,7 +42,7 @@ test('scene editor only places registered own works, preserves catalog data and 
   const payload=studioSlice(catalog,'frondward'),privateWork={...payload.projects[0],slug:'private-only',title:{ko:'비공개 새작품',en:'Private'}};payload.projects.push(privateWork);
   const ui=await setup(url=>url.includes('/session')?Response.json({owners:['frondward'],host:false}):Response.json({catalog,payload,revision:0,baseHash:'base',stale:false}));
   assert.equal(ui.button('Works'),undefined);assert.equal(ui.button('이미지'),undefined);assert.equal(ui.button('음악'),undefined);assert.equal(ui.button('꾸미기'),undefined);assert.equal(ui.button('비공개 새작품'),undefined);
-  assert.equal(ui.button('GRENCH BOSS'),undefined);assert.equal(ui.button('Induo Works 웹사이트'),undefined);
+  assert.equal(ui.button('GRENCH IT!'),undefined);assert.equal(ui.button('Induo Works 웹사이트'),undefined);
   assert.equal(ui.button('배치 공개'),undefined);
   elements(ui.api.floorBar).find(el=>el.className==='floor-height').events.click();
   await ui.editor.close();
@@ -100,7 +100,7 @@ test('independent scene view toggles full screen and restores pre-existing inert
 
 test('LAN scene preview uses only public content and offers no real draft write or submit action',async()=>{
   const ui=await setup(()=>{throw Error('Preview must not call studio APIs');},true);
-  assert.equal(ui.button('GRENCH BOSS'),undefined);assert.equal(ui.button('배치 공개'),undefined);assert.equal(ui.button('검토 요청'),undefined);assert.equal(ui.writes.length,0);
+  assert.equal(ui.button('GRENCH IT!'),undefined);assert.equal(ui.button('배치 공개'),undefined);assert.equal(ui.button('검토 요청'),undefined);assert.equal(ui.writes.length,0);
   ui.handlers.beforeunload({preventDefault(){throw Error('Disposable preview should not block refresh');}});
 });
 
@@ -271,7 +271,7 @@ test('guestbook contact menus distinguish team from individual and hidden posts 
 
 test('object palette exposes types only; legacy displays can flip and choose a different registered Work',async()=>{
  const ui=await setup();const press=label=>elements(ui.scene).find(e=>e.attributes['aria-label']===label).events.click();
- press('물건');assert.ok(elements(ui.scene).some(e=>e.attributes['aria-label']==='물건 종류'));assert.equal(ui.button('GRENCH BOSS'),undefined);press('전시대');
+ press('물건');assert.ok(elements(ui.scene).some(e=>e.attributes['aria-label']==='물건 종류'));assert.equal(ui.button('GRENCH IT!'),undefined);press('전시대');
  const event={button:0,pointerId:1,clientX:0,clientY:0,point:{x:0,y:0},target:{closest:()=>null},preventDefault(){},stopImmediatePropagation(){}};
  ui.scene.events.pointerdown(event);ui.scene.events.pointerup(event);assert.equal(ui.api.toolLabel,'선택·이동');
  const item=()=>ui.preview().workers.find(w=>w.id==='frondward').room.floors[0].exhibits.at(-1);assert.equal(item().kind,'project');assert.equal(item().width,1);assert.equal(item().depth,1);
